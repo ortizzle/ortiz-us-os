@@ -97,16 +97,23 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - First goal: **alcohol-free through Jan 17, 2027**, with grace built in —
   12 🎟️ drink tickets and 3 🏖️ weekend escape passes for the whole stretch.
 - Second goal: **💌 Love coupons** — his & hers books of 10 acts-of-service
-  coupons each (💙 From Chris, 💜 From Kat), no expiration. **Receipt
-  semantics**: you mark one from YOUR book *after* doing it for the other —
-  the books fill up as a synced record of taking care of each other, and
-  each phone sees both books. Coupons: worst-chore takeover, sleep-in
-  morning, breakfast in bed, massage, night off, solo afternoon, full-date
-  planning, your-pick night, coffee-in-bed week, one no-debate "you were
-  right". Pass `items` gives each ticket its own label; goals without
-  `ends` show ∞.
-- Tap an unused ticket to use it (date + optional occasion note); tap a used
-  one to see the occasion or give it back.
+  coupons each (💙 Chris, 💜 Kat), no expiration. **Send semantics**: each
+  phone shows only its owner's unsent book (pick "I'm Chris / I'm Kat" once,
+  stored device-locally in `settings.who`) plus everything the other person
+  has sent — unsent coupons exist only as static code, so they never sync
+  and every send lands as a surprise. Sending (with an optional note)
+  creates a synced `coupon:<kind>:<n>` record; the receiver gets an in-app
+  reveal sheet on their next sync/open, the coupon then lives in Goals as a
+  keepsake, and the sender's book shows "opened 💗" once it's been seen.
+  Optionally, a send also fires an elegant **teaser email** ("something's
+  waiting for you" — never the coupon itself) via a self-hosted Google Apps
+  Script webhook; see [COUPON_EMAIL.md](COUPON_EMAIL.md). Coupons:
+  worst-chore takeover, sleep-in morning, breakfast in bed, massage, night
+  off, solo afternoon, full-date planning, your-pick night, coffee-in-bed
+  week, one no-debate "you were right".
+- Tap an unused drink/escape ticket to use it (date + optional occasion
+  note); tap a used one to see the occasion or give it back. Tap an unsent
+  coupon to send it; tap a sent one to see its status or take it back.
 - Goal definitions live in `GOALS` in `app.js` — adding a future goal is a
   new entry there, not new machinery.
 
@@ -117,6 +124,10 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - Delete any entry.
 
 ### Settings
+- This phone belongs to — 💙 Chris / 💜 Kat, powers the coupon send/receive
+  split. Device-local, never synced.
+- Coupon email nudge — optional Apps Script web-app URL for the 💌 teaser
+  email. Device-local, never synced.
 - Home city + interests — sharpens Claude's idea suggestions.
 - Claude API key — optional, enables ✨ suggestions. Device-local, never
   synced.
@@ -135,7 +146,8 @@ Three sections with jump-chips (a mini table of contents) at the top:
   blow past localStorage and Gist size limits quickly. Revisit as a link to
   a shared album, or a separate storage backend.)
 - Notifications/reminders — the app shows the countdown when opened; it
-  doesn't push anything.
+  doesn't push anything. (One deliberate exception: the 💌 coupon teaser
+  email, which rides on a user-deployed Apps Script rather than a backend.)
 
 ## Open questions / possible future work
 

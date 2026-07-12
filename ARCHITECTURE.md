@@ -26,10 +26,12 @@ One `localStorage` key, `ortiz-us-os`, holding:
   entries: [{ id, type, date, title, notes, rating, planned, updatedAt, deleted }],
   ideas:   [{ id, type, text, source, done, private, updatedAt, deleted }],
   tickets: [{ id, goal, kind, n, used, usedAt, note, updatedAt }],
+  coupons: [{ id, from, n, text, note, sentAt, seenAt, updatedAt, deleted }],
   bingo:   [{ id, n, done, updatedAt }],
   bingo2:  [{ id, n, done, updatedAt }],
   recstate: [{ id, state, updatedAt }],
-  settings: { apiKey, city, interests, theme, gistToken, gistId, lastSyncAt },
+  settings: { apiKey, city, interests, theme, gistToken, gistId, lastSyncAt,
+              who, couponHook },
 }
 ```
 
@@ -44,6 +46,19 @@ One `localStorage` key, `ortiz-us-os`, holding:
   Seeds carry `updatedAt: ''` so any real tap (a proper ISO timestamp)
   outranks an untouched seed in a merge. Tickets are toggled used/unused,
   never tombstoned.
+- `coupons` are 💌 love coupons, and hold **sent coupons only** — the unsent
+  book is static code (`COUPON_ITEMS`), so it never transits the network and
+  each send lands on the other phone as a surprise. Ids are deterministic
+  (`coupon:<kind>:<n>`, kind = `chris` | `kat`). "Take it back" tombstones
+  the record; re-sending flips `deleted` back off on the same record. The
+  receiver's phone stamps `seenAt` when the in-app reveal is shown, which
+  syncs back so the sender's book shows "opened 💗". `settings.who` says
+  whose phone this is (whose book you send from); `settings.couponHook` is
+  an optional Apps Script URL that emails the other person a teaser on send
+  (see [COUPON_EMAIL.md](COUPON_EMAIL.md)). Legacy `love-coupons:*` tickets
+  from the old mark-after-done model are migrated into coupon records
+  (`migrateCoupons`, idempotent — it copies the ticket's `updatedAt` so both
+  phones produce identical records) and otherwise ignored.
 - `entries.mem` holds the memory-question answers (`{ moment, food, drink,
   activity }`), keyed by `MEMQ` in `app.js`.
 - `entries.status` (`'planning'` | `'booked'`, planned entries only) drives
@@ -80,8 +95,8 @@ GitHub Gist — same mechanism as Home OS, but writing to its own file
 
 - **Trigger:** debounced 2s after any local write (`scheduleSync` →
   `syncNow`), plus on tab re-focus (`visibilitychange`), plus once on boot.
-- **Payload:** `sharedPayload()` — `entries`, `ideas`, `tickets`, `bingo`,
-  `bingo2`, and `recstate`, with `ideas` filtered to exclude
+- **Payload:** `sharedPayload()` — `entries`, `ideas`, `tickets`, `coupons`,
+  `bingo`, `bingo2`, and `recstate`, with `ideas` filtered to exclude
   `private: true` records. `settings` is never included.
 - **Merge:** `mergeCol(local, remote)` — per-record by `id`; if the remote
   record's `updatedAt` is newer than the local one's, remote wins. Otherwise
