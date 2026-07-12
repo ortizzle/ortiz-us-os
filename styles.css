@@ -120,6 +120,23 @@ textarea.input { resize: vertical; min-height: 60px; }
 .rating button { background: none; border: 0; font-size: 24px; cursor: pointer; filter: grayscale(1) opacity(.4); padding: 0; }
 .rating button.on { filter: none; }
 
+/* special dates */
+.special { display: flex; gap: 8px; margin-bottom: 16px; }
+.special-chip { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; box-shadow: var(--shadow); min-width: 0; }
+.special-chip .s-emoji { font-size: 20px; }
+.special-chip .s-label { font-weight: 700; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.special-chip .s-count { color: var(--text-2); font-size: 11.5px; white-space: nowrap; }
+
+/* curated picks */
+.row.rec { cursor: pointer; }
+.row.rec:hover { border-color: var(--accent); }
+
+/* 💗 bingo */
+.bingo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.bcell { font: inherit; font-size: 10px; font-weight: 600; line-height: 1.25; padding: 6px 4px; min-height: 64px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; word-break: break-word; }
+.bcell.done { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); text-decoration: line-through; }
+.bcell.win { background: var(--accent); border-color: var(--accent); color: #fff; text-decoration: none; }
+
 /* couple's goals — passes */
 .pass-head { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 14px; margin: 16px 0 8px; }
 .tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }

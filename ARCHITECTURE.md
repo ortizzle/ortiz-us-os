@@ -26,6 +26,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
   entries: [{ id, type, date, title, notes, rating, planned, updatedAt, deleted }],
   ideas:   [{ id, type, text, source, done, private, updatedAt, deleted }],
   tickets: [{ id, goal, kind, n, used, usedAt, note, updatedAt }],
+  bingo:   [{ id, n, done, updatedAt }],
   settings: { apiKey, city, interests, theme, gistToken, gistId, lastSyncAt },
 }
 ```
@@ -40,6 +41,13 @@ One `localStorage` key, `ortiz-us-os`, holding:
   Seeds carry `updatedAt: ''` so any real tap (a proper ISO timestamp)
   outranks an untouched seed in a merge. Tickets are toggled used/unused,
   never tombstoned.
+- `entries.mem` holds the memory-question answers (`{ moment, food, drink,
+  activity }`), keyed by `MEMQ` in `app.js`.
+- `bingo` is the 💗 easter-egg card (6 taps on the topbar heart). Same
+  deterministic-id + `updatedAt: ''` seeding trick as tickets (`bingo:n`,
+  center square pre-done). Squares toggle, never tombstone.
+- `RECS` (curated picks) and `SPECIAL` (anniversary/birthdays) are static
+  data baked into `app.js` — not stored, not synced, edit in code.
 - `settings` is device-local only — it is never included in sync.
 
 ## The 2-2-2 model
@@ -63,9 +71,9 @@ GitHub Gist — same mechanism as Home OS, but writing to its own file
 
 - **Trigger:** debounced 2s after any local write (`scheduleSync` →
   `syncNow`), plus on tab re-focus (`visibilitychange`), plus once on boot.
-- **Payload:** `sharedPayload()` — `entries`, `ideas`, and `tickets`, with
-  `ideas` filtered to exclude `private: true` records. `settings` is never
-  included.
+- **Payload:** `sharedPayload()` — `entries`, `ideas`, `tickets`, and
+  `bingo`, with `ideas` filtered to exclude `private: true` records.
+  `settings` is never included.
 - **Merge:** `mergeCol(local, remote)` — per-record by `id`; if the remote
   record's `updatedAt` is newer than the local one's, remote wins. Otherwise
   local is kept. This is a last-write-wins CRDT-lite merge, not a real CRDT —

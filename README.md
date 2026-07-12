@@ -16,13 +16,18 @@ tombstones keep deletions deleted.
 
 ## How it thinks
 
-- **Rhythm** — each cadence shows the last one, the next due date, and a
-  countdown. Log what happened; plan what's next.
-- **Up Next** — everything planned, soonest first, with countdowns — the
-  anticipation tab. Cadences with nothing planned get a nudge.
-- **Ideas** — a running backlog per cadence. With a Claude API key in
-  Settings, ✨ generates real, local-feeling suggestions (city + interests
-  aware). "Plan" turns an idea into a scheduled date.
+- **Rhythm** — special-date countdowns (anniversary + birthdays) up top,
+  then "Coming up" (everything planned, soonest first, with countdowns and
+  a trip-guide-app reminder for getaways/trips), then each cadence's card.
+  Log what happened — with memory questions (favorite moment/food/drink for
+  dates; activity/food/a-moment-to-keep for getaways and trips) — or plan
+  what's next. Everything's editable after the fact (✎).
+- **Ideas** — a running backlog per cadence, plus **curated picks**: baked-in,
+  hand-researched Phoenix-area recommendations (restaurants, getaways,
+  destinations) with ratings and why — no API tokens needed. Tap for the full
+  story; ✨ "Go deeper" (with an API key) fetches insider tips. With a key,
+  ✨ also generates fresh city-and-interests-aware suggestions. "Plan" turns
+  any idea into a scheduled date.
 - **🔒 Private ideas** — the lock next to the add box. Locked ideas (including
   Claude-generated ones while locked) are stripped from the sync payload and
   never leave the device. For surprises.
@@ -30,7 +35,9 @@ tombstones keep deletions deleted.
   stretch through Jan 17, 2027 ships with 12 🎟️ drink tickets and 3 🏖️
   weekend escape passes — tap one to use it (with an occasion note), tap a
   used one to give it back. Ticket state syncs to both phones.
-- **History** — been there, with ♥ ratings out of 5.
+- **History** — been there, with ♥ ratings out of 5 and saved memories.
+- *…and if you tap the heart in the top corner six times, something's there
+  for just you two.* 💗
 
 ## Run locally
 
