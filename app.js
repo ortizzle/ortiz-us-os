@@ -17,6 +17,10 @@ function el(tag, attrs = {}, kids = []) {
 }
 const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return n; };
 
+// Shown in Settings so both phones can confirm which build they're actually
+// running. Bump alongside sw.js CACHE on any shell change.
+const APP_VERSION = 'v9 · love coupons';
+
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -961,6 +965,7 @@ function settingsModal() {
     syncLine,
     el('div', { style: 'margin-top:10px' }, el('button', { class: 'btn btn-sm', onclick: () => syncNow(true) }, '⇅ Sync now')),
     el('label', { class: 'field-label' }, 'Appearance'), themeSel,
+    el('p', { class: 'muted small center', style: 'margin:16px 0 0' }, `Us OS · ${APP_VERSION}`),
   ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
     el('button', { class: 'btn btn-primary', onclick: () => {

@@ -66,7 +66,9 @@ either causes silent data loss or leaked surprises across the two phones.
   `parse()` — never `new Date(dateString)` directly (timezone drift bugs).
 - Service worker (`sw.js`) is network-first with cache fallback, same as the
   rest of the Ortiz suite — bump `CACHE` version string on any shell-file
-  change so returning phones pick up new code instead of a stale cache.
+  change so returning phones pick up new code instead of a stale cache. Keep
+  `APP_VERSION` in `app.js` (shown at the bottom of Settings) in step with it,
+  so both phones can confirm which build they're actually running.
 
 ## Before shipping a change
 
