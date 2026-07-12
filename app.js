@@ -28,10 +28,11 @@ let DB = load();
 DB.entries ||= [];   // logged/planned dates: {id,type,date,title,notes,rating,planned,updatedAt,deleted}
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
 DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,note,updatedAt}
+DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seenAt,updatedAt,deleted}
 DB.bingo ||= [];     // easter-egg bingo squares: {id,n,done,updatedAt}
 DB.bingo2 ||= [];    // the card behind the card
 DB.recstate ||= [];  // curated-pick reactions: {id,state:'dismissed'|'done'|'',updatedAt}
-DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt} — never synced
+DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt,who,couponHook} — never synced
 const now = () => new Date().toISOString();
 // Deletes are tombstones (deleted:true + updatedAt) so a removal on one phone
 // wins over the stale copy on the other; pruned after 60 days.
@@ -66,7 +67,7 @@ function nextSpecial(s) {
 }
 
 // ---------- couple's goals ----------
-// Shared by both coupon books — each of you has all ten to give.
+// Same ten in each book — each of you has all ten to give.
 const COUPON_ITEMS = [
   'I take your worst chore this week',
   'Sleep-in morning — I’ve got everything handled',
@@ -79,6 +80,13 @@ const COUPON_ITEMS = [
   'Coffee delivered in bed for a whole week',
   'One “you were right” — no debate, no footnotes',
 ];
+const COUPLE = {
+  chris: { name: 'Chris', emoji: '💙' },
+  kat:   { name: 'Kat',   emoji: '💜' },
+};
+const other = (w) => (w === 'chris' ? 'kat' : 'chris');
+const me = () => DB.settings.who || '';
+
 const GOALS = [{
   id: 'dry-2027',
   emoji: '🥂',
@@ -89,16 +97,6 @@ const GOALS = [{
     { kind: 'drink',  emoji: '🎟️', label: 'Drink tickets',         one: 'drink ticket',         count: 12 },
     { kind: 'escape', emoji: '🏖️', label: 'Weekend escape passes', one: 'weekend escape pass',  count: 3 },
   ],
-}, {
-  id: 'love-coupons',
-  emoji: '💌',
-  title: 'Love coupons',
-  sub: 'A book of ten each. Mark one AFTER you’ve done it for the other — a running receipt of taking care of each other.',
-  ends: null,
-  passes: [
-    { kind: 'chris', emoji: '💙', label: 'From Chris', one: 'coupon from Chris', count: 10, items: COUPON_ITEMS },
-    { kind: 'kat',   emoji: '💜', label: 'From Kat',   one: 'coupon from Kat',   count: 10, items: COUPON_ITEMS },
-  ],
 }];
 // Tickets get fixed ids (goal:kind:n) so both phones seed the identical set
 // and merge per-ticket instead of doubling up. Seeds carry updatedAt:'' so a
@@ -108,6 +106,23 @@ function seedTickets() {
   for (const g of GOALS) for (const p of g.passes) for (let n = 1; n <= p.count; n++) {
     const id = `${g.id}:${p.kind}:${n}`;
     if (!have.has(id)) DB.tickets.push({ id, goal: g.id, kind: p.kind, n, used: false, updatedAt: '' });
+  }
+}
+
+// Love coupons moved from mark-after-done tickets (love-coupons:kind:n) to
+// sent-coupon records. Only SENT coupons exist in data — your unsent book is
+// static code, so it never transits the Gist and every send lands as a
+// surprise. Ids stay deterministic (coupon:kind:n); migration copies the old
+// ticket's updatedAt so both phones produce identical records and the merge
+// is idempotent. Old tickets stay in DB untouched for not-yet-updated phones.
+function migrateCoupons() {
+  const have = new Set(DB.coupons.map((c) => c.id));
+  for (const t of DB.tickets) {
+    if (t.goal !== 'love-coupons' || !t.used) continue;
+    const id = `coupon:${t.kind}:${t.n}`;
+    if (have.has(id)) continue;
+    DB.coupons.push({ id, from: t.kind, n: t.n, text: COUPON_ITEMS[t.n - 1], note: t.note || '',
+      sentAt: t.usedAt || '', seenAt: t.updatedAt || now(), updatedAt: t.updatedAt || now() });
   }
 }
 
@@ -318,50 +333,198 @@ function renderGoals() {
         el('span', {}, `${p.emoji} ${p.label}`),
         el('span', { class: 'chip' + (remaining ? ' love' : '') }, `${remaining} of ${tix.length} left`),
       ]));
-      kids.push(el('div', { class: 'tickets' + (p.items ? ' coupons' : '') }, tix.map((x) => {
-        const label = p.items?.[x.n - 1];
-        return el('button', {
-          class: 'ticket' + (x.used ? ' used' : ''),
-          title: x.used ? `Used ${x.usedAt ? fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}` : label || `${p.one} #${x.n}`,
-          onclick: () => ticketModal(x, p),
-        }, [
-          el('span', { class: 't-emoji' }, x.used && label ? '✓' : p.emoji),
-          label ? el('span', { class: 't-label' }, label) : el('span', { class: 't-n' }, x.used ? '✓' : x.n),
-        ]);
-      })));
+      kids.push(el('div', { class: 'tickets' }, tix.map((x) => el('button', {
+        class: 'ticket' + (x.used ? ' used' : ''),
+        title: x.used ? `Used ${x.usedAt ? fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}` : `${p.one} #${x.n}`,
+        onclick: () => ticketModal(x, p),
+      }, [
+        el('span', { class: 't-emoji' }, p.emoji),
+        el('span', { class: 't-n' }, x.used ? '✓' : x.n),
+      ]))));
     }
     view.append(el('div', { class: 'card' }, kids));
   }
+  view.append(couponsCard());
 }
 
 function ticketModal(x, p) {
-  const one = p.items?.[x.n - 1] || p.one;
   if (x.used) {
-    const m = modal(`${p.emoji} Used: ${one}`, [
+    const m = modal(`${p.emoji} Used: ${p.one}`, [
       el('p', { class: 'muted' }, `${x.usedAt ? fmt(x.usedAt) : 'Date unknown'}${x.note ? ' — ' + x.note : ''}`),
     ], [
       el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
       el('button', { class: 'btn btn-primary', onclick: () => {
         x.used = false; x.usedAt = null; x.note = ''; x.updatedAt = now();
-        commit(); m.close(); toast(p.items ? 'Unmarked' : 'Ticket returned 🎟️'); render();
-      } }, p.items ? '↩ Unmark it' : 'Give it back'),
+        commit(); m.close(); toast('Ticket returned 🎟️'); render();
+      } }, 'Give it back'),
     ]);
     return;
   }
   const date = el('input', { class: 'input', type: 'date', value: todayStr() });
-  const note = el('input', { class: 'input', placeholder: p.items ? 'Any details worth remembering? (optional)' : 'What’s the occasion? (optional)' });
-  const m = modal(p.items ? `${p.emoji} ${one}` : `${p.emoji} Use a ${one}?`, [
-    p.items ? el('p', { class: 'muted small', style: 'margin:0' }, `Mark this after it’s done — it’s a receipt, not a promise.`) : null,
-    el('label', { class: 'field-label' }, p.items ? 'When did it happen?' : 'When'), date,
-    el('label', { class: 'field-label' }, p.items ? 'Details' : 'Occasion'), note,
-  ].filter(Boolean), [
+  const note = el('input', { class: 'input', placeholder: 'What’s the occasion? (optional)' });
+  const m = modal(`${p.emoji} Use a ${p.one}?`, [
+    el('label', { class: 'field-label' }, 'When'), date,
+    el('label', { class: 'field-label' }, 'Occasion'), note,
+  ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Not yet'),
     el('button', { class: 'btn btn-primary', onclick: () => {
       x.used = true; x.usedAt = date.value || todayStr(); x.note = note.value.trim(); x.updatedAt = now();
-      commit(); m.close(); toast(p.items ? 'One for the books 💌' : 'Enjoy it — you earned it 🥂'); render();
-    } }, p.items ? '✓ I did this' : 'Use it'),
+      commit(); m.close(); toast('Enjoy it — you earned it 🥂'); render();
+    } }, 'Use it'),
   ]);
   note.focus();
+}
+
+// ---------- 💌 love coupons (send / receive) ----------
+const couponCardEl = (c) => el('div', { class: 'coupon-card' }, [
+  el('div', { class: 'c-emoji' }, COUPLE[c.from].emoji),
+  el('div', { class: 'c-text' }, c.text),
+  c.note ? el('div', { class: 'c-note' }, `“${c.note}”`) : null,
+]);
+
+function couponsCard() {
+  const who = me();
+  const kids = [
+    el('div', { class: 'card-top' }, [
+      el('div', { class: 'card-emoji' }, '💌'),
+      el('div', {}, [el('div', { class: 'card-title' }, 'Love coupons'),
+        el('div', { class: 'card-cadence' }, 'Ten each to give. Send one when you mean it — it lands on their phone as a little surprise. No expiration.')]),
+      el('div', { class: 'card-right' }, el('div', { class: 'countdown ok' }, '∞')),
+    ]),
+  ];
+  if (!who) {
+    kids.push(
+      el('p', { class: 'muted small' }, 'First: whose phone is this? Pick once — it stays on this device, so your unsent coupons stay your secret.'),
+      el('div', { class: 'card-actions' }, ['chris', 'kat'].map((w) => el('button', {
+        class: 'btn btn-primary btn-sm',
+        onclick: () => { DB.settings.who = w; save(DB); toast(`Hi, ${COUPLE[w].name} ${COUPLE[w].emoji}`); render(); maybeReveal(); },
+      }, `${COUPLE[w].emoji} I’m ${COUPLE[w].name}`))),
+    );
+    return el('div', { class: 'card' }, kids);
+  }
+
+  const mine = COUPLE[who], theirs = COUPLE[other(who)];
+  const sent = new Map(DB.coupons.filter((c) => c.from === who && !c.deleted).map((c) => [c.n, c]));
+  kids.push(el('div', { class: 'pass-head' }, [
+    el('span', {}, `${mine.emoji} Your book — tap one to send`),
+    el('span', { class: 'chip' + (sent.size < COUPON_ITEMS.length ? ' love' : '') }, `${COUPON_ITEMS.length - sent.size} of ${COUPON_ITEMS.length} to give`),
+  ]));
+  kids.push(el('div', { class: 'tickets coupons' }, COUPON_ITEMS.map((text, i) => {
+    const c = sent.get(i + 1);
+    if (!c) return el('button', { class: 'ticket', title: text, onclick: () => sendCouponModal(i + 1) }, [
+      el('span', { class: 't-emoji' }, mine.emoji),
+      el('span', { class: 't-label' }, text),
+    ]);
+    return el('button', {
+      class: 'ticket used',
+      title: `Sent ${c.sentAt ? fmt(c.sentAt) : ''} · ${c.seenAt ? 'opened' : 'not opened yet'}`,
+      onclick: () => sentCouponModal(c),
+    }, [
+      el('span', { class: 't-emoji' }, c.seenAt ? '💗' : '💌'),
+      el('span', { class: 't-label' }, c.text),
+    ]);
+  })));
+
+  const recv = DB.coupons.filter((c) => c.from !== who && !c.deleted).sort((a, b) => ((b.sentAt || '') < (a.sentAt || '') ? -1 : 1));
+  kids.push(el('div', { class: 'pass-head' }, [
+    el('span', {}, `${theirs.emoji} From ${theirs.name} — yours to keep`),
+    el('span', { class: 'chip' + (recv.length ? ' love' : '') }, `${recv.length} received`),
+  ]));
+  if (!recv.length) kids.push(el('p', { class: 'muted small', style: 'margin:0' }, `Coupons ${theirs.name} sends you land here 💌`));
+  else kids.push(el('div', { class: 'tickets coupons' }, recv.map((c) => el('button', {
+    class: 'ticket recv', title: c.sentAt ? `Sent ${fmt(c.sentAt)}` : '',
+    onclick: () => recvCouponModal(c),
+  }, [
+    el('span', { class: 't-emoji' }, theirs.emoji),
+    el('span', { class: 't-label' }, c.text),
+    c.sentAt ? el('span', { class: 't-date' }, fmt(c.sentAt)) : null,
+  ]))));
+  return el('div', { class: 'card' }, kids);
+}
+
+function sendCouponModal(n) {
+  const who = me(), theirs = COUPLE[other(who)];
+  const note = el('input', { class: 'input', placeholder: 'Add a little note (optional)' });
+  const m = modal(`💌 Send this to ${theirs.name}?`, [
+    couponCardEl({ from: who, text: COUPON_ITEMS[n - 1] }),
+    el('p', { class: 'muted small', style: 'margin:0' },
+      `It’ll appear in ${theirs.name}’s app as a surprise${DB.settings.couponHook ? ', with a little email nudge' : ''}. A coupon is a promise — no expiration.`),
+    el('label', { class: 'field-label' }, 'Note'), note,
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Not yet'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      sendCoupon(n, note.value.trim());
+      m.close(); toast(`On its way to ${theirs.name} 💌`); render();
+    } }, '💌 Send it'),
+  ]);
+  note.focus();
+}
+
+// Re-sending after a take-back reuses the tombstoned record — deterministic
+// ids mean flipping deleted back off, never a second record.
+function sendCoupon(n, note) {
+  const who = me();
+  const id = `coupon:${who}:${n}`;
+  let c = DB.coupons.find((x) => x.id === id);
+  if (!c) { c = { id, from: who, n }; DB.coupons.push(c); }
+  Object.assign(c, { deleted: false, text: COUPON_ITEMS[n - 1], note, sentAt: todayStr(), seenAt: null, updatedAt: now() });
+  commit();
+  sendCouponNudge(who);
+}
+
+function sentCouponModal(c) {
+  const theirs = COUPLE[other(c.from)];
+  const m = modal(`💌 Sent to ${theirs.name}`, [
+    couponCardEl(c),
+    el('p', { class: 'muted small' }, `Sent ${c.sentAt ? fmt(c.sentAt) : '—'} · ${c.seenAt ? 'opened 💗' : 'not opened yet'}`),
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+    el('button', { class: 'btn btn-ghost', onclick: () => {
+      c.deleted = true; c.updatedAt = now();
+      // Keep the legacy ticket in step so migration can never resurrect this.
+      const t = DB.tickets.find((x) => x.id === `love-coupons:${c.from}:${c.n}`);
+      if (t?.used) Object.assign(t, { used: false, usedAt: null, note: '', updatedAt: now() });
+      commit(); m.close(); toast('Back in your book'); render();
+    } }, '↩ Take it back'),
+  ]);
+}
+
+function recvCouponModal(c) {
+  const sender = COUPLE[c.from];
+  const m = modal(`${sender.emoji} From ${sender.name}`, [
+    couponCardEl(c),
+    el('p', { class: 'muted small' }, `${c.sentAt ? 'Sent ' + fmt(c.sentAt) + ' — no' : 'No'} strings, no expiration. Cash it in whenever.`),
+  ], [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
+}
+
+// The in-app reveal IS the notification: after any sync that brings in a new
+// coupon addressed to this phone, pop the reveal sheet. Marking seenAt on
+// show (not on close) keeps a scrim-tap dismiss from re-popping it forever,
+// and flips the sender's ticket to "opened 💗" on their next sync.
+function maybeReveal() {
+  const who = me();
+  if (!who || document.querySelector('.scrim')) return;
+  const fresh = DB.coupons.filter((c) => !c.deleted && c.from !== who && !c.seenAt);
+  if (!fresh.length) return;
+  for (const c of fresh) { c.seenAt = now(); c.updatedAt = now(); }
+  commit();
+  const sender = COUPLE[fresh[0].from];
+  const m = modal(`💌 ${sender.name} sent you ${fresh.length === 1 ? 'a love coupon' : fresh.length + ' love coupons'}`, [
+    ...fresh.map(couponCardEl),
+    el('p', { class: 'muted small center' }, 'Yours to keep — it lives in Goals whenever you want to cash it in.'),
+  ], [el('button', { class: 'btn btn-primary', onclick: () => { m.close(); render(); } }, '💝 Keep it')]);
+}
+
+// Best-effort teaser email via the couple's Apps Script webhook — see
+// COUPON_EMAIL.md. text/plain keeps it a "simple" request (no CORS preflight,
+// which Apps Script can't answer). The coupon itself travels by Gist sync;
+// a failed nudge only costs the email, never the coupon.
+function sendCouponNudge(from) {
+  const url = DB.settings.couponHook;
+  if (!url) return;
+  fetch(url, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ from }) })
+    .then((r) => { if (!r.ok) throw new Error(); })
+    .catch(() => toast('Coupon sent in-app — the email nudge didn’t go through'));
 }
 
 function upcomingCard(e) {
@@ -778,16 +941,22 @@ function settingsModal() {
   const city = el('input', { class: 'input', placeholder: 'e.g. Phoenix, AZ', value: s.city || '' });
   const interests = el('input', { class: 'input', placeholder: 'e.g. live music, tacos, hiking, comedy', value: s.interests || '' });
   const themeSel = el('select', { class: 'input' }, ['auto','light','dark'].map((v) => el('option', { value: v, selected: (s.theme||'auto')===v ? 'selected' : null }, v[0].toUpperCase()+v.slice(1))));
+  const whoSel = el('select', { class: 'input' }, [['', 'Choose…'], ['chris', '💙 Chris'], ['kat', '💜 Kat']].map(([v, label]) => el('option', { value: v, selected: (s.who || '') === v ? 'selected' : null }, label)));
+  const couponHook = el('input', { class: 'input', placeholder: 'https://script.google.com/macros/s/…/exec', value: s.couponHook || '' });
   const gistToken = el('input', { class: 'input', type: 'password', placeholder: 'GitHub token (gist scope)', value: s.gistToken || '' });
   const gistId = el('input', { class: 'input', placeholder: 'Gist ID', value: s.gistId || '' });
   const syncLine = el('p', { class: 'muted small', style: 'margin:6px 0 0' },
     s.gistToken && s.gistId ? `Sync configured${s.lastSyncAt ? ' · last synced ' + new Date(s.lastSyncAt).toLocaleString() : ''}` : 'Same setup as Home OS: both phones use the same private Gist + token. 🔒 Private ideas never leave this device.');
 
   const m = modal('Settings', [
+    el('label', { class: 'field-label' }, 'This phone belongs to'), whoSel,
+    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Picks whose 💌 coupon book you send from. Kept on this device only.'),
     el('label', { class: 'field-label' }, 'Home city (sharpens ideas)'), city,
     el('label', { class: 'field-label' }, 'What you two enjoy'), interests,
     el('label', { class: 'field-label' }, 'Claude API key (optional — for ✨ idea suggestions)'), apiKey,
     el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Kept on this device only. Get one at console.anthropic.com.'),
+    el('label', { class: 'field-label' }, 'Coupon email nudge (optional — Apps Script URL)'), couponHook,
+    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Emails the other of you a teaser when a coupon is sent. Setup steps: COUPON_EMAIL.md in the repo.'),
     el('label', { class: 'field-label' }, 'Shared sync (optional — private Gist)'), gistToken, el('div', { style: 'height:8px' }), gistId,
     syncLine,
     el('div', { style: 'margin-top:10px' }, el('button', { class: 'btn btn-sm', onclick: () => syncNow(true) }, '⇅ Sync now')),
@@ -795,7 +964,7 @@ function settingsModal() {
   ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
     el('button', { class: 'btn btn-primary', onclick: () => {
-      DB.settings = { ...s, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
+      DB.settings = { ...s, who: whoSel.value, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
       commit(); applyTheme(); m.close(); toast('Saved'); render();
     } }, 'Save'),
   ]);
@@ -808,7 +977,9 @@ const hasKey = () => Boolean(DB.settings.apiKey);
 // are stripped from the payload before it ever leaves the device.
 const GIST_FILE = 'ortiz-us-os.json';
 function sharedPayload() {
-  return { entries: DB.entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, bingo: DB.bingo, bingo2: DB.bingo2, recstate: DB.recstate, savedAt: now() };
+  // Coupons need no privacy filter: only sent ones exist as records at all —
+  // the unsent book is static code, so it can't leak.
+  return { entries: DB.entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, coupons: DB.coupons, bingo: DB.bingo, bingo2: DB.bingo2, recstate: DB.recstate, savedAt: now() };
 }
 function mergeCol(local, remote) {
   const byId = new Map(local.map((r) => [r.id, r]));
@@ -839,9 +1010,13 @@ async function syncNow(manual) {
       // Remote never contains private ideas, so local 🔒 ones pass through untouched.
       DB.ideas = mergeCol(DB.ideas, remote.ideas);
       DB.tickets = mergeCol(DB.tickets, remote.tickets);
+      DB.coupons = mergeCol(DB.coupons, remote.coupons);
       DB.bingo = mergeCol(DB.bingo, remote.bingo);
       DB.bingo2 = mergeCol(DB.bingo2, remote.bingo2);
       DB.recstate = mergeCol(DB.recstate, remote.recstate);
+      // A not-yet-updated phone may still mark legacy coupon tickets — fold
+      // any that arrived via merge into coupon records.
+      migrateCoupons();
       pruneTombstones();
       save(DB);
     }
@@ -853,6 +1028,7 @@ async function syncNow(manual) {
     DB.settings.lastSyncAt = now(); save(DB);
     if (manual) toast('Synced ✓');
     if (!document.querySelector('.scrim')) render(); // don't stomp an open sheet
+    maybeReveal(); // a sheet that just synced in a coupon deserves the moment
   } catch (err) {
     if (manual) toast('Sync failed: ' + err.message);
   } finally { syncing = false; }
@@ -918,7 +1094,9 @@ applyTheme();
 pruneTombstones();
 seedTickets();
 seedBingo();
+migrateCoupons();
 render();
+maybeReveal(); // a coupon synced in while the app was closed still gets its moment
 syncNow(false); // pull the other phone's changes on open
 // Coming back to the app (phone unlock, tab switch) is the natural moment
 // the other phone's changes matter — re-sync quietly.

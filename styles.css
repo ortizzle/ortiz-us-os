@@ -138,6 +138,14 @@ textarea.input { resize: vertical; min-height: 60px; }
 .ticket .t-label { font-size: 11.5px; font-weight: 600; line-height: 1.3; }
 .ticket.used .t-label { text-decoration: line-through; }
 
+/* 💌 love coupons — received keepsakes + the coupon card (send + reveal sheets) */
+.ticket.recv { border-style: solid; }
+.ticket.recv .t-date { font-size: 10.5px; font-weight: 600; opacity: .75; }
+.coupon-card { border: 1.5px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); border-radius: 14px; padding: 16px 14px; text-align: center; margin: 10px 0; }
+.coupon-card .c-emoji { font-size: 30px; line-height: 1; }
+.coupon-card .c-text { font-weight: 700; font-size: 16px; line-height: 1.35; margin-top: 6px; }
+.coupon-card .c-note { font-size: 13px; font-style: italic; margin-top: 6px; opacity: .85; }
+
 .toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 60; box-shadow: var(--shadow); }
 
 .spinner { width: 20px; height: 20px; border: 2.5px solid var(--surface-2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
