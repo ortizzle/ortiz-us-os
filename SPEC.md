@@ -41,12 +41,24 @@ Three sections with jump-chips (a mini table of contents) at the top:
   first — with a Title field ("date night" is the type; "Odyssey at
   Harkins" is the title) and a small "…or log one that already happened"
   link that flips the sheet into log mode.
-- **Event details** — a fresh plan stays lean (date + title). Reopening the
-  event from Booked / Still planning (tap anywhere on its card) opens its
-  detail sheet with per-type planning fields (`PLANQ`): date nights &
-  occasions get location / time / dress code / notes; getaways & trips get
-  location / end date / what-to-pack / notes. Details render on the event
-  card and history rows ("Jul 20 – Jul 24 · 7:30 PM · Sedona").
+- **Event details** — tapping a status box opens the plan sheet with the
+  full per-type detail fields (`PLANQ`) right there: date nights & occasions
+  get location / time / dress code / notes; getaways & trips get location /
+  end date / what-to-pack / notes. New plans save via **Just plan it** (still
+  planning) or **✅ Book it** (booked); reopening an event (tap its card)
+  shows the same sheet with a **🗑 Remove** action, so plans can be deleted
+  without going to History. Still-planning cards lead with **✎ Details**
+  (details are what you need to book); booked cards lead with the toggle.
+  Details render on the event card and history rows ("Jul 20 – Jul 24 ·
+  7:30 PM · Sedona").
+- **Per-event surprises** — every field but the date has a 🔒 toggle in the
+  sheet. Locking one keeps its value on your phone only (never synced); the
+  other of you sees "🔒 Kept as a surprise 💝" in its place. For hiding a
+  surprise getaway's location, a gift, a dressed-up plan — anything.
+- **✨ Ideas** (was "Plan with Claude") — on planning cards with an API key,
+  generates concrete options scoped by cadence: date nights stay local
+  (Phoenix/Scottsdale/Tempe), special occasions range across the metro,
+  getaways reach statewide or within ~6 hours' drive, trips go destination-wide.
 - **✅ Booked** — plans that are locked in, soonest first, with countdowns.
   Special dates (anniversary Sep 12, 2013 with years count; birthdays
   Chris Feb 26, Kat Aug 15) auto-surface here only when within 45 days —

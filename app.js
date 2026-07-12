@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v11 · plan-first rhythm';
+const APP_VERSION = 'v12 · details & surprises';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -29,7 +29,8 @@ function load() {
 }
 function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
 let DB = load();
-DB.entries ||= [];   // logged/planned dates: {id,type,date,title,notes,rating,planned,updatedAt,deleted}
+DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,loc,time,dress,pack,notes,rating,planned,status,mem,hidden,updatedAt,deleted}
+DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: { field: value } } — never synced
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
 DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,note,updatedAt}
 DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seenAt,updatedAt,deleted}
@@ -44,6 +45,9 @@ function pruneTombstones() {
   const cutoff = new Date(Date.now() - 60 * 86400000).toISOString();
   DB.entries = DB.entries.filter((r) => !(r.deleted && (r.updatedAt || '') < cutoff));
   DB.ideas = DB.ideas.filter((r) => !(r.deleted && (r.updatedAt || '') < cutoff));
+  // Drop hidden-field secrets whose entry is gone or tombstoned — nothing to overlay.
+  const live = new Set(DB.entries.filter((e) => !e.deleted).map((e) => e.id));
+  for (const id of Object.keys(DB.secrets)) if (!live.has(id)) delete DB.secrets[id];
 }
 const commit = () => { save(DB); scheduleSync(); };
 
@@ -202,9 +206,42 @@ const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate()+n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 function fmt(s) { return parse(s).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: parse(s).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined }); }
 function fmtTime(t) { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; }
+
+// ---------- per-event privacy ----------
+// A hidden field's real value lives ONLY in DB.secrets on the phone that set
+// it (never synced). The synced entry carries just entry.hidden (the field
+// keys) so the other phone knows to show a 🔒 teaser. shownVal returns the
+// real value if THIS phone owns the secret, null if it's the partner's
+// surprise, or the plain synced value otherwise.
+const HIDEABLE = ['title', 'loc', 'time', 'dress', 'dateEnd', 'pack', 'notes'];
+const iOwnSecret = (e, k) => Boolean(DB.secrets[e.id] && k in DB.secrets[e.id]);
+function shownVal(e, k) {
+  if (iOwnSecret(e, k)) return DB.secrets[e.id][k];
+  if ((e.hidden || []).includes(k)) return null; // partner — kept a surprise
+  return e[k];
+}
+// value → string for a card line: real value, '🔒' if the partner's surprise, '' if empty.
+function lineVal(e, k, fmtFn) {
+  const v = shownVal(e, k);
+  if (v === null) return '🔒';
+  if (!v) return '';
+  return fmtFn ? fmtFn(v) : v;
+}
+function titleText(e) {
+  const v = shownVal(e, 'title');
+  if (v === null) return '🔒 A surprise 💝';
+  return v || cadenceOf(e.type).title;
+}
+function notesSuffix(e) {
+  const v = shownVal(e, 'notes');
+  if (v === null) return ' · 🔒';
+  return v ? ' · ' + v : '';
+}
 // One line that reads like a plan: "Jul 20 – Jul 24 · 7:30 PM · Sedona · dressy"
 function whenWhere(e) {
-  return [fmt(e.date) + (e.dateEnd ? ' – ' + fmt(e.dateEnd) : ''), fmtTime(e.time), e.loc, e.dress].filter(Boolean).join(' · ');
+  const end = shownVal(e, 'dateEnd');
+  const range = fmt(e.date) + (end === null ? ' – 🔒' : end ? ' – ' + fmt(end) : '');
+  return [range, lineVal(e, 'time', fmtTime), lineVal(e, 'loc'), lineVal(e, 'dress')].filter(Boolean).join(' · ');
 }
 
 // The most recent DONE (not future-planned) entry of a type.
@@ -250,6 +287,27 @@ const RECS = [
   { type: 'date', name: 'First Friday + Roosevelt Row', area: 'Downtown Phoenix', stars: 4,
     why: 'Free monthly art walk — galleries, murals, food trucks, people-watching.',
     more: 'First Friday of every month. Wander the murals, duck into galleries, end on a rooftop downtown. Zero-pressure, zero-cost, always something new to talk about.' },
+  { type: 'date', name: 'Postino (Arcadia or Central)', area: 'Arcadia', stars: 4,
+    why: 'Bruschetta boards, a bottle of wine, string lights — the easy, unfussy date.',
+    more: 'The garage doors roll up in spring and fall. Get a bruschetta board, the $25 board-and-bottle deal on select evenings, and split a soft-serve after. Low stakes, high hang.' },
+  { type: 'date', name: 'Musical Instrument Museum', area: 'North Phoenix', stars: 4.5,
+    why: 'A wireless-headphone wander through instruments — and music — from every country on earth.',
+    more: 'Weirdly romantic and genuinely unique: you drift room to room and the audio follows you. Check the concert calendar — the intimate MIM Music Theater books great acts. Daytime date that ends before dinner.' },
+  { type: 'date', name: 'Rooftop cocktails — Mowry & Cotton / Lustre', area: 'Paradise Valley / Downtown', stars: 4,
+    why: 'Skyline-and-sunset drinks — dressed up a little, no dinner reservation required.',
+    more: 'Mowry & Cotton at The Phoenician for resort polish; Lustre atop the Kimpton Palomar for downtown-skyline buzz. Go for golden hour, order two cocktails, and let the view do the work.' },
+  { type: 'date', name: 'FnB', area: 'Old Town Scottsdale', stars: 4.5,
+    why: 'Chef-driven, veg-forward Arizona cooking — a tiny room that regulars guard jealously.',
+    more: 'James Beard-recognized and all about what’s in season locally. Small, warm, conversation-easy. Their all-Arizona wine list is a talking point in itself. Book ahead — it fills.' },
+  { type: 'date', name: 'Barrio Café', area: 'Central Phoenix', stars: 4,
+    why: 'Tableside guac, cochinita pibil, and a mole worth the drive — modern Mexican with soul.',
+    more: 'Chef Silvana Salcido Esparza’s landmark. No reservations, so go early or grab a margarita while you wait. The 24-ingredient mole poblano and the chiles en nogada (in season) are the moves.' },
+  { type: 'date', name: 'Camelback or Piestewa sunrise + brunch', area: 'Phoenix / Scottsdale', stars: 4,
+    why: 'Beat the heat with an early summit, then reward yourselves with a big breakfast.',
+    more: 'Echo Canyon (Camelback) is the scramble; Piestewa is the friendlier climb. Start at first light Oct–April, then roll to Morning Squeeze or Ncounter. Active, cheap, and you’ve done something together before 10am.' },
+  { type: 'date', name: 'Stand-up at Stand Up Live', area: 'Downtown Phoenix', stars: 4,
+    why: 'A real comedy club — dinner-and-a-show energy without leaving downtown.',
+    more: 'Touring headliners most weekends. Grab dinner at CityScape nearby, then two-drink-minimum your way through the late show. Book a booth, sit close-ish (not front-row unless you want in on it).' },
 
   { type: 'getaway', name: 'Sedona', area: '2h north', stars: 5,
     why: 'Red rocks, spas, creekside dinners, stargazing — the classic for a reason.',
@@ -548,22 +606,24 @@ function upcomingCard(e) {
   const left = daysBetween(t, e.date);
   const when = left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left}d`;
   const booked = e.status === 'booked';
+  const details = el('button', { class: 'btn btn-sm' + (booked ? ' btn-ghost' : ' btn-primary'), title: 'Location, time, what to pack…',
+    onclick: (ev) => { ev.stopPropagation(); logModal(e.type, { entry: e }); } }, '✎ Details');
+  const bookToggle = el('button', { class: 'btn btn-sm', title: booked ? 'Mark as still planning' : 'It’s a done deal',
+    onclick: (ev) => { ev.stopPropagation(); e.status = booked ? 'planning' : 'booked'; e.updatedAt = now(); commit(); render(); } },
+    booked ? '↩ back to planning' : '✅ mark booked');
+  const ideas = !booked && hasKey() ? el('button', { class: 'btn btn-sm', onclick: (ev) => { ev.stopPropagation(); planWithClaude(e); } }, '✨ Ideas') : null;
   const kids = [
     el('div', { class: 'card-top' }, [
       el('div', { class: 'card-emoji' }, c.emoji),
       el('div', {}, [
-        el('div', { class: 'card-title' }, e.title || c.title),
-        el('div', { class: 'card-cadence' }, `${whenWhere(e)}${e.notes ? ' · ' + e.notes : ''}`),
+        el('div', { class: 'card-title' }, titleText(e)),
+        el('div', { class: 'card-cadence' }, `${whenWhere(e)}${notesSuffix(e)}`),
       ]),
       el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
     ]),
-    el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
-      el('button', { class: 'btn btn-sm' + (booked ? '' : ' btn-primary'), title: booked ? 'Mark as still planning' : 'It’s a done deal',
-        onclick: (ev) => { ev.stopPropagation(); e.status = booked ? 'planning' : 'booked'; e.updatedAt = now(); commit(); render(); } },
-        booked ? '↩ back to planning' : '✅ mark booked'),
-      !booked && hasKey() ? el('button', { class: 'btn btn-sm', onclick: (ev) => { ev.stopPropagation(); planWithClaude(e); } }, '✨ Plan with Claude') : null,
-      el('button', { class: 'btn btn-ghost btn-sm', title: 'Details', onclick: (ev) => { ev.stopPropagation(); logModal(e.type, { entry: e }); } }, '✎ Details'),
-    ]),
+    // Still planning? Details lead — that's what you need to book. Once booked,
+    // details step back and the "still planning" toggle leads.
+    el('div', { class: 'card-actions', style: 'margin-top:10px' }, booked ? [bookToggle, details] : [details, bookToggle, ideas]),
   ];
   // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
   if ((e.type === 'getaway' || e.type === 'trip') && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
@@ -571,12 +631,20 @@ function upcomingCard(e) {
   return el('div', { class: 'card next-card clickable', onclick: () => logModal(e.type, { entry: e }) }, kids);
 }
 
-// The ladder: idea → ✨ go deeper → plan (intention, dated) → ✅ booked.
-// This is Claude's job at the "plan" rung: turn intention into bookings.
+// Geographic reach per cadence — date nights stay close, getaways range wide.
+const IDEA_SCOPE = {
+  date: 'Keep every option LOCAL to the immediate Phoenix–Scottsdale–Tempe area — a short drive, a normal evening out.',
+  occasion: 'Options can range across the greater Phoenix metro (Scottsdale, Mesa, Chandler, Gilbert, Glendale, downtown Phoenix) — worth a longer drive for something special.',
+  getaway: 'Options can be anywhere in Arizona or within about a 6-hour drive of Phoenix (Sedona, Flagstaff, Prescott, Tucson, Bisbee, even San Diego, Vegas, or Rocky Point).',
+  trip: 'Options are bigger destination trips — flights and multiple nights are fine.',
+};
+// The ladder: idea → plan (intention, dated) → ✅ booked. This "✨ Ideas"
+// button lives at the "plan" rung — concrete options to turn intention into a
+// booking, scoped by how far the cadence should reach.
 async function planWithClaude(e) {
   const c = cadenceOf(e.type);
   const out = el('p', { class: 'small' }, el('span', { class: 'spinner' }));
-  const m = modal(`✨ Planning: ${e.title || c.title}`, [out], [el('button', { class: 'btn', onclick: () => m.close() }, 'Close')]);
+  const m = modal(`✨ Ideas: ${titleText(e)}`, [out], [el('button', { class: 'btn', onclick: () => m.close() }, 'Close')]);
   try {
     const s = DB.settings;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -585,7 +653,8 @@ async function planWithClaude(e) {
       // Date nights are a few hours, not a festival: options must be separate,
       // single-focus alternatives — never interests stacked into one itinerary.
       body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 500, thinking: { type: 'disabled' }, messages: [{ role: 'user', content:
-        `A married couple near ${s.city || 'Phoenix, AZ'} intends to book this ${c.title.toLowerCase()}: "${e.title || 'untitled'}" on ${e.date}${e.notes ? ` (notes: ${e.notes})` : ''}.`
+        `A married couple near ${s.city || 'Phoenix, AZ'} intends to book this ${c.title.toLowerCase()}: "${shownVal(e, 'title') || 'untitled'}" on ${e.date}${e.notes ? ` (notes: ${e.notes})` : ''}.`
+        + ` ${IDEA_SCOPE[e.type]}`
         + (s.interests ? ` Their interests (pick ONE per option, don't combine them): ${s.interests}.` : '')
         + ((e.type === 'date' || e.type === 'occasion')
           ? ` They have only a few hours that evening. Offer 2-3 SEPARATE single-focus options — each is one thing to do (one restaurant OR one hike OR one show — never dinner plus an activity chained together). For each: the real place by name, why it fits, and what to reserve or check ahead.`
@@ -634,8 +703,9 @@ function renderRhythm() {
       status = left < 0 ? `${-left}d overdue` : left === 0 ? 'due today' : `due in ${left}d`;
       cls = left <= 3 ? 'due' : 'ok';
     }
+    const pt = planned ? shownVal(planned, 'title') : null;
     const meta = planned
-      ? `${planned.title || 'planned'} · ${fmt(planned.date)}`
+      ? `${pt === null ? '🔒 surprise' : pt || 'planned'} · ${fmt(planned.date)}`
       : last ? `last: ${fmt(last.date)}` : 'no history yet';
 
     return el('button', { class: 'stat', onclick: () => logModal(c.type, { planned: true }) }, [
@@ -825,8 +895,8 @@ function historyRow(e, upcoming) {
   return el('div', { class: 'row hrow' }, [
     el('span', { class: 'r-emoji' }, c.emoji),
     el('div', { class: 'r-main' }, [
-      el('div', { class: 'r-title' }, e.title || c.title),
-      el('div', { class: 'r-meta' }, `${whenWhere(e)}${e.notes ? ' · ' + e.notes : ''}`),
+      el('div', { class: 'r-title' }, titleText(e)),
+      el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
       memLine(e),
     ]),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
@@ -851,33 +921,47 @@ const PLANQ = {
   getaway:  [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
   trip:     [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
 };
-const PLAN_HINT = { loc: 'Where is it?', dress: 'casual / dressy / fancy', pack: 'Swimsuits, sunscreen, hiking shoes…' };
+const PLAN_HINT = { title: 'Name it — “Odyssey at Harkins”', loc: 'Where is it?', dress: 'casual / dressy / fancy', pack: 'Swimsuits, sunscreen, hiking shoes…', notes: 'Anything worth remembering' };
+const FIELD_TYPE = { time: 'time', dateEnd: 'date' };
 function logModal(type, { planned = false, prefill = '', ideaId = null, entry = null } = {}) {
   const c = cadenceOf(type);
   if (entry) planned = Boolean(entry.planned);
-  const title = el('input', { class: 'input', placeholder: planned ? 'Name it — “Odyssey at Harkins” (optional)' : 'What did you do? (optional)', value: entry ? (entry.title || '') : prefill });
   const date = el('input', { class: 'input', type: 'date', value: entry ? entry.date : planned ? addDays(todayStr(), PLAN_LEAD[type]) : todayStr() });
-  const notes = el('input', { class: 'input', placeholder: 'A note to remember it by (optional)', value: entry ? (entry.notes || '') : '' });
-  let rating = entry ? (entry.rating || 0) : 0;
-  const stars = [1,2,3,4,5].map((n) => el('button', { class: n <= rating ? 'on' : '', onclick: () => { rating = rating === n ? 0 : n; stars.forEach((s,i) => s.classList.toggle('on', i < rating)); } }, '♥'));
-  const ratingRow = el('div', {}, [el('label', { class: 'field-label' }, 'How was it?'), el('div', { class: 'rating' }, stars)]);
+  const body = [el('label', { class: 'field-label' }, planned ? 'Planned date' : 'Date'), date];
 
-  const body = [
-    el('label', { class: 'field-label' }, planned ? 'Planned date' : 'Date'), date,
-    el('label', { class: 'field-label' }, 'Title'), title,
-  ];
-
-  // A fresh plan stays lean — pick the date, name it, done. The detail
-  // fields appear when you reopen the event from Booked / Still planning.
-  const planInputs = {};
-  const showPlanFields = planned && entry;
-  if (showPlanFields) for (const [k, label] of PLANQ[type]) {
-    planInputs[k] = k === 'pack'
-      ? el('textarea', { class: 'input', placeholder: PLAN_HINT[k] }, entry[k] || '')
-      : el('input', { class: 'input', type: k === 'time' ? 'time' : k === 'dateEnd' ? 'date' : 'text', placeholder: PLAN_HINT[k] || 'optional', value: entry[k] || '' });
-    body.push(el('label', { class: 'field-label' }, label), planInputs[k]);
+  // Hideable fields carry a 🔒 toggle (planned events only — surprises live in
+  // the future). A locked field's value is written to DB.secrets (this device
+  // only); the synced entry keeps just the key in entry.hidden. On the
+  // partner's phone the field shows a read-only 🔒 teaser and is left untouched
+  // on save, so a merge from their edits can never wipe your secret.
+  const inputs = {}, locked = {};
+  const canHide = planned;
+  function field(k, labelText, { textarea = false } = {}) {
+    // Partner's surprise: no input, nothing to save, just the teaser.
+    if (entry && (entry.hidden || []).includes(k) && !iOwnSecret(entry, k)) {
+      body.push(el('label', { class: 'field-label' }, labelText), el('div', { class: 'input locked-note' }, '🔒 Kept as a surprise 💝'));
+      return;
+    }
+    const val = entry ? (shownVal(entry, k) || '') : (k === 'title' ? prefill : '');
+    const input = textarea
+      ? el('textarea', { class: 'input', placeholder: PLAN_HINT[k] || 'optional' }, val)
+      : el('input', { class: 'input', type: FIELD_TYPE[k] || 'text', placeholder: PLAN_HINT[k] || 'optional', value: val });
+    inputs[k] = input;
+    let lab;
+    if (canHide) {
+      locked[k] = entry ? iOwnSecret(entry, k) : false;
+      const lock = el('button', { type: 'button', class: 'lockmini' + (locked[k] ? ' on' : ''), title: 'Keep this a surprise', onclick: () => {
+        locked[k] = !locked[k]; lock.classList.toggle('on', locked[k]); lock.textContent = locked[k] ? '🔒' : '🔓';
+      } }, locked[k] ? '🔒' : '🔓');
+      lab = el('label', { class: 'field-label lockrow' }, [el('span', {}, labelText), lock]);
+    } else lab = el('label', { class: 'field-label' }, labelText);
+    body.push(lab, input);
   }
-  if (!planned || showPlanFields) body.push(el('label', { class: 'field-label' }, 'Notes'), notes);
+
+  field('title', 'Title');
+  // Fresh plan or reopened event both show the detail fields now.
+  if (planned) for (const [k, label] of PLANQ[type]) field(k, label);
+  field('notes', 'Notes');
 
   // Memories + rating make sense once it's happened (or when editing a past entry).
   const showExtras = !planned || (entry && entry.date <= todayStr());
@@ -887,37 +971,78 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
       memInputs[k] = el('input', { class: 'input', placeholder: 'optional', value: entry?.mem?.[k] || '' });
       body.push(el('label', { class: 'field-label' }, label), memInputs[k]);
     }
-    body.push(ratingRow);
+    let rating = entry ? (entry.rating || 0) : 0;
+    var getRating = () => rating;
+    const stars = [1,2,3,4,5].map((n) => el('button', { class: n <= rating ? 'on' : '', onclick: () => { rating = rating === n ? 0 : n; stars.forEach((s,i) => s.classList.toggle('on', i < rating)); } }, '♥'));
+    body.push(el('div', {}, [el('label', { class: 'field-label' }, 'How was it?'), el('div', { class: 'rating' }, stars)]));
   }
 
-  if (!entry && planned) body.push(el('p', { style: 'margin:14px 0 0' },
-    el('button', { class: 'linklike', onclick: () => { m.close(); logModal(type, { prefill: title.value, ideaId }); } }, '✓ …or log one that already happened')));
+  if (canHide) body.push(el('p', { class: 'muted small', style: 'margin:12px 0 0' }, '🔒 = kept a surprise: stays on this phone only, shows the other of you a locked teaser.'));
+  if (!entry && planned) body.push(el('p', { style: 'margin:10px 0 0' },
+    el('button', { class: 'linklike', onclick: () => { m.close(); logModal(type, { prefill: inputs.title?.value || '', ideaId }); } }, '✓ …or log one that already happened')));
 
-  const heading = entry
-    ? (planned ? `${c.emoji} ${entry.title || c.title}` : `Edit ${c.title.toLowerCase()}`)
-    : planned ? `Plan a ${c.title.toLowerCase()}` : `Log a ${c.title.toLowerCase()}`;
-  const m = modal(heading, body, [
-    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
-    el('button', { class: 'btn btn-primary', onclick: () => {
+  // Commit inputs onto an entry, routing locked fields to DB.secrets.
+  function apply(e) {
+    e.date = date.value || e.date || todayStr();
+    const hidden = [];
+    const sec = DB.secrets[e.id] || {};
+    for (const k of HIDEABLE) {
+      if (!(k in inputs)) { if ((e.hidden || []).includes(k)) hidden.push(k); continue; } // partner-hidden: preserve
+      const v = inputs[k].value.trim();
+      if (canHide && locked[k]) { sec[k] = v; e[k] = ''; hidden.push(k); }
+      else { delete sec[k]; e[k] = v; }
+    }
+    if (Object.keys(sec).length) DB.secrets[e.id] = sec; else delete DB.secrets[e.id];
+    e.hidden = hidden;
+    if (showExtras) {
       const mem = {};
       for (const [k] of MEMQ[type]) if (memInputs[k]?.value.trim()) mem[k] = memInputs[k].value.trim();
-      const planVals = {};
-      for (const k of Object.keys(planInputs)) planVals[k] = planInputs[k].value.trim();
-      if (entry) {
-        Object.assign(entry, { date: date.value || entry.date, title: title.value.trim(), notes: notes.value.trim(), rating, mem, ...planVals, updatedAt: now() });
-        // A planned entry edited to a past date has happened — graduate it to history.
-        if (entry.planned && entry.date <= todayStr()) entry.planned = false;
-        commit(); m.close(); toast('Updated 💞'); render();
-        return;
-      }
-      DB.entries.push({ id: uid(), type, date: date.value || todayStr(), title: title.value.trim(), notes: notes.value.trim(), rating, mem, planned, status: planned ? 'planning' : undefined, updatedAt: now() });
-      if (ideaId) { const it = DB.ideas.find((x) => x.id === ideaId); if (it) { it.done = true; it.updatedAt = now(); } }
-      commit(); m.close();
-      toast(planned ? 'Added to Coming up 💞' : 'Logged — nice 💞');
-      render();
-    } }, entry ? 'Save' : planned ? 'Plan it' : 'Log it'),
-  ]);
-  title.focus();
+      e.mem = mem; e.rating = getRating();
+    }
+    e.updatedAt = now();
+  }
+
+  const heading = entry
+    ? (planned ? `${c.emoji} ${titleText(entry)}` : `Edit ${c.title.toLowerCase()}`)
+    : planned ? `Plan a ${c.title.toLowerCase()}` : `Log a ${c.title.toLowerCase()}`;
+
+  const saveNew = (status) => {
+    const e = { id: uid(), type, planned, status, deleted: false };
+    apply(e);
+    DB.entries.push(e);
+    if (ideaId) { const it = DB.ideas.find((x) => x.id === ideaId); if (it) { it.done = true; it.updatedAt = now(); } }
+    commit(); m.close();
+    toast(planned ? (status === 'booked' ? 'Booked 💞' : 'Added to Coming up 💞') : 'Logged — nice 💞');
+    render();
+  };
+  const saveEdit = () => {
+    apply(entry);
+    if (entry.planned && entry.date <= todayStr()) entry.planned = false; // past date → graduate to history
+    commit(); m.close(); toast('Updated 💞'); render();
+  };
+  const remove = () => {
+    entry.deleted = true; entry.updatedAt = now(); delete DB.secrets[entry.id];
+    commit(); m.close(); toast('Removed'); render();
+  };
+
+  let actions;
+  if (entry) actions = [
+    el('button', { class: 'btn btn-ghost btn-danger-text', title: 'Remove this', onclick: remove }, '🗑 Remove'),
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: saveEdit }, 'Save'),
+  ];
+  else if (planned) actions = [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => saveNew('planning') }, 'Just plan it'),
+    el('button', { class: 'btn', onclick: () => saveNew('booked') }, '✅ Book it'),
+  ];
+  else actions = [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => saveNew(undefined) }, 'Log it'),
+  ];
+
+  const m = modal(heading, body, actions);
+  inputs.title?.focus();
 }
 
 // ---------- 💗 bingo view (reached by tapping the topbar heart 6×) ----------
