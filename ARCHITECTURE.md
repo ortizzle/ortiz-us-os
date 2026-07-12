@@ -23,7 +23,8 @@ One `localStorage` key, `ortiz-us-os`, holding:
 
 ```js
 {
-  entries: [{ id, type, date, title, notes, rating, planned, updatedAt, deleted }],
+  entries: [{ id, type, date, dateEnd, title, loc, time, dress, pack, notes,
+              rating, planned, status, mem, updatedAt, deleted }],
   ideas:   [{ id, type, text, source, done, private, updatedAt, deleted }],
   tickets: [{ id, goal, kind, n, used, usedAt, note, updatedAt }],
   coupons: [{ id, from, n, text, note, sentAt, seenAt, updatedAt, deleted }],
@@ -39,6 +40,9 @@ One `localStorage` key, `ortiz-us-os`, holding:
   in `app.js`; `occasion` has `days: 0` — no due-date rhythm).
 - `entries` are either logged (`planned: false`, `date` in the past) or
   planned (`planned: true` or `date` in the future). `rating` is 0–5 hearts.
+  Planning-detail fields (`PLANQ` in `app.js`) are per-type: date nights and
+  occasions carry `loc`/`time`/`dress`; getaways and trips carry
+  `loc`/`dateEnd`/`pack`. All optional, edited from the event's own sheet.
 - `ideas.source` is `'you'` or `'claude'`.
 - `tickets` are goal passes (see `GOALS` in `app.js`). They use
   **deterministic ids** (`goal:kind:n`, e.g. `dry-2027:drink:1`) so both
