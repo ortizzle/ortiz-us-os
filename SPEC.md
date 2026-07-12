@@ -34,8 +34,19 @@ Three cadences, each with a target interval:
 
 ### Rhythm (home tab)
 Three sections with jump-chips (a mini table of contents) at the top:
-- **Plan & log** — one card per cadence: last time it happened, days until
-  due (or overdue), a progress bar, and anything already planned.
+- **Plan & log** — a 2×2 grid of compact status boxes, one per cadence:
+  live status (`due in Nd` / `Nd overdue` / `🔨 planning` / `✅ booked`;
+  occasions show `anytime`) plus a one-line meta (what's planned, or last
+  time). Tapping a box goes straight to picking a date — plans-forward
+  first — with a Title field ("date night" is the type; "Odyssey at
+  Harkins" is the title) and a small "…or log one that already happened"
+  link that flips the sheet into log mode.
+- **Event details** — a fresh plan stays lean (date + title). Reopening the
+  event from Booked / Still planning (tap anywhere on its card) opens its
+  detail sheet with per-type planning fields (`PLANQ`): date nights &
+  occasions get location / time / dress code / notes; getaways & trips get
+  location / end date / what-to-pack / notes. Details render on the event
+  card and history rows ("Jul 20 – Jul 24 · 7:30 PM · Sedona").
 - **✅ Booked** — plans that are locked in, soonest first, with countdowns.
   Special dates (anniversary Sep 12, 2013 with years count; birthdays
   Chris Feb 26, Kat Aug 15) auto-surface here only when within 45 days —

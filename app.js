@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v10 · red hearts';
+const APP_VERSION = 'v11 · plan-first rhythm';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -201,6 +201,11 @@ const parse = (s) => { const [y,m,d] = s.split('-').map(Number); return new Date
 const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate()+n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 function fmt(s) { return parse(s).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: parse(s).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined }); }
+function fmtTime(t) { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; }
+// One line that reads like a plan: "Jul 20 – Jul 24 · 7:30 PM · Sedona · dressy"
+function whenWhere(e) {
+  return [fmt(e.date) + (e.dateEnd ? ' – ' + fmt(e.dateEnd) : ''), fmtTime(e.time), e.loc, e.dress].filter(Boolean).join(' · ');
+}
 
 // The most recent DONE (not future-planned) entry of a type.
 function lastDone(type) {
@@ -548,21 +553,22 @@ function upcomingCard(e) {
       el('div', { class: 'card-emoji' }, c.emoji),
       el('div', {}, [
         el('div', { class: 'card-title' }, e.title || c.title),
-        el('div', { class: 'card-cadence' }, `${fmt(e.date)}${e.notes ? ' · ' + e.notes : ''}`),
+        el('div', { class: 'card-cadence' }, `${whenWhere(e)}${e.notes ? ' · ' + e.notes : ''}`),
       ]),
       el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
     ]),
     el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
       el('button', { class: 'btn btn-sm' + (booked ? '' : ' btn-primary'), title: booked ? 'Mark as still planning' : 'It’s a done deal',
-        onclick: () => { e.status = booked ? 'planning' : 'booked'; e.updatedAt = now(); commit(); render(); } },
+        onclick: (ev) => { ev.stopPropagation(); e.status = booked ? 'planning' : 'booked'; e.updatedAt = now(); commit(); render(); } },
         booked ? '↩ back to planning' : '✅ mark booked'),
-      !booked && hasKey() ? el('button', { class: 'btn btn-sm', onclick: () => planWithClaude(e) }, '✨ Plan with Claude') : null,
-      el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎ Edit'),
+      !booked && hasKey() ? el('button', { class: 'btn btn-sm', onclick: (ev) => { ev.stopPropagation(); planWithClaude(e); } }, '✨ Plan with Claude') : null,
+      el('button', { class: 'btn btn-ghost btn-sm', title: 'Details', onclick: (ev) => { ev.stopPropagation(); logModal(e.type, { entry: e }); } }, '✎ Details'),
     ]),
   ];
   // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
   if ((e.type === 'getaway' || e.type === 'trip') && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
-  return el('div', { class: 'card next-card' }, kids);
+  // The whole card is the event — tap anywhere to open its details.
+  return el('div', { class: 'card next-card clickable', onclick: () => logModal(e.type, { entry: e }) }, kids);
 }
 
 // The ladder: idea → ✨ go deeper → plan (intention, dated) → ✅ booked.
@@ -612,38 +618,33 @@ function renderRhythm() {
   const nearSpecial = SPECIAL.map((s) => ({ s, nx: nextSpecial(s) })).filter((x) => x.nx.left <= 45).sort((a,b) => a.nx.left - b.nx.left);
 
   view.append(el('h2', { id: 'sec-log' }, 'Plan & log'));
-  for (const c of CADENCES) {
+  // Compact status boxes, one per cadence. Tap = straight into picking a
+  // date (plans-forward first); details come later from the event itself.
+  view.append(el('div', { class: 'statgrid' }, CADENCES.map((c) => {
     const last = lastDone(c.type);
     const planned = nextPlanned(c.type);
 
-    // Right side speaks the ladder: booked > planning > due-in / overdue.
-    let countdown;
-    if (planned) countdown = el('div', { class: 'countdown ' + (planned.status === 'booked' ? 'ok' : 'due') }, planned.status === 'booked' ? '✅ booked' : '🔨 planning');
-    else if (!c.days) countdown = el('div', { class: 'countdown ok' }, 'anytime');
-    else if (!last) countdown = el('div', { class: 'countdown due' }, 'let’s start');
+    // Status speaks the ladder: booked > planning > due-in / overdue.
+    let status, cls;
+    if (planned) { status = planned.status === 'booked' ? '✅ booked' : '🔨 planning'; cls = planned.status === 'booked' ? 'ok' : 'due'; }
+    else if (!c.days) { status = 'anytime'; cls = 'ok'; }
+    else if (!last) { status = 'let’s start'; cls = 'due'; }
     else {
       const left = daysBetween(todayStr(), addDays(last.date, c.days));
-      countdown = el('div', { class: 'countdown ' + (left <= 3 ? 'due' : 'ok') },
-        left < 0 ? `${-left}d overdue` : left === 0 ? 'due today' : `due in ${left}d`);
+      status = left < 0 ? `${-left}d overdue` : left === 0 ? 'due today' : `due in ${left}d`;
+      cls = left <= 3 ? 'due' : 'ok';
     }
-
     const meta = planned
-      ? `${planned.title || 'Something planned'} · ${fmt(planned.date)}`
-      : last ? `last: ${last.title ? last.title + ' · ' : ''}${fmt(last.date)}` : 'no history yet';
+      ? `${planned.title || 'planned'} · ${fmt(planned.date)}`
+      : last ? `last: ${fmt(last.date)}` : 'no history yet';
 
-    view.append(el('div', { class: 'card' }, [
-      el('div', { class: 'card-top' }, [
-        el('div', { class: 'card-emoji' }, c.emoji),
-        el('div', {}, [el('div', { class: 'card-title' }, c.title), el('div', { class: 'card-cadence' }, c.cadence)]),
-        el('div', { class: 'card-right' }, [countdown, el('div', { class: 'card-meta' }, meta)]),
-      ]),
-      el('div', { class: 'card-actions', style: 'margin-top:12px' }, [
-        el('button', { class: 'btn btn-primary btn-sm', onclick: () => logModal(c.type) }, '✓ Log one'),
-        el('button', { class: 'btn btn-sm', onclick: () => logModal(c.type, { planned: true }) }, '＋ Plan ahead'),
-        el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { current = 'ideas'; ideaFilter = c.type; setTab(); render(); } }, '💡 Ideas'),
-      ]),
-    ]));
-  }
+    return el('button', { class: 'stat', onclick: () => logModal(c.type, { planned: true }) }, [
+      el('span', { class: 's-emoji' }, c.emoji),
+      el('span', { class: 's-name' }, c.title),
+      el('span', { class: 's-status ' + cls }, status),
+      el('span', { class: 's-meta' }, meta),
+    ]);
+  })));
 
   view.append(el('h2', { id: 'sec-booked' }, '✅ Booked'));
   if (nearSpecial.length) for (const { s, nx } of nearSpecial) {
@@ -814,16 +815,23 @@ function memLine(e) {
 }
 function historyRow(e, upcoming) {
   const c = cadenceOf(e.type);
-  return el('div', { class: 'row' }, [
+  // Pills sit on their own bottom line so titles get the full width, and the
+  // upcoming chip speaks the ladder (planning/booked), same as everywhere else.
+  const chip = e.rating
+    ? el('span', { class: 'chip love' }, '♥'.repeat(e.rating))
+    : upcoming
+      ? el('span', { class: 'chip' + (e.status === 'booked' ? ' love' : '') }, e.status === 'booked' ? '✅ booked' : '🔨 planning')
+      : null;
+  return el('div', { class: 'row hrow' }, [
     el('span', { class: 'r-emoji' }, c.emoji),
     el('div', { class: 'r-main' }, [
       el('div', { class: 'r-title' }, e.title || c.title),
-      el('div', { class: 'r-meta' }, `${fmt(e.date)}${e.notes ? ' · ' + e.notes : ''}`),
+      el('div', { class: 'r-meta' }, `${whenWhere(e)}${e.notes ? ' · ' + e.notes : ''}`),
       memLine(e),
     ]),
-    e.rating ? el('span', { class: 'chip love' }, '♥'.repeat(e.rating)) : (upcoming ? el('span', { class: 'chip' }, 'planned') : null),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => { e.deleted = true; e.updatedAt = now(); commit(); render(); } }, '✕'),
+    chip ? el('div', { class: 'r-bottom' }, chip) : null,
   ]);
 }
 
@@ -836,10 +844,18 @@ const MEMQ = {
   occasion: [['moment', 'Favorite moment'], ['food', 'Favorite food'], ['gift', 'Best gift or surprise']],
 };
 const PLAN_LEAD = { date: 14, getaway: 45, trip: 180, occasion: 30 }; // getaways & trips get planned early
+// Planning details per cadence — the stuff worth knowing before you go.
+const PLANQ = {
+  date:     [['loc', 'Location'], ['time', 'Time'], ['dress', 'Dress code']],
+  occasion: [['loc', 'Location'], ['time', 'Time'], ['dress', 'Dress code']],
+  getaway:  [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
+  trip:     [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
+};
+const PLAN_HINT = { loc: 'Where is it?', dress: 'casual / dressy / fancy', pack: 'Swimsuits, sunscreen, hiking shoes…' };
 function logModal(type, { planned = false, prefill = '', ideaId = null, entry = null } = {}) {
   const c = cadenceOf(type);
   if (entry) planned = Boolean(entry.planned);
-  const title = el('input', { class: 'input', placeholder: 'What did you do? (optional)', value: entry ? (entry.title || '') : prefill });
+  const title = el('input', { class: 'input', placeholder: planned ? 'Name it — “Odyssey at Harkins” (optional)' : 'What did you do? (optional)', value: entry ? (entry.title || '') : prefill });
   const date = el('input', { class: 'input', type: 'date', value: entry ? entry.date : planned ? addDays(todayStr(), PLAN_LEAD[type]) : todayStr() });
   const notes = el('input', { class: 'input', placeholder: 'A note to remember it by (optional)', value: entry ? (entry.notes || '') : '' });
   let rating = entry ? (entry.rating || 0) : 0;
@@ -848,9 +864,21 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
 
   const body = [
     el('label', { class: 'field-label' }, planned ? 'Planned date' : 'Date'), date,
-    el('label', { class: 'field-label' }, c.title), title,
-    el('label', { class: 'field-label' }, 'Notes'), notes,
+    el('label', { class: 'field-label' }, 'Title'), title,
   ];
+
+  // A fresh plan stays lean — pick the date, name it, done. The detail
+  // fields appear when you reopen the event from Booked / Still planning.
+  const planInputs = {};
+  const showPlanFields = planned && entry;
+  if (showPlanFields) for (const [k, label] of PLANQ[type]) {
+    planInputs[k] = k === 'pack'
+      ? el('textarea', { class: 'input', placeholder: PLAN_HINT[k] }, entry[k] || '')
+      : el('input', { class: 'input', type: k === 'time' ? 'time' : k === 'dateEnd' ? 'date' : 'text', placeholder: PLAN_HINT[k] || 'optional', value: entry[k] || '' });
+    body.push(el('label', { class: 'field-label' }, label), planInputs[k]);
+  }
+  if (!planned || showPlanFields) body.push(el('label', { class: 'field-label' }, 'Notes'), notes);
+
   // Memories + rating make sense once it's happened (or when editing a past entry).
   const showExtras = !planned || (entry && entry.date <= todayStr());
   const memInputs = {};
@@ -862,14 +890,21 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     body.push(ratingRow);
   }
 
-  const heading = entry ? `Edit ${c.title.toLowerCase()}` : planned ? `Plan a ${c.title.toLowerCase()}` : `Log a ${c.title.toLowerCase()}`;
+  if (!entry && planned) body.push(el('p', { style: 'margin:14px 0 0' },
+    el('button', { class: 'linklike', onclick: () => { m.close(); logModal(type, { prefill: title.value, ideaId }); } }, '✓ …or log one that already happened')));
+
+  const heading = entry
+    ? (planned ? `${c.emoji} ${entry.title || c.title}` : `Edit ${c.title.toLowerCase()}`)
+    : planned ? `Plan a ${c.title.toLowerCase()}` : `Log a ${c.title.toLowerCase()}`;
   const m = modal(heading, body, [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
     el('button', { class: 'btn btn-primary', onclick: () => {
       const mem = {};
       for (const [k] of MEMQ[type]) if (memInputs[k]?.value.trim()) mem[k] = memInputs[k].value.trim();
+      const planVals = {};
+      for (const k of Object.keys(planInputs)) planVals[k] = planInputs[k].value.trim();
       if (entry) {
-        Object.assign(entry, { date: date.value || entry.date, title: title.value.trim(), notes: notes.value.trim(), rating, mem, updatedAt: now() });
+        Object.assign(entry, { date: date.value || entry.date, title: title.value.trim(), notes: notes.value.trim(), rating, mem, ...planVals, updatedAt: now() });
         // A planned entry edited to a past date has happened — graduate it to history.
         if (entry.planned && entry.date <= todayStr()) entry.planned = false;
         commit(); m.close(); toast('Updated 💞'); render();
