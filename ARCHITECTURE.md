@@ -24,7 +24,8 @@ One `localStorage` key, `ortiz-us-os`, holding:
 ```js
 {
   entries: [{ id, type, date, dateEnd, title, loc, time, dress, pack, notes,
-              rating, planned, status, mem, updatedAt, deleted }],
+              rating, planned, status, mem, hidden, updatedAt, deleted }],
+  secrets: { entryId: { field: value } },   // device-local, never synced
   ideas:   [{ id, type, text, source, done, private, updatedAt, deleted }],
   tickets: [{ id, goal, kind, n, used, usedAt, note, updatedAt }],
   coupons: [{ id, from, n, text, note, sentAt, seenAt, updatedAt, deleted }],
@@ -43,6 +44,15 @@ One `localStorage` key, `ortiz-us-os`, holding:
   Planning-detail fields (`PLANQ` in `app.js`) are per-type: date nights and
   occasions carry `loc`/`time`/`dress`; getaways and trips carry
   `loc`/`dateEnd`/`pack`. All optional, edited from the event's own sheet.
+- **Per-event surprises.** Any hideable field (`HIDEABLE`: title, loc, time,
+  dress, dateEnd, pack, notes) can be locked 🔒 on a planned event. The real
+  value goes to `secrets[entryId][field]` — **device-local, never in
+  `sharedPayload`** — and the synced entry carries only the field key in
+  `entry.hidden`. The setting phone overlays the real value (`shownVal`); the
+  other phone sees `entry.hidden` and renders a read-only 🔒 teaser, and its
+  saves never touch those keys, so a merge from the partner's edits can't wipe
+  the secret (same guarantee as private ideas, at field granularity). Secrets
+  for deleted/pruned entries are dropped in `pruneTombstones`.
 - `ideas.source` is `'you'` or `'claude'`.
 - `tickets` are goal passes (see `GOALS` in `app.js`). They use
   **deterministic ids** (`goal:kind:n`, e.g. `dry-2027:drink:1`) so both
