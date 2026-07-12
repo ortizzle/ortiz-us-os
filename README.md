@@ -18,13 +18,19 @@ tombstones keep deletions deleted.
 
 - **Rhythm** — each cadence shows the last one, the next due date, and a
   countdown. Log what happened; plan what's next.
+- **Up Next** — everything planned, soonest first, with countdowns — the
+  anticipation tab. Cadences with nothing planned get a nudge.
 - **Ideas** — a running backlog per cadence. With a Claude API key in
   Settings, ✨ generates real, local-feeling suggestions (city + interests
   aware). "Plan" turns an idea into a scheduled date.
 - **🔒 Private ideas** — the lock next to the add box. Locked ideas (including
   Claude-generated ones while locked) are stripped from the sync payload and
   never leave the device. For surprises.
-- **History** — coming up + been there, with ♥ ratings.
+- **Goals** — shared commitments with grace built in: the alcohol-free
+  stretch through Jan 17, 2027 ships with 12 🎟️ drink tickets and 3 🏖️
+  weekend escape passes — tap one to use it (with an occasion note), tap a
+  used one to give it back. Ticket state syncs to both phones.
+- **History** — been there, with ♥ ratings out of 5.
 
 ## Run locally
 

@@ -120,6 +120,14 @@ textarea.input { resize: vertical; min-height: 60px; }
 .rating button { background: none; border: 0; font-size: 24px; cursor: pointer; filter: grayscale(1) opacity(.4); padding: 0; }
 .rating button.on { filter: none; }
 
+/* couple's goals — passes */
+.pass-head { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 14px; margin: 16px 0 8px; }
+.tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.ticket { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; font: inherit; padding: 10px 4px 8px; min-height: 44px; border-radius: 12px; border: 1.5px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); cursor: pointer; }
+.ticket .t-emoji { font-size: 20px; line-height: 1; }
+.ticket .t-n { font-size: 12px; font-weight: 800; }
+.ticket.used { border-style: solid; border-color: var(--line); background: var(--surface-2); color: var(--text-2); filter: grayscale(1) opacity(.65); }
+
 .toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 60; box-shadow: var(--shadow); }
 
 .spinner { width: 20px; height: 20px; border: 2.5px solid var(--surface-2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }

@@ -27,6 +27,7 @@ function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
 let DB = load();
 DB.entries ||= [];   // logged/planned dates: {id,type,date,title,notes,rating,planned,updatedAt,deleted}
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
+DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,note,updatedAt}
 DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt} — never synced
 const now = () => new Date().toISOString();
 // Deletes are tombstones (deleted:true + updatedAt) so a removal on one phone
@@ -45,6 +46,29 @@ const CADENCES = [
   { type: 'trip',    emoji: '✈️', title: 'Destination trip', cadence: 'every ~2 years',  days: 730 },
 ];
 const cadenceOf = (t) => CADENCES.find((c) => c.type === t);
+
+// ---------- couple's goals ----------
+const GOALS = [{
+  id: 'dry-2027',
+  emoji: '🥂',
+  title: 'Alcohol-free stretch',
+  sub: 'Through Jan 17, 2027 — with passes saved for the moments worth toasting.',
+  ends: '2027-01-17',
+  passes: [
+    { kind: 'drink',  emoji: '🎟️', label: 'Drink tickets',         one: 'drink ticket',         count: 12 },
+    { kind: 'escape', emoji: '🏖️', label: 'Weekend escape passes', one: 'weekend escape pass',  count: 3 },
+  ],
+}];
+// Tickets get fixed ids (goal:kind:n) so both phones seed the identical set
+// and merge per-ticket instead of doubling up. Seeds carry updatedAt:'' so a
+// real tap on either phone always outranks the untouched seed in a merge.
+function seedTickets() {
+  const have = new Set(DB.tickets.map((t) => t.id));
+  for (const g of GOALS) for (const p of g.passes) for (let n = 1; n <= p.count; n++) {
+    const id = `${g.id}:${p.kind}:${n}`;
+    if (!have.has(id)) DB.tickets.push({ id, goal: g.id, kind: p.kind, n, used: false, updatedAt: '' });
+  }
+}
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const parse = (s) => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
 const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
@@ -87,8 +111,109 @@ let current = 'rhythm';
 function render() {
   clear(view);
   if (current === 'rhythm') renderRhythm();
+  else if (current === 'upnext') renderUpNext();
   else if (current === 'ideas') renderIdeas();
+  else if (current === 'goals') renderGoals();
   else renderHistory();
+}
+
+// ---------- up next ----------
+function renderUpNext() {
+  view.append(el('h1', {}, 'Up next'), el('p', { class: 'sub' }, 'What you two get to look forward to.'));
+  const t = todayStr();
+  const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
+
+  for (const e of upcoming) {
+    const c = cadenceOf(e.type);
+    const left = daysBetween(t, e.date);
+    const when = left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left} days`;
+    view.append(el('div', { class: 'card next-card' }, [
+      el('div', { class: 'card-top' }, [
+        el('div', { class: 'card-emoji' }, c.emoji),
+        el('div', {}, [
+          el('div', { class: 'card-title' }, e.title || c.title),
+          el('div', { class: 'card-cadence' }, `${c.title} · ${fmt(e.date)}${e.notes ? ' · ' + e.notes : ''}`),
+        ]),
+        el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
+      ]),
+    ]));
+  }
+  if (!upcoming.length) view.append(el('div', { class: 'empty' }, 'Nothing on the calendar yet — that just means it’s planning time 💞'));
+
+  // Nudge for any cadence with nothing planned: anticipation needs a pipeline.
+  const missing = CADENCES.filter((c) => !upcoming.some((e) => e.type === c.type));
+  if (missing.length) {
+    view.append(el('h2', {}, 'Needs a plan'));
+    for (const c of missing) view.append(el('div', { class: 'row' }, [
+      el('span', { class: 'r-emoji' }, c.emoji),
+      el('div', { class: 'r-main' }, [el('div', { class: 'r-title' }, c.title), el('div', { class: 'r-meta' }, `nothing planned · ${c.cadence}`)]),
+      el('div', { class: 'r-actions' }, [
+        el('button', { class: 'btn btn-sm', onclick: () => logModal(c.type, { planned: true }) }, '＋ Plan'),
+        el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { current = 'ideas'; ideaFilter = c.type; setTab(); render(); } }, '💡'),
+      ]),
+    ]));
+  }
+}
+
+// ---------- couple's goals ----------
+function renderGoals() {
+  view.append(el('h1', {}, 'Couple’s goals'), el('p', { class: 'sub' }, 'Shared commitments — with grace built in.'));
+  const t = todayStr();
+  for (const g of GOALS) {
+    const left = daysBetween(t, g.ends);
+    const kids = [
+      el('div', { class: 'card-top' }, [
+        el('div', { class: 'card-emoji' }, g.emoji),
+        el('div', {}, [el('div', { class: 'card-title' }, g.title), el('div', { class: 'card-cadence' }, g.sub)]),
+        el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left < 0 ? 'due' : 'ok') }, left < 0 ? 'done!' : `${left}d left`)),
+      ]),
+    ];
+    for (const p of g.passes) {
+      const tix = DB.tickets.filter((x) => x.goal === g.id && x.kind === p.kind).sort((a,b) => a.n - b.n);
+      const remaining = tix.filter((x) => !x.used).length;
+      kids.push(el('div', { class: 'pass-head' }, [
+        el('span', {}, `${p.emoji} ${p.label}`),
+        el('span', { class: 'chip' + (remaining ? ' love' : '') }, `${remaining} of ${tix.length} left`),
+      ]));
+      kids.push(el('div', { class: 'tickets' }, tix.map((x) =>
+        el('button', {
+          class: 'ticket' + (x.used ? ' used' : ''),
+          title: x.used ? `Used ${x.usedAt ? fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}` : `${p.one} #${x.n}`,
+          onclick: () => ticketModal(x, p),
+        }, [el('span', { class: 't-emoji' }, p.emoji), el('span', { class: 't-n' }, x.used ? '✓' : x.n)])
+      )));
+    }
+    view.append(el('div', { class: 'card' }, kids));
+  }
+}
+
+function ticketModal(x, p) {
+  const one = p.one;
+  if (x.used) {
+    const m = modal(`${p.emoji} Used ${one}`, [
+      el('p', { class: 'muted' }, `${x.usedAt ? fmt(x.usedAt) : 'Date unknown'}${x.note ? ' — ' + x.note : ''}`),
+    ], [
+      el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+      el('button', { class: 'btn btn-primary', onclick: () => {
+        x.used = false; x.usedAt = null; x.note = ''; x.updatedAt = now();
+        commit(); m.close(); toast('Ticket returned 🎟️'); render();
+      } }, 'Give it back'),
+    ]);
+    return;
+  }
+  const date = el('input', { class: 'input', type: 'date', value: todayStr() });
+  const note = el('input', { class: 'input', placeholder: 'What’s the occasion? (optional)' });
+  const m = modal(`${p.emoji} Use a ${one}?`, [
+    el('label', { class: 'field-label' }, 'When'), date,
+    el('label', { class: 'field-label' }, 'Occasion'), note,
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Not yet'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      x.used = true; x.usedAt = date.value || todayStr(); x.note = note.value.trim(); x.updatedAt = now();
+      commit(); m.close(); toast('Enjoy it — you earned it 🥂'); render();
+    } }, 'Use it'),
+  ]);
+  note.focus();
 }
 
 function renderRhythm() {
@@ -132,11 +257,12 @@ function renderIdeas() {
   view.append(el('h1', {}, 'Ideas'), el('p', { class: 'sub' }, 'A running list for when it’s time to plan.'));
 
   const seg = el('div', { class: 'seg' }, [
-    ['all', 'All'], ...CADENCES.map((c) => [c.type, `${c.emoji} ${c.title.split(' ')[0]}`]),
+    ['all', 'All'], ...CADENCES.map((c) => [c.type, `${c.emoji} ${c.title.split(' ')[0]}`]), ['private', '🔒 Private'],
   ].map(([v, label]) => el('button', { class: ideaFilter === v ? 'active' : '', onclick: () => { ideaFilter = v; render(); } }, label)));
   view.append(seg);
+  if (ideaFilter === 'private') view.append(el('p', { class: 'muted small', style: 'margin: -6px 0 12px' }, 'Your eyes only — these live on this device and never sync.'));
 
-  const addType = ideaFilter === 'all' ? 'date' : ideaFilter;
+  const addType = (ideaFilter === 'all' || ideaFilter === 'private') ? 'date' : ideaFilter;
   const inp = el('input', { class: 'input', placeholder: `Add a ${privateMode ? 'private ' : ''}${cadenceOf(addType).title.toLowerCase()} idea…`, onkeydown: (e) => { if (e.key === 'Enter') addIdea(); } });
   // Private mode: for surprises. A locked idea lives ONLY on this device —
   // it's excluded from the sync payload, so the other phone never sees it.
@@ -160,7 +286,7 @@ function renderIdeas() {
   }
 
   const list = DB.ideas
-    .filter((i) => !i.deleted && (ideaFilter === 'all' || i.type === ideaFilter))
+    .filter((i) => !i.deleted && (ideaFilter === 'all' || (ideaFilter === 'private' ? i.private : i.type === ideaFilter)))
     .sort((a, b) => ((b.updatedAt || '') < (a.updatedAt || '') ? -1 : 1));
   if (!list.length) { view.append(el('div', { class: 'empty' }, 'No ideas here yet — jot one above, or let Claude riff.')); return; }
 
@@ -214,7 +340,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null } = {}) {
   const date = el('input', { class: 'input', type: 'date', value: planned ? addDays(todayStr(), 14) : todayStr() });
   const notes = el('input', { class: 'input', placeholder: 'A note to remember it by (optional)' });
   let rating = 0;
-  const stars = [1,2,3].map((n) => el('button', { onclick: () => { rating = rating === n ? 0 : n; stars.forEach((s,i) => s.classList.toggle('on', i < rating)); } }, '♥'));
+  const stars = [1,2,3,4,5].map((n) => el('button', { onclick: () => { rating = rating === n ? 0 : n; stars.forEach((s,i) => s.classList.toggle('on', i < rating)); } }, '♥'));
   const ratingRow = el('div', {}, [el('label', { class: 'field-label' }, 'How was it?'), el('div', { class: 'rating' }, stars)]);
 
   const body = [
@@ -274,7 +400,7 @@ const hasKey = () => Boolean(DB.settings.apiKey);
 // are stripped from the payload before it ever leaves the device.
 const GIST_FILE = 'ortiz-us-os.json';
 function sharedPayload() {
-  return { entries: DB.entries, ideas: DB.ideas.filter((i) => !i.private), savedAt: now() };
+  return { entries: DB.entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, savedAt: now() };
 }
 function mergeCol(local, remote) {
   const byId = new Map(local.map((r) => [r.id, r]));
@@ -304,6 +430,7 @@ async function syncNow(manual) {
       DB.entries = mergeCol(DB.entries, remote.entries);
       // Remote never contains private ideas, so local 🔒 ones pass through untouched.
       DB.ideas = mergeCol(DB.ideas, remote.ideas);
+      DB.tickets = mergeCol(DB.tickets, remote.tickets);
       pruneTombstones();
       save(DB);
     }
@@ -329,10 +456,13 @@ async function generateIdeas(type, btn) {
   try {
     const s = DB.settings;
     const existing = DB.ideas.filter((i) => i.type === type).map((i) => i.text).join('; ');
+    const month = new Date().toLocaleDateString('en-US', { month: 'long' });
     const prompt = `You help a married couple, Chris & Kat, keep their relationship playful. Suggest 4 specific, doable ${c.title.toLowerCase()} ideas (${c.cadence}).`
-      + (s.city ? ` They live in ${s.city} — favor real, local-feeling options.` : '')
+      + (s.city ? ` They live in ${s.city} — name real venues, neighborhoods, and destinations near there, the kind of thing locals actually do.` : '')
+      + ` It's ${month}, so lean seasonal (weather, festivals-season, that time of year).`
       + (s.interests ? ` They enjoy: ${s.interests}.` : '')
       + (existing ? ` Avoid repeating these they already have: ${existing}.` : '')
+      + ` Don't invent specific event dates or claim something is happening on a particular day — suggest places and experiences, not calendar listings.`
       + ` Return ONLY a JSON array of 4 short strings (each a single idea, no numbering). No prose.`;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -366,6 +496,7 @@ document.getElementById('settings-btn').addEventListener('click', settingsModal)
 
 applyTheme();
 pruneTombstones();
+seedTickets();
 render();
 syncNow(false); // pull the other phone's changes on open
 // Coming back to the app (phone unlock, tab switch) is the natural moment
