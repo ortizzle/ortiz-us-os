@@ -5,6 +5,8 @@
   --text: #23191c; --text-2: #7d6b71; --line: #ece3e6;
   --accent: #d1476b; --accent-soft: #fbe6ec; --accent-ink: #a3204a;
   --good: #2e9e6b; --good-soft: #e3f5ec; --warn: #c98a12; --warn-soft: #fbf0d8;
+  --chris: #3f74c9; --chris-soft: #e8f0fc; --chris-ink: #24519b;
+  --kat: #8a54c0; --kat-soft: #f2e9fb; --kat-ink: #63299c;
   --shadow: 0 1px 3px rgba(40,20,28,0.06), 0 8px 24px rgba(40,20,28,0.05);
   --radius: 18px;
 }
@@ -13,6 +15,8 @@
   --text: #f3e9ec; --text-2: #b39aa2; --line: #33232a;
   --accent: #f2789a; --accent-soft: #3a1e28; --accent-ink: #f7a6bd;
   --good: #57c48d; --good-soft: #17322550; --warn: #e0b25a; --warn-soft: #3a2e1550;
+  --chris: #6fa0ea; --chris-soft: #17233d; --chris-ink: #a7c8f6;
+  --kat: #b98ce6; --kat-soft: #241536; --kat-ink: #cfa8f2;
   --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.35);
 }
 @media (prefers-color-scheme: dark) {
@@ -21,6 +25,8 @@
     --text: #f3e9ec; --text-2: #b39aa2; --line: #33232a;
     --accent: #f2789a; --accent-soft: #3a1e28; --accent-ink: #f7a6bd;
     --good: #57c48d; --good-soft: #17322550; --warn: #e0b25a; --warn-soft: #3a2e1550;
+    --chris: #6fa0ea; --chris-soft: #17233d; --chris-ink: #a7c8f6;
+    --kat: #b98ce6; --kat-soft: #241536; --kat-ink: #cfa8f2;
     --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.35);
   }
 }
@@ -141,6 +147,9 @@ textarea.input { resize: vertical; min-height: 60px; }
 /* 💌 love coupons — received keepsakes + the coupon card (send + reveal sheets) */
 .ticket.recv { border-style: solid; }
 .ticket.recv .t-date { font-size: 10.5px; font-weight: 600; opacity: .75; }
+/* Received coupons carry the sender's colour so the shelf reads at a glance. */
+.ticket.from-chris, .coupon-card.from-chris { border-color: var(--chris); background: var(--chris-soft); color: var(--chris-ink); }
+.ticket.from-kat, .coupon-card.from-kat { border-color: var(--kat); background: var(--kat-soft); color: var(--kat-ink); }
 .coupon-card { border: 1.5px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); border-radius: 14px; padding: 16px 14px; text-align: center; margin: 10px 0; }
 .coupon-card .c-emoji { font-size: 30px; line-height: 1; }
 .coupon-card .c-text { font-weight: 700; font-size: 16px; line-height: 1.35; margin-top: 6px; }

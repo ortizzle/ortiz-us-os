@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v9 · love coupons';
+const APP_VERSION = 'v10 · red hearts';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -380,11 +380,17 @@ function ticketModal(x, p) {
 }
 
 // ---------- 💌 love coupons (send / receive) ----------
-const couponCardEl = (c) => el('div', { class: 'coupon-card' }, [
-  el('div', { class: 'c-emoji' }, COUPLE[c.from].emoji),
-  el('div', { class: 'c-text' }, c.text),
-  c.note ? el('div', { class: 'c-note' }, `“${c.note}”`) : null,
-]);
+// Your own coupons wear a red ❤️ (love you're giving); a coupon that arrived
+// from the other person is tinted their colour (💙 Chris / 💜 Kat) so the
+// sender reads at a glance on the shelf.
+function couponCardEl(c) {
+  const mine = c.from === me();
+  return el('div', { class: 'coupon-card' + (mine ? '' : ' from-' + c.from) }, [
+    el('div', { class: 'c-emoji' }, mine ? '❤️' : COUPLE[c.from].emoji),
+    el('div', { class: 'c-text' }, c.text),
+    c.note ? el('div', { class: 'c-note' }, `“${c.note}”`) : null,
+  ]);
+}
 
 function couponsCard() {
   const who = me();
@@ -407,16 +413,16 @@ function couponsCard() {
     return el('div', { class: 'card' }, kids);
   }
 
-  const mine = COUPLE[who], theirs = COUPLE[other(who)];
+  const theirs = COUPLE[other(who)];
   const sent = new Map(DB.coupons.filter((c) => c.from === who && !c.deleted).map((c) => [c.n, c]));
   kids.push(el('div', { class: 'pass-head' }, [
-    el('span', {}, `${mine.emoji} Your book — tap one to send`),
+    el('span', {}, `❤️ Your book — tap one to send`),
     el('span', { class: 'chip' + (sent.size < COUPON_ITEMS.length ? ' love' : '') }, `${COUPON_ITEMS.length - sent.size} of ${COUPON_ITEMS.length} to give`),
   ]));
   kids.push(el('div', { class: 'tickets coupons' }, COUPON_ITEMS.map((text, i) => {
     const c = sent.get(i + 1);
     if (!c) return el('button', { class: 'ticket', title: text, onclick: () => sendCouponModal(i + 1) }, [
-      el('span', { class: 't-emoji' }, mine.emoji),
+      el('span', { class: 't-emoji' }, '❤️'),
       el('span', { class: 't-label' }, text),
     ]);
     return el('button', {
@@ -436,10 +442,10 @@ function couponsCard() {
   ]));
   if (!recv.length) kids.push(el('p', { class: 'muted small', style: 'margin:0' }, `Coupons ${theirs.name} sends you land here 💌`));
   else kids.push(el('div', { class: 'tickets coupons' }, recv.map((c) => el('button', {
-    class: 'ticket recv', title: c.sentAt ? `Sent ${fmt(c.sentAt)}` : '',
+    class: 'ticket recv from-' + c.from, title: c.sentAt ? `Sent ${fmt(c.sentAt)}` : '',
     onclick: () => recvCouponModal(c),
   }, [
-    el('span', { class: 't-emoji' }, theirs.emoji),
+    el('span', { class: 't-emoji' }, COUPLE[c.from].emoji),
     el('span', { class: 't-label' }, c.text),
     c.sentAt ? el('span', { class: 't-date' }, fmt(c.sentAt)) : null,
   ]))));
