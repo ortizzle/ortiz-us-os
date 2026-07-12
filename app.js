@@ -44,9 +44,10 @@ const commit = () => { save(DB); scheduleSync(); };
 
 // ---------- 2-2-2 model ----------
 const CADENCES = [
-  { type: 'date',    emoji: '💞', title: 'Date night',       cadence: 'every 2 weeks',   days: 14 },
-  { type: 'getaway', emoji: '🧳', title: 'Weekend getaway',  cadence: 'every ~2 months', days: 61 },
-  { type: 'trip',    emoji: '✈️', title: 'Destination trip', cadence: 'every ~2 years',  days: 730 },
+  { type: 'date',     emoji: '💞', title: 'Date night',       cadence: 'every 2 weeks',   days: 14 },
+  { type: 'getaway',  emoji: '🧳', title: 'Weekend getaway',  cadence: 'every ~2 months', days: 61 },
+  { type: 'trip',     emoji: '✈️', title: 'Destination trip', cadence: 'every ~2 years',  days: 730 },
+  { type: 'occasion', emoji: '🎉', title: 'Special occasion', cadence: 'birthdays, anniversaries, big days', days: 0 },
 ];
 const cadenceOf = (t) => CADENCES.find((c) => c.type === t);
 
@@ -74,6 +75,26 @@ const GOALS = [{
   passes: [
     { kind: 'drink',  emoji: '🎟️', label: 'Drink tickets',         one: 'drink ticket',         count: 12 },
     { kind: 'escape', emoji: '🏖️', label: 'Weekend escape passes', one: 'weekend escape pass',  count: 3 },
+  ],
+}, {
+  id: 'love-coupons',
+  emoji: '💌',
+  title: 'Love coupons',
+  sub: 'Small acts of service, redeemable anytime. No expiration, no scorekeeping — hand one over and it happens.',
+  ends: null,
+  passes: [
+    { kind: 'coupon', emoji: '💌', label: 'Coupons', one: 'love coupon', count: 10, items: [
+      'I take your worst chore this week',
+      'Sleep-in morning — I’ve got everything handled',
+      'Breakfast in bed, no occasion needed',
+      '30-minute massage, redeemable tonight',
+      'Your night off — dinner’s on me, start to finish',
+      'One guilt-free solo afternoon',
+      'I plan the whole date — zero input needed',
+      'Your pick tonight — movie, show, whatever',
+      'Coffee delivered in bed for a whole week',
+      'One “you were right” — no debate, no footnotes',
+    ] },
   ],
 }];
 // Tickets get fixed ids (goal:kind:n) so both phones seed the identical set
@@ -279,12 +300,12 @@ function renderGoals() {
   view.append(el('h1', {}, 'Couple’s goals'), el('p', { class: 'sub' }, 'Shared commitments — with grace built in.'));
   const t = todayStr();
   for (const g of GOALS) {
-    const left = daysBetween(t, g.ends);
+    const left = g.ends ? daysBetween(t, g.ends) : null;
     const kids = [
       el('div', { class: 'card-top' }, [
         el('div', { class: 'card-emoji' }, g.emoji),
         el('div', {}, [el('div', { class: 'card-title' }, g.title), el('div', { class: 'card-cadence' }, g.sub)]),
-        el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left < 0 ? 'due' : 'ok') }, left < 0 ? 'done!' : `${left}d left`)),
+        el('div', { class: 'card-right' }, el('div', { class: 'countdown ok' }, left == null ? '∞' : left < 0 ? 'done!' : `${left}d left`)),
       ]),
     ];
     for (const p of g.passes) {
@@ -294,22 +315,26 @@ function renderGoals() {
         el('span', {}, `${p.emoji} ${p.label}`),
         el('span', { class: 'chip' + (remaining ? ' love' : '') }, `${remaining} of ${tix.length} left`),
       ]));
-      kids.push(el('div', { class: 'tickets' }, tix.map((x) =>
-        el('button', {
+      kids.push(el('div', { class: 'tickets' + (p.items ? ' coupons' : '') }, tix.map((x) => {
+        const label = p.items?.[x.n - 1];
+        return el('button', {
           class: 'ticket' + (x.used ? ' used' : ''),
-          title: x.used ? `Used ${x.usedAt ? fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}` : `${p.one} #${x.n}`,
+          title: x.used ? `Used ${x.usedAt ? fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}` : label || `${p.one} #${x.n}`,
           onclick: () => ticketModal(x, p),
-        }, [el('span', { class: 't-emoji' }, p.emoji), el('span', { class: 't-n' }, x.used ? '✓' : x.n)])
-      )));
+        }, [
+          el('span', { class: 't-emoji' }, x.used && label ? '✓' : p.emoji),
+          label ? el('span', { class: 't-label' }, label) : el('span', { class: 't-n' }, x.used ? '✓' : x.n),
+        ]);
+      })));
     }
     view.append(el('div', { class: 'card' }, kids));
   }
 }
 
 function ticketModal(x, p) {
-  const one = p.one;
+  const one = p.items?.[x.n - 1] || p.one;
   if (x.used) {
-    const m = modal(`${p.emoji} Used ${one}`, [
+    const m = modal(`${p.emoji} Used: ${one}`, [
       el('p', { class: 'muted' }, `${x.usedAt ? fmt(x.usedAt) : 'Date unknown'}${x.note ? ' — ' + x.note : ''}`),
     ], [
       el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
@@ -322,7 +347,7 @@ function ticketModal(x, p) {
   }
   const date = el('input', { class: 'input', type: 'date', value: todayStr() });
   const note = el('input', { class: 'input', placeholder: 'What’s the occasion? (optional)' });
-  const m = modal(`${p.emoji} Use a ${one}?`, [
+  const m = modal(p.items ? `${p.emoji} Redeem: ${one}` : `${p.emoji} Use a ${one}?`, [
     el('label', { class: 'field-label' }, 'When'), date,
     el('label', { class: 'field-label' }, 'Occasion'), note,
   ], [
@@ -351,15 +376,40 @@ function upcomingCard(e) {
       el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
     ]),
     el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
-      el('button', { class: 'btn btn-sm' + (booked ? '' : ' btn-primary'), title: booked ? 'Mark as still planning' : 'Mark as booked',
+      el('button', { class: 'btn btn-sm' + (booked ? '' : ' btn-primary'), title: booked ? 'Mark as still planning' : 'It’s a done deal',
         onclick: () => { e.status = booked ? 'planning' : 'booked'; e.updatedAt = now(); commit(); render(); } },
         booked ? '↩ back to planning' : '✅ mark booked'),
+      !booked && hasKey() ? el('button', { class: 'btn btn-sm', onclick: () => planWithClaude(e) }, '✨ Plan with Claude') : null,
       el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎ Edit'),
     ]),
   ];
   // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
-  if (e.type !== 'date' && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
+  if ((e.type === 'getaway' || e.type === 'trip') && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
   return el('div', { class: 'card next-card' }, kids);
+}
+
+// The ladder: idea → ✨ go deeper → plan (intention, dated) → ✅ booked.
+// This is Claude's job at the "plan" rung: turn intention into bookings.
+async function planWithClaude(e) {
+  const c = cadenceOf(e.type);
+  const out = el('p', { class: 'small' }, el('span', { class: 'spinner' }));
+  const m = modal(`✨ Planning: ${e.title || c.title}`, [out], [el('button', { class: 'btn', onclick: () => m.close() }, 'Close')]);
+  try {
+    const s = DB.settings;
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': s.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 500, thinking: { type: 'disabled' }, messages: [{ role: 'user', content:
+        `A married couple near ${s.city || 'Phoenix, AZ'} intends to book this ${c.title.toLowerCase()}: "${e.title || 'untitled'}" on ${e.date}${e.notes ? ` (notes: ${e.notes})` : ''}.`
+        + (s.interests ? ` They enjoy: ${s.interests}.` : '')
+        + ` Help them get it from intention to booked: 2-3 concrete suggestions naming real places, what to reserve and how far ahead, one upgrade worth considering. Under 150 words, plain prose, no headers, no invented event dates.` }] }),
+    });
+    if (!res.ok) throw new Error('Claude ' + res.status);
+    const json = await res.json();
+    out.textContent = (json.content || []).filter((x) => x.type === 'text').map((x) => x.text).join('').trim();
+  } catch (err) {
+    out.textContent = 'Planning fetch failed: ' + err.message;
+  }
 }
 
 function renderRhythm() {
@@ -383,18 +433,20 @@ function renderRhythm() {
   for (const c of CADENCES) {
     const last = lastDone(c.type);
     const planned = nextPlanned(c.type);
-    const due = last ? addDays(last.date, c.days) : todayStr();
-    const left = daysBetween(todayStr(), due);
-    const pct = last ? Math.min(100, Math.max(0, Math.round((c.days - left) / c.days * 100))) : 100;
-    const over = left < 0;
 
-    const countdown = planned
-      ? el('div', { class: 'countdown ok' }, 'planned')
-      : el('div', { class: 'countdown ' + (left <= 0 ? 'due' : left <= Math.ceil(c.days*0.15) ? 'due' : 'ok') },
-          !last ? 'let’s start' : over ? `${-left}d over` : left === 0 ? 'today' : `${left}d`);
+    // Right side speaks the ladder: booked > planning > due-in / overdue.
+    let countdown;
+    if (planned) countdown = el('div', { class: 'countdown ' + (planned.status === 'booked' ? 'ok' : 'due') }, planned.status === 'booked' ? '✅ booked' : '🔨 planning');
+    else if (!c.days) countdown = el('div', { class: 'countdown ok' }, 'anytime');
+    else if (!last) countdown = el('div', { class: 'countdown due' }, 'let’s start');
+    else {
+      const left = daysBetween(todayStr(), addDays(last.date, c.days));
+      countdown = el('div', { class: 'countdown ' + (left <= 3 ? 'due' : 'ok') },
+        left < 0 ? `${-left}d overdue` : left === 0 ? 'due today' : `due in ${left}d`);
+    }
 
     const meta = planned
-      ? `${cadenceOf(c.type).emoji ? '' : ''}${planned.title || 'Something planned'} · ${fmt(planned.date)}`
+      ? `${planned.title || 'Something planned'} · ${fmt(planned.date)}`
       : last ? `last: ${last.title ? last.title + ' · ' : ''}${fmt(last.date)}` : 'no history yet';
 
     view.append(el('div', { class: 'card' }, [
@@ -403,8 +455,7 @@ function renderRhythm() {
         el('div', {}, [el('div', { class: 'card-title' }, c.title), el('div', { class: 'card-cadence' }, c.cadence)]),
         el('div', { class: 'card-right' }, [countdown, el('div', { class: 'card-meta' }, meta)]),
       ]),
-      el('div', { class: 'bar' + (over ? ' over' : '') }, el('span', { style: `width:${pct}%` })),
-      el('div', { class: 'card-actions' }, [
+      el('div', { class: 'card-actions', style: 'margin-top:12px' }, [
         el('button', { class: 'btn btn-primary btn-sm', onclick: () => logModal(c.type) }, '✓ Log one'),
         el('button', { class: 'btn btn-sm', onclick: () => logModal(c.type, { planned: true }) }, '＋ Plan ahead'),
         el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { current = 'ideas'; ideaFilter = c.type; setTab(); render(); } }, '💡 Ideas'),
@@ -573,7 +624,7 @@ function renderHistory() {
   if (!done.length) view.append(el('div', { class: 'empty' }, 'Log your first one from the Rhythm tab.'));
   for (const e of done) view.append(historyRow(e, false));
 }
-const MEM_ICONS = { moment: '💫', food: '🍴', drink: '🍸', activity: '🥾' };
+const MEM_ICONS = { moment: '💫', food: '🍴', drink: '🍸', activity: '🥾', gift: '🎁' };
 function memLine(e) {
   if (!e.mem) return null;
   const bits = Object.entries(e.mem).filter(([, v]) => v).map(([k, v]) => `${MEM_ICONS[k] || '•'} ${v}`);
@@ -597,11 +648,12 @@ function historyRow(e, upcoming) {
 // ---------- log / plan / edit modal ----------
 // Memory questions per cadence — the stuff worth remembering later.
 const MEMQ = {
-  date:    [['moment', 'Favorite moment'], ['food', 'Favorite food'], ['drink', 'Favorite drink']],
-  getaway: [['activity', 'Favorite activity'], ['food', 'Favorite food'], ['moment', 'A moment to keep']],
-  trip:    [['activity', 'Favorite activity'], ['food', 'Favorite food'], ['moment', 'A moment to keep']],
+  date:     [['moment', 'Favorite moment'], ['food', 'Favorite food'], ['drink', 'Favorite drink']],
+  getaway:  [['activity', 'Favorite activity'], ['food', 'Favorite food'], ['moment', 'A moment to keep']],
+  trip:     [['activity', 'Favorite activity'], ['food', 'Favorite food'], ['moment', 'A moment to keep']],
+  occasion: [['moment', 'Favorite moment'], ['food', 'Favorite food'], ['gift', 'Best gift or surprise']],
 };
-const PLAN_LEAD = { date: 14, getaway: 45, trip: 180 }; // getaways & trips get planned early
+const PLAN_LEAD = { date: 14, getaway: 45, trip: 180, occasion: 30 }; // getaways & trips get planned early
 function logModal(type, { planned = false, prefill = '', ideaId = null, entry = null } = {}) {
   const c = cadenceOf(type);
   if (entry) planned = Boolean(entry.planned);
@@ -686,13 +738,14 @@ function renderBingo() {
       class: 'bcell' + (b.done ? ' done' : '') + (inWin.has(b.n) ? ' win' : ''),
       onclick: () => {
         if (free) {
-          // The free square of the sweet card hides the door to the second one.
+          // The free square of the sweet card hides the door to the second one:
+          // 6 taps earns a "keep going", 6 more opens it.
           if (!deep) {
             freeTaps++;
             clearTimeout(freeTimer);
-            freeTimer = setTimeout(() => { freeTaps = 0; }, 1500);
-            if (freeTaps >= 6) { freeTaps = 0; current = 'bingo2'; render(); return; }
-            toast(freeTaps >= 3 ? '…keep going 👀' : 'That one’s always free 💋');
+            freeTimer = setTimeout(() => { freeTaps = 0; }, 2000);
+            if (freeTaps >= 12) { freeTaps = 0; current = 'bingo2'; render(); return; }
+            toast(freeTaps < 6 ? 'That one’s always free 💋' : freeTaps === 6 ? '…keep going 👀' : '👀' + '🔥'.repeat(freeTaps - 6));
           } else toast('Always free 🔥');
           return;
         }

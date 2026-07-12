@@ -24,6 +24,11 @@ Three cadences, each with a target interval:
 | 💞 Date night | every 2 weeks | Regular, low-effort connection |
 | 🧳 Weekend getaway | every ~2 months | A bigger reset, still local-ish |
 | ✈️ Destination trip | every ~2 years | The big one |
+| 🎉 Special occasion | as they come | Birthdays, anniversaries, big days — no due-date pressure |
+
+**The ladder** (shared vocabulary across the app): *idea* (interested) →
+*✨ go deeper* (looking to plan) → *plan* (intention to book, has a date) →
+*✅ booked* (done deal).
 
 ## Features
 
@@ -37,8 +42,13 @@ Three sections with jump-chips (a mini table of contents) at the top:
   clean the rest of the year (defined in `SPECIAL` in `app.js`).
 - **🔨 Still planning** — plans with a date but details not locked. Every
   planned entry carries a `status` flag (`planning` default → `booked`),
-  toggled right on the card. Getaways/trips in planning carry a reminder
+  toggled right on the card. Planning cards get **✨ Plan with Claude**
+  (API key required): concrete venue suggestions, what to reserve and how
+  far ahead, one upgrade idea. Getaways/trips in planning carry a reminder
   to build a trip-guide app (like Jerome).
+- Cadence cards' status word speaks the ladder: `🔨 planning`, `✅ booked`,
+  `due in Nd` / `Nd overdue`, or `anytime` (occasions). No progress bars —
+  they read as noise.
 - **Log one** — record something that already happened: date, optional
   title/notes, 1–5 ♥ rating, and **memory questions** (date night: favorite
   moment / food / drink; getaway & trip: favorite activity / food / a moment
@@ -55,10 +65,11 @@ Three sections with jump-chips (a mini table of contents) at the top:
   25 squares (center free) of sweet, intimate prompts — flowers with
   intention, notes on pillows, connection-first warmth. Squares sync;
   completing a line celebrates with a BINGO toast.
-- Tapping the sweet card's FREE center square 6 times opens "After dark" —
-  the card behind the card: adult, consensual, higher-temperature prompts
-  (positions, play, scenarios; non-graphic language). Separate synced
-  card (`bingo2`), same rules.
+- The sweet card's FREE center square hides "After dark" — the card behind
+  the card: adult, consensual, higher-temperature prompts (positions, play,
+  scenarios; non-graphic language). The door is two-stage: 6 taps earns
+  "…keep going 👀", 6 more opens it. Separate synced card (`bingo2`),
+  same rules.
 
 ### Ideas
 - A running backlog per cadence, freeform text entries.
@@ -85,6 +96,11 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - Shared commitments rendered as interactive passes, synced to both phones.
 - First goal: **alcohol-free through Jan 17, 2027**, with grace built in —
   12 🎟️ drink tickets and 3 🏖️ weekend escape passes for the whole stretch.
+- Second goal: **💌 Love coupons** — 10 acts-of-service coupons with no
+  expiration (worst-chore takeover, sleep-in morning, breakfast in bed,
+  massage, night off, solo afternoon, full-date planning, your-pick night,
+  coffee-in-bed week, one no-debate "you were right"). Pass `items` gives
+  each ticket its own label; goals without `ends` show ∞.
 - Tap an unused ticket to use it (date + optional occasion note); tap a used
   one to see the occasion or give it back.
 - Goal definitions live in `GOALS` in `app.js` — adding a future goal is a

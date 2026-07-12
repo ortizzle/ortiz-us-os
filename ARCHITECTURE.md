@@ -33,7 +33,8 @@ One `localStorage` key, `ortiz-us-os`, holding:
 }
 ```
 
-- `type` is one of `date` | `getaway` | `trip` (see `CADENCES` in `app.js`).
+- `type` is one of `date` | `getaway` | `trip` | `occasion` (see `CADENCES`
+  in `app.js`; `occasion` has `days: 0` — no due-date rhythm).
 - `entries` are either logged (`planned: false`, `date` in the past) or
   planned (`planned: true` or `date` in the future). `rating` is 0–5 hearts.
 - `ideas.source` is `'you'` or `'claude'`.
