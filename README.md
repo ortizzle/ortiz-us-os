@@ -16,12 +16,13 @@ tombstones keep deletions deleted.
 
 ## How it thinks
 
-- **Rhythm** — special-date countdowns (anniversary + birthdays) up top,
-  then "Coming up" (everything planned, soonest first, with countdowns and
-  a trip-guide-app reminder for getaways/trips), then each cadence's card.
-  Log what happened — with memory questions (favorite moment/food/drink for
-  dates; activity/food/a-moment-to-keep for getaways and trips) — or plan
-  what's next. Everything's editable after the fact (✎).
+- **Rhythm** — three sections with jump-chips: **Plan & log** (cadence
+  cards with countdowns), **✅ Booked** (locked-in plans, plus anniversary/
+  birthday countdowns that auto-surface within 45 days), and **🔨 Still
+  planning** (dated but not locked — flip to booked right on the card).
+  Logging asks memory questions (favorite moment/food/drink for dates;
+  activity/food/a-moment-to-keep for getaways and trips). Everything's
+  editable after the fact (✎).
 - **Ideas** — a running backlog per cadence, plus **curated picks**: baked-in,
   hand-researched Phoenix-area recommendations (restaurants, getaways,
   destinations) with ratings and why — no API tokens needed. Tap for the full

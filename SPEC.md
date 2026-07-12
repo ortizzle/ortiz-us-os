@@ -28,13 +28,17 @@ Three cadences, each with a target interval:
 ## Features
 
 ### Rhythm (home tab)
-- **Special dates** strip: countdown chips for the anniversary (Sep 12,
-  2013 — shows the years) and both birthdays (Chris Feb 26, Kat Aug 15).
-- **Coming up**: everything planned, soonest first, each with a countdown
-  ("in 45d", "tomorrow", "today!") and an ✎ edit button. Planned getaways
-  and trips carry a reminder to build a trip-guide app (like Jerome).
-- One card per cadence showing: last time it happened, days until due (or
-  days overdue), a progress bar, and anything already planned.
+Three sections with jump-chips (a mini table of contents) at the top:
+- **Plan & log** — one card per cadence: last time it happened, days until
+  due (or overdue), a progress bar, and anything already planned.
+- **✅ Booked** — plans that are locked in, soonest first, with countdowns.
+  Special dates (anniversary Sep 12, 2013 with years count; birthdays
+  Chris Feb 26, Kat Aug 15) auto-surface here only when within 45 days —
+  clean the rest of the year (defined in `SPECIAL` in `app.js`).
+- **🔨 Still planning** — plans with a date but details not locked. Every
+  planned entry carries a `status` flag (`planning` default → `booked`),
+  toggled right on the card. Getaways/trips in planning carry a reminder
+  to build a trip-guide app (like Jerome).
 - **Log one** — record something that already happened: date, optional
   title/notes, 1–5 ♥ rating, and **memory questions** (date night: favorite
   moment / food / drink; getaway & trip: favorite activity / food / a moment
@@ -46,11 +50,15 @@ Three cadences, each with a target interval:
   history row reopens it. Editing a planned entry to a past date graduates
   it to history.
 
-### 💗 Easter egg
-- Tapping the topbar heart 6 times opens a hidden couples' bingo card:
-  25 squares (center free) of intimate, warm, playful prompts — connection
-  first, tasteful heat second. Squares sync across both phones; completing
-  a row/column/diagonal celebrates with a BINGO toast.
+### 💗 Easter eggs (two layers)
+- Tapping the topbar heart 6 times opens "Just us": a couples' bingo card,
+  25 squares (center free) of sweet, intimate prompts — flowers with
+  intention, notes on pillows, connection-first warmth. Squares sync;
+  completing a line celebrates with a BINGO toast.
+- Tapping the sweet card's FREE center square 6 times opens "After dark" —
+  the card behind the card: adult, consensual, higher-temperature prompts
+  (positions, play, scenarios; non-graphic language). Separate synced
+  card (`bingo2`), same rules.
 
 ### Ideas
 - A running backlog per cadence, freeform text entries.
@@ -59,7 +67,9 @@ Three cadences, each with a target interval:
   destinations, each with area, star rating, a one-line why, and a longer
   insider take behind a tap. Zero API tokens. "Add to ideas" copies one
   into the backlog; ✨ "Go deeper" (API key required) fetches current
-  practical tips on demand.
+  practical tips on demand. Picks can be ✕ dismissed (hidden, restorable
+  via a "dismissed · show" toggle) or marked ✓ done (sinks to the bottom
+  with a checkmark) — reactions sync between phones (`recstate`).
 - **✨ Claude suggestions** — with an API key set, generate 4 ideas tailored
   to home city and stated interests, avoiding repeats of existing ideas.
 - **🔒 Private mode** — a lock toggle on the add box. Ideas added while

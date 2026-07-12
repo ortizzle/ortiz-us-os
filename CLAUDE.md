@@ -26,8 +26,9 @@ full shape. Key invariants:
 - **Every mutation bumps `updatedAt`** (`now()`, ISO string) — sync's merge
   logic depends on it to pick the newer record.
 - **`settings` never syncs.** It's local-only (API key, Gist token, theme).
-- **Goal tickets and bingo squares use deterministic ids** (`goal:kind:n`,
-  `bingo:n`) seeded with `updatedAt: ''` — this is what keeps both phones
+- **Goal tickets, bingo squares (both cards), and curated-pick reactions
+  use deterministic ids** (`goal:kind:n`, `bingo:n`, `bingo2:n`,
+  `rec:<name>`) seeded with `updatedAt: ''` — this is what keeps both phones
   from doubling the seeded sets and lets any real tap win the merge. New
   goals go in `GOALS`; never seed shared fixed-size collections with random
   ids.

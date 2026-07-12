@@ -27,6 +27,8 @@ One `localStorage` key, `ortiz-us-os`, holding:
   ideas:   [{ id, type, text, source, done, private, updatedAt, deleted }],
   tickets: [{ id, goal, kind, n, used, usedAt, note, updatedAt }],
   bingo:   [{ id, n, done, updatedAt }],
+  bingo2:  [{ id, n, done, updatedAt }],
+  recstate: [{ id, state, updatedAt }],
   settings: { apiKey, city, interests, theme, gistToken, gistId, lastSyncAt },
 }
 ```
@@ -43,9 +45,15 @@ One `localStorage` key, `ortiz-us-os`, holding:
   never tombstoned.
 - `entries.mem` holds the memory-question answers (`{ moment, food, drink,
   activity }`), keyed by `MEMQ` in `app.js`.
-- `bingo` is the 💗 easter-egg card (6 taps on the topbar heart). Same
+- `entries.status` (`'planning'` | `'booked'`, planned entries only) drives
+  the Rhythm tab's Booked / Still-planning split; missing status = planning.
+- `bingo` and `bingo2` are the 💗 easter-egg cards (6 taps on the topbar
+  heart; then 6 taps on the sweet card's FREE square for the second). Same
   deterministic-id + `updatedAt: ''` seeding trick as tickets (`bingo:n`,
-  center square pre-done). Squares toggle, never tombstone.
+  `bingo2:n`, center square pre-done). Squares toggle, never tombstone.
+- `recstate` holds curated-pick reactions keyed `rec:<name>` with `state`
+  `'dismissed'` | `'done'` | `''` (restored) — created lazily on first
+  reaction, ids deterministic so both phones merge cleanly.
 - `RECS` (curated picks) and `SPECIAL` (anniversary/birthdays) are static
   data baked into `app.js` — not stored, not synced, edit in code.
 - `settings` is device-local only — it is never included in sync.
@@ -71,9 +79,9 @@ GitHub Gist — same mechanism as Home OS, but writing to its own file
 
 - **Trigger:** debounced 2s after any local write (`scheduleSync` →
   `syncNow`), plus on tab re-focus (`visibilitychange`), plus once on boot.
-- **Payload:** `sharedPayload()` — `entries`, `ideas`, `tickets`, and
-  `bingo`, with `ideas` filtered to exclude `private: true` records.
-  `settings` is never included.
+- **Payload:** `sharedPayload()` — `entries`, `ideas`, `tickets`, `bingo`,
+  `bingo2`, and `recstate`, with `ideas` filtered to exclude
+  `private: true` records. `settings` is never included.
 - **Merge:** `mergeCol(local, remote)` — per-record by `id`; if the remote
   record's `updatedAt` is newer than the local one's, remote wins. Otherwise
   local is kept. This is a last-write-wins CRDT-lite merge, not a real CRDT —

@@ -29,6 +29,8 @@ DB.entries ||= [];   // logged/planned dates: {id,type,date,title,notes,rating,p
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
 DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,note,updatedAt}
 DB.bingo ||= [];     // easter-egg bingo squares: {id,n,done,updatedAt}
+DB.bingo2 ||= [];    // the card behind the card
+DB.recstate ||= [];  // curated-pick reactions: {id,state:'dismissed'|'done'|'',updatedAt}
 DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt} — never synced
 const now = () => new Date().toISOString();
 // Deletes are tombstones (deleted:true + updatedAt) so a removal on one phone
@@ -95,30 +97,60 @@ const BINGO_ITEMS = [
   'Make out like teenagers (nothing more… yet)',
   'Breakfast in bed, phones off',
   'Whisper 3 things you love about their body',
-  'Lingerie (or less) surprise',
+  'Bring home flowers, just because',
   'Slow morning together before the day starts',
   'Phone-free night in bed',
   'Trade one fantasy each over a drink',
-  'Blindfold + something soft',
+  'A small gift with intention — something they mentioned once',
   'Late-night hot tub or skinny dip',
-  'Undress each other slowly, lights on',
+  'Write why you chose them — leave it on their pillow',
   'Love note hidden in a pocket',
   'Recreate your first kiss',
   'Shower together, wash each other’s hair',
   'Flirty text thread during the workday',
-  'Somewhere new in the house',
+  'Make their coffee before they’re up',
   'Yes / no / maybe lists — compare answers',
   'Sunset drive with no destination',
-  'Read something steamy aloud together',
+  'Plan a surprise micro-date — 90 minutes, zero notice',
   'A kiss every time you pass each other (all day)',
   'Book a “hotel night” — even in town',
 ];
+// Card two lives behind the free square of card one. Adult, consensual,
+// still non-graphic — heat for two people who already trust each other.
+const BINGO2_ITEMS = [
+  'A brand-new position — pick it together',
+  'Her on top, her pace, her rules',
+  'From behind, hands everywhere',
+  'Standing — wall or counter',
+  'Dead quiet — first one to make a sound loses',
+  'Morning quickie before the alarm snoozes',
+  'Shower sex (towel on the floor, you’re welcome)',
+  'Oral — all about her',
+  'Oral — all about him',
+  '69',
+  'Edge each other — nobody finishes until asked nicely',
+  'Dirty talk only — say exactly what you want',
+  'Blindfold + restraints (pick a safeword first)',
+  'Strip tease — full commitment, music on',
+  'Lap dance that breaks the no-touching rule',
+  'Body-oil massage that escalates',
+  'One of you is in charge tonight — trade next time',
+  'In front of a mirror',
+  'Kitchen counter or table',
+  'Parked in the garage, teenage rules',
+  'Hotel night: do not leave the room',
+  'Toy night — new one or the favorite',
+  'Roleplay: strangers at a bar who go home together',
+  'Sleepy morning sex — green-lit the night before',
+];
 const BINGO_FREE = 12; // center square
 function seedBingo() {
-  const have = new Set(DB.bingo.map((b) => b.id));
-  for (let n = 0; n < 25; n++) {
-    const id = `bingo:${n}`;
-    if (!have.has(id)) DB.bingo.push({ id, n, done: n === BINGO_FREE, updatedAt: '' });
+  for (const [col, key] of [[DB.bingo, 'bingo'], [DB.bingo2, 'bingo2']]) {
+    const have = new Set(col.map((b) => b.id));
+    for (let n = 0; n < 25; n++) {
+      const id = `${key}:${n}`;
+      if (!have.has(id)) col.push({ id, n, done: n === BINGO_FREE, updatedAt: '' });
+    }
   }
 }
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
@@ -238,7 +270,7 @@ function render() {
   if (current === 'rhythm') renderRhythm();
   else if (current === 'ideas') renderIdeas();
   else if (current === 'goals') renderGoals();
-  else if (current === 'bingo') renderBingo();
+  else if (current === 'bingo' || current === 'bingo2') renderBingo();
   else renderHistory();
 }
 
@@ -303,45 +335,51 @@ function ticketModal(x, p) {
   note.focus();
 }
 
+function upcomingCard(e) {
+  const t = todayStr();
+  const c = cadenceOf(e.type);
+  const left = daysBetween(t, e.date);
+  const when = left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left}d`;
+  const booked = e.status === 'booked';
+  const kids = [
+    el('div', { class: 'card-top' }, [
+      el('div', { class: 'card-emoji' }, c.emoji),
+      el('div', {}, [
+        el('div', { class: 'card-title' }, e.title || c.title),
+        el('div', { class: 'card-cadence' }, `${fmt(e.date)}${e.notes ? ' · ' + e.notes : ''}`),
+      ]),
+      el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
+    ]),
+    el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
+      el('button', { class: 'btn btn-sm' + (booked ? '' : ' btn-primary'), title: booked ? 'Mark as still planning' : 'Mark as booked',
+        onclick: () => { e.status = booked ? 'planning' : 'booked'; e.updatedAt = now(); commit(); render(); } },
+        booked ? '↩ back to planning' : '✅ mark booked'),
+      el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎ Edit'),
+    ]),
+  ];
+  // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
+  if (e.type !== 'date' && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
+  return el('div', { class: 'card next-card' }, kids);
+}
+
 function renderRhythm() {
   view.append(el('h1', {}, 'Your rhythm'), el('p', { class: 'sub' }, 'The 2-2-2 you two live by — kept on pace.'));
 
-  view.append(el('div', { class: 'special' }, SPECIAL.map((s) => {
-    const nx = nextSpecial(s);
-    const label = s.since ? `${s.label} · ${nx.years} yrs` : s.label;
-    return el('div', { class: 'special-chip' }, [
-      el('span', { class: 's-emoji' }, s.emoji),
-      el('div', {}, [el('div', { class: 's-label' }, label), el('div', { class: 's-count' }, nx.left === 0 ? 'today! 🎉' : `${nx.left}d · ${fmt(nx.date)}`)]),
-    ]);
-  })));
+  const jump = (id) => () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  view.append(el('div', { class: 'seg' }, [
+    el('button', { onclick: jump('sec-log') }, '💞 Plan & log'),
+    el('button', { onclick: jump('sec-booked') }, '✅ Booked'),
+    el('button', { onclick: jump('sec-planning') }, '🔨 Planning'),
+  ]));
 
   const t = todayStr();
   const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
-  if (upcoming.length) {
-    view.append(el('h2', {}, 'Coming up'));
-    for (const e of upcoming) {
-      const c = cadenceOf(e.type);
-      const left = daysBetween(t, e.date);
-      const when = left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left}d`;
-      const kids = [
-        el('div', { class: 'card-top' }, [
-          el('div', { class: 'card-emoji' }, c.emoji),
-          el('div', {}, [
-            el('div', { class: 'card-title' }, e.title || c.title),
-            el('div', { class: 'card-cadence' }, `${fmt(e.date)}${e.notes ? ' · ' + e.notes : ''}`),
-          ]),
-          el('div', { class: 'card-right' }, [
-            el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when),
-            el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
-          ]),
-        ]),
-      ];
-      // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
-      if (e.type !== 'date') kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ planned ahead? remember: build the trip-guide app (Jerome was a hit)'));
-      view.append(el('div', { class: 'card next-card' }, kids));
-    }
-  }
+  const bookedList = upcoming.filter((e) => e.status === 'booked');
+  const planningList = upcoming.filter((e) => e.status !== 'booked');
+  // Special dates surface only when they're close — clean the rest of the year.
+  const nearSpecial = SPECIAL.map((s) => ({ s, nx: nextSpecial(s) })).filter((x) => x.nx.left <= 45).sort((a,b) => a.nx.left - b.nx.left);
 
+  view.append(el('h2', { id: 'sec-log' }, 'Plan & log'));
   for (const c of CADENCES) {
     const last = lastDone(c.type);
     const planned = nextPlanned(c.type);
@@ -373,6 +411,24 @@ function renderRhythm() {
       ]),
     ]));
   }
+
+  view.append(el('h2', { id: 'sec-booked' }, '✅ Booked'));
+  if (nearSpecial.length) for (const { s, nx } of nearSpecial) {
+    view.append(el('div', { class: 'row' }, [
+      el('span', { class: 'r-emoji' }, s.emoji),
+      el('div', { class: 'r-main' }, [
+        el('div', { class: 'r-title' }, s.since ? `${s.label} — ${nx.years} years` : `${s.label}’s birthday`),
+        el('div', { class: 'r-meta' }, fmt(nx.date)),
+      ]),
+      el('span', { class: 'chip love' }, nx.left === 0 ? 'today! 🎉' : `in ${nx.left}d`),
+    ]));
+  }
+  if (!bookedList.length && !nearSpecial.length) view.append(el('p', { class: 'muted small' }, 'Nothing locked in yet — when a plan is set, mark it ✅ booked.'));
+  for (const e of bookedList) view.append(upcomingCard(e));
+
+  view.append(el('h2', { id: 'sec-planning' }, '🔨 Still planning'));
+  if (!planningList.length) view.append(el('p', { class: 'muted small' }, 'Nothing in the works — tap ＋ Plan ahead above, or raid the Ideas tab.'));
+  for (const e of planningList) view.append(upcomingCard(e));
 }
 
 let ideaFilter = 'all';
@@ -430,24 +486,42 @@ function renderIdeas() {
   }
 
   if (ideaFilter !== 'private') {
-    const recs = RECS.filter((r) => ideaFilter === 'all' || r.type === ideaFilter);
+    const all = RECS.filter((r) => ideaFilter === 'all' || r.type === ideaFilter);
+    const visible = all.filter((r) => recState(r) !== 'dismissed' || showDismissedRecs);
+    const hidden = all.length - all.filter((r) => recState(r) !== 'dismissed').length;
+    // Done picks sink to the bottom; dismissed ones disappear unless shown.
+    visible.sort((a, b) => (recState(a) === 'done' ? 1 : 0) - (recState(b) === 'done' ? 1 : 0));
     view.append(el('h2', {}, 'Curated picks'));
     view.append(el('p', { class: 'muted small', style: 'margin: -4px 0 10px' }, 'Hand-researched, no API needed. Tap one for the full story.'));
-    for (const r of recs) {
+    for (const r of visible) {
       const c = cadenceOf(r.type);
-      view.append(el('div', { class: 'row rec', onclick: () => recModal(r) }, [
-        el('span', { class: 'r-emoji' }, c.emoji),
+      const st = recState(r);
+      view.append(el('div', { class: 'row rec' + (st === 'done' ? ' done' : ''), onclick: () => recModal(r) }, [
+        el('span', { class: 'r-emoji' }, st === 'done' ? '✓' : c.emoji),
         el('div', { class: 'r-main' }, [
           el('div', { class: 'r-title' }, `${r.name} · ${starStr(r.stars)}`),
           el('div', { class: 'r-meta' }, `${r.area} — ${r.why}`),
         ]),
-        el('span', { class: 'chip' }, 'more'),
+        st === 'dismissed'
+          ? el('button', { class: 'btn btn-sm', onclick: (ev) => { ev.stopPropagation(); setRecState(r, ''); } }, '↩ restore')
+          : el('button', { class: 'btn btn-ghost btn-sm', title: 'Not for us', onclick: (ev) => { ev.stopPropagation(); setRecState(r, 'dismissed'); toast('Hidden — restore anytime below'); } }, '✕'),
       ]));
     }
+    if (hidden) view.append(el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { showDismissedRecs = !showDismissedRecs; render(); } },
+      showDismissedRecs ? 'Hide dismissed' : `${hidden} dismissed · show`));
   }
 }
 
 const starStr = (s) => '★'.repeat(Math.floor(s)) + (s % 1 ? '½' : '');
+let showDismissedRecs = false;
+const recId = (r) => 'rec:' + r.name;
+function recState(r) { return DB.recstate.find((x) => x.id === recId(r))?.state || ''; }
+function setRecState(r, state) {
+  const x = DB.recstate.find((y) => y.id === recId(r));
+  if (x) { x.state = state; x.updatedAt = now(); }
+  else DB.recstate.push({ id: recId(r), state, updatedAt: now() });
+  commit(); render();
+}
 
 function recModal(r) {
   const c = cadenceOf(r.type);
@@ -460,6 +534,7 @@ function recModal(r) {
   ];
   const actions = [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+    el('button', { class: 'btn btn-sm', title: 'We did this one', onclick: () => { m.close(); setRecState(r, recState(r) === 'done' ? '' : 'done'); toast(recState(r) === 'done' ? '✓ Been there' : 'Back on the list'); } }, recState(r) === 'done' ? '↩ not done' : '✓ Did it'),
     el('button', { class: 'btn btn-primary', onclick: () => {
       DB.ideas.unshift({ id: uid(), type: r.type, text: `${r.name} (${r.area})`, source: 'pick', done: false, private: privateMode, updatedAt: now() });
       commit(); m.close(); toast('Added to ideas 💡'); render();
@@ -566,7 +641,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
         commit(); m.close(); toast('Updated 💞'); render();
         return;
       }
-      DB.entries.push({ id: uid(), type, date: date.value || todayStr(), title: title.value.trim(), notes: notes.value.trim(), rating, mem, planned, updatedAt: now() });
+      DB.entries.push({ id: uid(), type, date: date.value || todayStr(), title: title.value.trim(), notes: notes.value.trim(), rating, mem, planned, status: planned ? 'planning' : undefined, updatedAt: now() });
       if (ideaId) { const it = DB.ideas.find((x) => x.id === ideaId); if (it) { it.done = true; it.updatedAt = now(); } }
       commit(); m.close();
       toast(planned ? 'Added to Coming up 💞' : 'Logged — nice 💞');
@@ -586,31 +661,52 @@ function bingoLines(doneSet) {
   lines.push([0,6,12,18,24], [4,8,12,16,20]);
   return lines.filter((L) => L.every((n) => doneSet.has(n)));
 }
+let freeTaps = 0, freeTimer;
 function renderBingo() {
-  view.append(el('h1', {}, 'Just us 💗'), el('p', { class: 'sub' }, 'You found it. Twenty-five little ways to stay close — mark them together, get five in a row.'));
-  view.append(el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'rhythm'; setTab(); render(); } }, '← back'));
+  const deep = current === 'bingo2';
+  const col = deep ? DB.bingo2 : DB.bingo;
+  const items = deep ? BINGO2_ITEMS : BINGO_ITEMS;
+  view.append(
+    el('h1', {}, deep ? 'After dark 🔥' : 'Just us 💗'),
+    el('p', { class: 'sub' }, deep
+      ? 'The card behind the card. Same rules, higher temperature — everything optional, everything discussed, nothing rushed.'
+      : 'You found it. Twenty-five little ways to stay close — mark them together, get five in a row.'),
+  );
+  view.append(el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = deep ? 'bingo' : 'rhythm'; setTab(); render(); } }, '← back'));
 
-  const doneSet = new Set(DB.bingo.filter((b) => b.done).map((b) => b.n));
+  const doneSet = new Set(col.filter((b) => b.done).map((b) => b.n));
   const wins = bingoLines(doneSet);
   const inWin = new Set(wins.flat());
   if (wins.length) view.append(el('p', { class: 'small', style: 'font-weight:700; color: var(--accent)' }, `BINGO × ${wins.length} 🎉`));
 
-  const cells = DB.bingo.slice().sort((a,b) => a.n - b.n).map((b) => {
+  const cells = col.slice().sort((a,b) => a.n - b.n).map((b) => {
     const free = b.n === BINGO_FREE;
-    const label = free ? 'FREE — kiss right now 💋' : BINGO_ITEMS[b.n < BINGO_FREE ? b.n : b.n - 1];
+    const label = free ? (deep ? 'FREE — you know what to do 🔥' : 'FREE — kiss right now 💋') : items[b.n < BINGO_FREE ? b.n : b.n - 1];
     return el('button', {
       class: 'bcell' + (b.done ? ' done' : '') + (inWin.has(b.n) ? ' win' : ''),
       onclick: () => {
-        if (free) { toast('That one’s always free 💋'); return; }
+        if (free) {
+          // The free square of the sweet card hides the door to the second one.
+          if (!deep) {
+            freeTaps++;
+            clearTimeout(freeTimer);
+            freeTimer = setTimeout(() => { freeTaps = 0; }, 1500);
+            if (freeTaps >= 6) { freeTaps = 0; current = 'bingo2'; render(); return; }
+            toast(freeTaps >= 3 ? '…keep going 👀' : 'That one’s always free 💋');
+          } else toast('Always free 🔥');
+          return;
+        }
         b.done = !b.done; b.updatedAt = now(); commit();
-        const nowWins = bingoLines(new Set(DB.bingo.filter((x) => x.done).map((x) => x.n))).length;
-        if (b.done && nowWins > wins.length) toast('BINGO! You two 🎉💞');
+        const nowWins = bingoLines(new Set(col.filter((x) => x.done).map((x) => x.n))).length;
+        if (b.done && nowWins > wins.length) toast(deep ? 'BINGO. Well then 🔥' : 'BINGO! You two 🎉💞');
         render();
       },
     }, label);
   });
-  view.append(el('div', { class: 'bingo' }, cells));
-  view.append(el('p', { class: 'muted small center', style: 'margin-top:14px' }, 'Synced between your phones. No pressure, no order — just excuses to reach for each other.'));
+  view.append(el('div', { class: 'bingo' + (deep ? ' deep' : '') }, cells));
+  view.append(el('p', { class: 'muted small center', style: 'margin-top:14px' }, deep
+    ? 'Synced between your phones. A safeword and a sense of humor cover everything else.'
+    : 'Synced between your phones. No pressure, no order — just excuses to reach for each other.'));
 }
 
 // ---------- settings ----------
@@ -650,7 +746,7 @@ const hasKey = () => Boolean(DB.settings.apiKey);
 // are stripped from the payload before it ever leaves the device.
 const GIST_FILE = 'ortiz-us-os.json';
 function sharedPayload() {
-  return { entries: DB.entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, bingo: DB.bingo, savedAt: now() };
+  return { entries: DB.entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, bingo: DB.bingo, bingo2: DB.bingo2, recstate: DB.recstate, savedAt: now() };
 }
 function mergeCol(local, remote) {
   const byId = new Map(local.map((r) => [r.id, r]));
@@ -682,6 +778,8 @@ async function syncNow(manual) {
       DB.ideas = mergeCol(DB.ideas, remote.ideas);
       DB.tickets = mergeCol(DB.tickets, remote.tickets);
       DB.bingo = mergeCol(DB.bingo, remote.bingo);
+      DB.bingo2 = mergeCol(DB.bingo2, remote.bingo2);
+      DB.recstate = mergeCol(DB.recstate, remote.recstate);
       pruneTombstones();
       save(DB);
     }
