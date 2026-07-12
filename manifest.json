@@ -1,0 +1,12 @@
+{
+  "name": "Ortiz Us OS",
+  "short_name": "Us OS",
+  "description": "Chris & Kat's 2-2-2 app — date nights, getaways, and trips, kept on rhythm.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fbf7f8",
+  "theme_color": "#fbf7f8",
+  "icons": [
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
