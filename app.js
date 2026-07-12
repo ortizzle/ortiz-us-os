@@ -66,6 +66,19 @@ function nextSpecial(s) {
 }
 
 // ---------- couple's goals ----------
+// Shared by both coupon books — each of you has all ten to give.
+const COUPON_ITEMS = [
+  'I take your worst chore this week',
+  'Sleep-in morning — I’ve got everything handled',
+  'Breakfast in bed, no occasion needed',
+  '30-minute massage, redeemable tonight',
+  'Your night off — dinner’s on me, start to finish',
+  'One guilt-free solo afternoon',
+  'I plan the whole date — zero input needed',
+  'Your pick tonight — movie, show, whatever',
+  'Coffee delivered in bed for a whole week',
+  'One “you were right” — no debate, no footnotes',
+];
 const GOALS = [{
   id: 'dry-2027',
   emoji: '🥂',
@@ -80,21 +93,11 @@ const GOALS = [{
   id: 'love-coupons',
   emoji: '💌',
   title: 'Love coupons',
-  sub: 'Small acts of service, redeemable anytime. No expiration, no scorekeeping — hand one over and it happens.',
+  sub: 'A book of ten each. Mark one AFTER you’ve done it for the other — a running receipt of taking care of each other.',
   ends: null,
   passes: [
-    { kind: 'coupon', emoji: '💌', label: 'Coupons', one: 'love coupon', count: 10, items: [
-      'I take your worst chore this week',
-      'Sleep-in morning — I’ve got everything handled',
-      'Breakfast in bed, no occasion needed',
-      '30-minute massage, redeemable tonight',
-      'Your night off — dinner’s on me, start to finish',
-      'One guilt-free solo afternoon',
-      'I plan the whole date — zero input needed',
-      'Your pick tonight — movie, show, whatever',
-      'Coffee delivered in bed for a whole week',
-      'One “you were right” — no debate, no footnotes',
-    ] },
+    { kind: 'chris', emoji: '💙', label: 'From Chris', one: 'coupon from Chris', count: 10, items: COUPON_ITEMS },
+    { kind: 'kat',   emoji: '💜', label: 'From Kat',   one: 'coupon from Kat',   count: 10, items: COUPON_ITEMS },
   ],
 }];
 // Tickets get fixed ids (goal:kind:n) so both phones seed the identical set
@@ -340,22 +343,23 @@ function ticketModal(x, p) {
       el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
       el('button', { class: 'btn btn-primary', onclick: () => {
         x.used = false; x.usedAt = null; x.note = ''; x.updatedAt = now();
-        commit(); m.close(); toast('Ticket returned 🎟️'); render();
-      } }, 'Give it back'),
+        commit(); m.close(); toast(p.items ? 'Unmarked' : 'Ticket returned 🎟️'); render();
+      } }, p.items ? '↩ Unmark it' : 'Give it back'),
     ]);
     return;
   }
   const date = el('input', { class: 'input', type: 'date', value: todayStr() });
-  const note = el('input', { class: 'input', placeholder: 'What’s the occasion? (optional)' });
-  const m = modal(p.items ? `${p.emoji} Redeem: ${one}` : `${p.emoji} Use a ${one}?`, [
-    el('label', { class: 'field-label' }, 'When'), date,
-    el('label', { class: 'field-label' }, 'Occasion'), note,
-  ], [
+  const note = el('input', { class: 'input', placeholder: p.items ? 'Any details worth remembering? (optional)' : 'What’s the occasion? (optional)' });
+  const m = modal(p.items ? `${p.emoji} ${one}` : `${p.emoji} Use a ${one}?`, [
+    p.items ? el('p', { class: 'muted small', style: 'margin:0' }, `Mark this after it’s done — it’s a receipt, not a promise.`) : null,
+    el('label', { class: 'field-label' }, p.items ? 'When did it happen?' : 'When'), date,
+    el('label', { class: 'field-label' }, p.items ? 'Details' : 'Occasion'), note,
+  ].filter(Boolean), [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Not yet'),
     el('button', { class: 'btn btn-primary', onclick: () => {
       x.used = true; x.usedAt = date.value || todayStr(); x.note = note.value.trim(); x.updatedAt = now();
-      commit(); m.close(); toast('Enjoy it — you earned it 🥂'); render();
-    } }, 'Use it'),
+      commit(); m.close(); toast(p.items ? 'One for the books 💌' : 'Enjoy it — you earned it 🥂'); render();
+    } }, p.items ? '✓ I did this' : 'Use it'),
   ]);
   note.focus();
 }
@@ -399,10 +403,15 @@ async function planWithClaude(e) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': s.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      // Date nights are a few hours, not a festival: options must be separate,
+      // single-focus alternatives — never interests stacked into one itinerary.
       body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 500, thinking: { type: 'disabled' }, messages: [{ role: 'user', content:
         `A married couple near ${s.city || 'Phoenix, AZ'} intends to book this ${c.title.toLowerCase()}: "${e.title || 'untitled'}" on ${e.date}${e.notes ? ` (notes: ${e.notes})` : ''}.`
-        + (s.interests ? ` They enjoy: ${s.interests}.` : '')
-        + ` Help them get it from intention to booked: 2-3 concrete suggestions naming real places, what to reserve and how far ahead, one upgrade worth considering. Under 150 words, plain prose, no headers, no invented event dates.` }] }),
+        + (s.interests ? ` Their interests (pick ONE per option, don't combine them): ${s.interests}.` : '')
+        + ((e.type === 'date' || e.type === 'occasion')
+          ? ` They have only a few hours that evening. Offer 2-3 SEPARATE single-focus options — each is one thing to do (one restaurant OR one hike OR one show — never dinner plus an activity chained together). For each: the real place by name, why it fits, and what to reserve or check ahead.`
+          : ` Offer 2-3 concrete suggestions naming real places, what to reserve and how far ahead, and one upgrade worth considering.`)
+        + ` Under 150 words, plain prose, no headers, no invented event dates.` }] }),
     });
     if (!res.ok) throw new Error('Claude ' + res.status);
     const json = await res.json();

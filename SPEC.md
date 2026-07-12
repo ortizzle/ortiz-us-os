@@ -96,11 +96,15 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - Shared commitments rendered as interactive passes, synced to both phones.
 - First goal: **alcohol-free through Jan 17, 2027**, with grace built in —
   12 🎟️ drink tickets and 3 🏖️ weekend escape passes for the whole stretch.
-- Second goal: **💌 Love coupons** — 10 acts-of-service coupons with no
-  expiration (worst-chore takeover, sleep-in morning, breakfast in bed,
-  massage, night off, solo afternoon, full-date planning, your-pick night,
-  coffee-in-bed week, one no-debate "you were right"). Pass `items` gives
-  each ticket its own label; goals without `ends` show ∞.
+- Second goal: **💌 Love coupons** — his & hers books of 10 acts-of-service
+  coupons each (💙 From Chris, 💜 From Kat), no expiration. **Receipt
+  semantics**: you mark one from YOUR book *after* doing it for the other —
+  the books fill up as a synced record of taking care of each other, and
+  each phone sees both books. Coupons: worst-chore takeover, sleep-in
+  morning, breakfast in bed, massage, night off, solo afternoon, full-date
+  planning, your-pick night, coffee-in-bed week, one no-debate "you were
+  right". Pass `items` gives each ticket its own label; goals without
+  `ends` show ∞.
 - Tap an unused ticket to use it (date + optional occasion note); tap a used
   one to see the occasion or give it back.
 - Goal definitions live in `GOALS` in `app.js` — adding a future goal is a
