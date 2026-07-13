@@ -66,7 +66,14 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - **✅ Booked** — plans that are locked in, soonest first, with countdowns.
   Special dates (anniversary Sep 12, 2013 with years count; birthdays
   Chris Feb 26, Kat Aug 15) auto-surface here only when within 45 days —
-  clean the rest of the year (defined in `SPECIAL` in `app.js`).
+  clean the rest of the year (defined in `SPECIAL` in `app.js`). Tapping a
+  special-date row opens a **🎁 private stash** for that person/occasion —
+  gift ideas, trip thoughts, hints they dropped — device-local, never
+  synced, so it works like a surprise scratchpad.
+- **Lookup links** — curated-pick sheets and any event with a known location
+  get link-outs for menu & prices (or stays & prices for getaways/trips),
+  map & hours, and reviews. Links are constructed searches (Google/Maps/
+  Yelp), not hardcoded venue URLs, so they can't rot.
 - **🔨 Still planning** — plans with a date but details not locked in. Every
   planned entry carries a `status` flag (`planning` default → `booked`),
   toggled right on the card. Getaways/trips in planning carry a reminder to
