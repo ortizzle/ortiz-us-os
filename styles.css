@@ -93,9 +93,11 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .stat:hover { border-color: var(--accent); }
 .stat .s-emoji { font-size: 20px; line-height: 1.3; }
 .stat .s-name { font-weight: 700; font-size: 13.5px; }
+.stat .s-statusrow { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
 .stat .s-status { font-weight: 800; font-size: 15px; letter-spacing: -0.01em; }
 .stat .s-status.due { color: var(--accent); }
 .stat .s-status.ok { color: var(--good); }
+.stat .s-count { color: var(--good); font-weight: 800; font-size: 15px; white-space: nowrap; }
 .stat .s-meta { color: var(--text-2); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* idea + history rows */

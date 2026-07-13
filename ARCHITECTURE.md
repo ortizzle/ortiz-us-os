@@ -27,6 +27,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
               rating, planned, status, mem, hidden, updatedAt, deleted }],
   secrets: { entryId: { field: value } },   // device-local, never synced
   stash:   { person: [{ id, text, done, createdAt }] }, // device-local, never synced
+  deepcache: { key: { text, at } },         // device-local ✨ result cache, ~30 days
   ideas:   [{ id, type, text, source, done, private, updatedAt, deleted }],
   tickets: [{ id, goal, kind, n, used, usedAt, note, updatedAt }],
   coupons: [{ id, from, n, text, note, sentAt, seenAt, updatedAt, deleted }],
@@ -55,9 +56,14 @@ One `localStorage` key, `ortiz-us-os`, holding:
   the secret (same guarantee as private ideas, at field granularity). Secrets
   for deleted/pruned entries are dropped in `pruneTombstones`.
 - **`stash`** is the 🎁 per-person surprise scratchpad (gift/trip ideas about
-  the other), opened by tapping a special-date row in ✅ Booked. Device-local
-  like `secrets` — never in `sharedPayload`, saved with `save()` not
-  `commit()` since there's nothing to sync.
+  the other), opened from the Surprise-stashes card on Goals (year-round) or
+  by tapping a special-date row in ✅ Booked when one is surfaced.
+  Device-local like `secrets` — never in `sharedPayload`, saved with
+  `save()` not `commit()` since there's nothing to sync.
+- **`deepcache`** stores paid-for ✨ responses (curated-pick deep dives keyed
+  `rec:<name>`, per-plan idea runs keyed `plan:<entryId>`) so reopening shows
+  them instantly instead of re-spending tokens; explicit refresh re-fetches.
+  Device-local, aged out after ~30 days in `pruneTombstones`.
 - `ideas.source` is `'you'` or `'claude'`.
 - `tickets` are goal passes (see `GOALS` in `app.js`). They use
   **deterministic ids** (`goal:kind:n`, e.g. `dry-2027:drink:1`) so both

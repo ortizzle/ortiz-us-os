@@ -69,7 +69,10 @@ after an update.
   statewide/~6 h drive, trips go anywhere. Anniversary and birthdays
   auto-surface in ✅ Booked within 45 days — and tapping one opens a **🎁
   private idea stash** for that person (gift ideas, trip thoughts, hints
-  they dropped): your phone only, never syncs.
+  they dropped): your phone only, never syncs. The stashes are also
+  available year-round from the **Surprise stashes** card on Goals. ✨
+  results (deep dives, per-plan ideas) are **cached on-device for ~30
+  days** — reopening is free; refresh to spend tokens on a new take.
 - **Lookup links** — curated picks and any event with a location get
   link-outs for menu & prices (stays & prices for getaways/trips), map &
   hours, and reviews. Built as live searches, so they can't go stale.
@@ -115,7 +118,8 @@ locked it, the other phone already saw it.
 | Shared ideas & curated-pick reactions | 🔒 Private ideas |
 | Goal tickets, bingo squares | 🔒 Locked (surprise) field values |
 | **Sent** love coupons | Unsent love coupons (they're not data at all) |
-| | 🎁 Special-date idea stashes |
+| | 🎁 Surprise idea stashes |
+| | ✨ Cached Claude results (~30 days) |
 
 Sync runs a couple of seconds after any change and whenever the app comes
 back into view; **⇅ Sync now** in Settings forces one.

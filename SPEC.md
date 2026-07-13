@@ -69,7 +69,12 @@ Three sections with jump-chips (a mini table of contents) at the top:
   clean the rest of the year (defined in `SPECIAL` in `app.js`). Tapping a
   special-date row opens a **🎁 private stash** for that person/occasion —
   gift ideas, trip thoughts, hints they dropped — device-local, never
-  synced, so it works like a surprise scratchpad.
+  synced, so it works like a surprise scratchpad. All three stashes (Kat,
+  Chris, Anniversary) are reachable year-round from the **Surprise stashes**
+  card on Goals, without special dates cluttering ✅ Booked out of season.
+- **✨ results are keepers** — deep dives and per-plan idea runs cache
+  on-device for ~30 days (`deepcache`) and show instantly on reopen; an
+  explicit ↻ refresh is the only thing that re-spends tokens.
 - **Lookup links** — curated-pick sheets and any event with a known location
   get link-outs for menu & prices (or stays & prices for getaways/trips),
   map & hours, and reviews. Links are constructed searches (Google/Maps/
