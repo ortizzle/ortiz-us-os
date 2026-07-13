@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v16 · stashes & keepers';
+const APP_VERSION = 'v17 · big numbers';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -811,7 +811,7 @@ function renderRhythm() {
     let status, cls, count = '';
     if (planned) {
       const until = daysBetween(t, planned.date);
-      count = until === 0 ? 'today!' : until === 1 ? 'tomorrow' : until < 0 ? `${-until}d ago` : `in ${until}d`;
+      count = until === 0 ? 'today!' : until === 1 ? 'tmrw!' : until < 0 ? `${-until}d ago` : `${until}d`;
       status = planned.status === 'booked' ? '✅ booked' : '🔨 planning';
       cls = planned.status === 'booked' ? 'ok' : 'due';
     }
