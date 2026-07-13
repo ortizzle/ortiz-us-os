@@ -26,6 +26,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
   entries: [{ id, type, date, dateEnd, title, loc, time, dress, pack, notes,
               rating, planned, status, mem, hidden, updatedAt, deleted }],
   secrets: { entryId: { field: value } },   // device-local, never synced
+  stash:   { person: [{ id, text, done, createdAt }] }, // device-local, never synced
   ideas:   [{ id, type, text, source, done, private, updatedAt, deleted }],
   tickets: [{ id, goal, kind, n, used, usedAt, note, updatedAt }],
   coupons: [{ id, from, n, text, note, sentAt, seenAt, updatedAt, deleted }],
@@ -53,6 +54,10 @@ One `localStorage` key, `ortiz-us-os`, holding:
   saves never touch those keys, so a merge from the partner's edits can't wipe
   the secret (same guarantee as private ideas, at field granularity). Secrets
   for deleted/pruned entries are dropped in `pruneTombstones`.
+- **`stash`** is the 🎁 per-person surprise scratchpad (gift/trip ideas about
+  the other), opened by tapping a special-date row in ✅ Booked. Device-local
+  like `secrets` — never in `sharedPayload`, saved with `save()` not
+  `commit()` since there's nothing to sync.
 - `ideas.source` is `'you'` or `'claude'`.
 - `tickets` are goal passes (see `GOALS` in `app.js`). They use
   **deterministic ids** (`goal:kind:n`, e.g. `dry-2027:drink:1`) so both

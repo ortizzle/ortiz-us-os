@@ -26,6 +26,8 @@ full shape. Key invariants:
 - **Every mutation bumps `updatedAt`** (`now()`, ISO string) — sync's merge
   logic depends on it to pick the newer record.
 - **`settings` never syncs.** It's local-only (API key, Gist token, theme).
+  Same for **`stash`** (🎁 per-person gift-idea scratchpads) — device-local,
+  saved with `save()` not `commit()`.
 - **Goal tickets, bingo squares (both cards), curated-pick reactions, and
   love coupons use deterministic ids** (`goal:kind:n`, `bingo:n`, `bingo2:n`,
   `rec:<name>`, `coupon:<kind>:<n>`) — this is what keeps both phones from

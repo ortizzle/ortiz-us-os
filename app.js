@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v14 · closer to home';
+const APP_VERSION = 'v15 · little extras';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -31,6 +31,7 @@ function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
 let DB = load();
 DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,loc,time,dress,pack,notes,rating,planned,status,mem,hidden,updatedAt,deleted}
 DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: { field: value } } — never synced
+DB.stash ||= {};     // 🎁 per-person surprise scratchpads (gift/trip ideas), DEVICE-LOCAL: { kat: [{id,text,done,createdAt}] } — never synced
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
 DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,note,updatedAt}
 DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seenAt,updatedAt,deleted}
@@ -72,6 +73,52 @@ function nextSpecial(s) {
   if (d < t) d = new Date(t.getFullYear() + 1, s.month - 1, s.day);
   const date = `${d.getFullYear()}-${String(s.month).padStart(2,'0')}-${String(s.day).padStart(2,'0')}`;
   return { date, left: daysBetween(todayStr(), date), years: s.since ? d.getFullYear() - s.since : null };
+}
+
+// 🎁 Per-occasion surprise scratchpad, opened from a special-date row. Lives
+// in DB.stash — device-local like secrets, so gift/trip ideas about the
+// other person never sync. Saved with save(), not commit(): nothing to sync.
+function stashSheet(sp) {
+  const key = sp.label.toLowerCase();
+  DB.stash[key] ||= [];
+  const list = DB.stash[key];
+  const inp = el('input', { class: 'input', placeholder: 'Gift idea, trip thought, a hint they dropped…', onkeydown: (e) => { if (e.key === 'Enter') add(); } });
+  const wrap = el('div', {});
+  function redraw() {
+    clear(wrap);
+    if (!list.length) wrap.append(el('p', { class: 'muted small center', style: 'padding:10px 0' }, 'Nothing stashed yet.'));
+    for (const it of list) wrap.append(el('div', { class: 'row' + (it.done ? ' done' : '') }, [
+      el('div', { class: 'r-main' }, el('div', { class: 'r-title' }, it.text)),
+      el('button', { class: 'btn btn-ghost btn-sm', title: it.done ? 'Un-do' : 'Done / got it', onclick: () => { it.done = !it.done; save(DB); redraw(); } }, it.done ? '↩' : '✓'),
+      el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => { list.splice(list.indexOf(it), 1); save(DB); redraw(); } }, '✕'),
+    ]));
+  }
+  function add() {
+    const text = inp.value.trim(); if (!text) return;
+    list.unshift({ id: uid(), text, done: false, createdAt: now() });
+    save(DB); inp.value = ''; redraw();
+  }
+  redraw();
+  const m = modal(`${sp.emoji} ${sp.label} — your eyes only`, [
+    el('p', { class: 'muted small', style: 'margin:0 0 10px' }, 'Gift ideas, trip thoughts, sizes, hints they dropped. Lives on THIS phone only — never syncs, so the surprise holds.'),
+    el('div', { class: 'addbox' }, [inp, el('button', { class: 'btn btn-primary', onclick: add }, 'Add')]),
+    wrap,
+  ], [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Done')]);
+  inp.focus();
+}
+
+// Guaranteed-valid lookup links: constructed searches (menu/prices, map &
+// hours, reviews) rather than hardcoded venue URLs that rot.
+function lookupLinks(query, type) {
+  const q = encodeURIComponent(query);
+  const money = type === 'getaway' || type === 'trip'
+    ? ['🏨 Stays & prices', `https://www.google.com/search?q=${q}+hotels+prices`]
+    : ['📋 Menu & prices', `https://www.google.com/search?q=${q}+menu+prices`];
+  return el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
+    money,
+    ['📍 Map & hours', `https://www.google.com/maps/search/?api=1&query=${q}`],
+    ['⭐ Reviews', `https://www.yelp.com/search?find_desc=${q}`],
+  ].map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
 }
 
 // ---------- couple's goals ----------
@@ -410,6 +457,7 @@ function render() {
   else if (current === 'ideas') renderIdeas();
   else if (current === 'goals') renderGoals();
   else if (current === 'bingo' || current === 'bingo2') renderBingo();
+  else if (current === 'settings') renderSettings();
   else renderHistory();
 }
 
@@ -757,11 +805,11 @@ function renderRhythm() {
 
   view.append(el('h2', { id: 'sec-booked' }, '✅ Booked'));
   if (nearSpecial.length) for (const { s, nx } of nearSpecial) {
-    view.append(el('div', { class: 'row' }, [
+    view.append(el('div', { class: 'row rec', onclick: () => stashSheet(s), title: 'Your private scratchpad for this one' }, [
       el('span', { class: 'r-emoji' }, s.emoji),
       el('div', { class: 'r-main' }, [
         el('div', { class: 'r-title' }, s.since ? `${s.label} — ${nx.years} years` : `${s.label}’s birthday`),
-        el('div', { class: 'r-meta' }, fmt(nx.date)),
+        el('div', { class: 'r-meta' }, `${fmt(nx.date)} · 🎁 tap for your private idea stash`),
       ]),
       el('span', { class: 'chip love' }, nx.left === 0 ? 'today! 🎉' : `in ${nx.left}d`),
     ]));
@@ -873,6 +921,7 @@ function recModal(r) {
     el('p', { class: 'muted small', style: 'margin:0' }, `${c.emoji} ${c.title} · ${r.area} · ${starStr(r.stars)}`),
     el('p', {}, r.why),
     el('p', { class: 'muted' }, r.more),
+    lookupLinks(`${r.name} ${r.area}`, r.type),
     deeper,
   ];
   const actions = [
@@ -1004,6 +1053,9 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // event's location is worth recording, and a graduated surprise needs its
   // fields visible to be unlockable. Only a fresh log stays lean.
   if (planned || entry) for (const [k, label] of PLANQ[type]) field(k, label);
+  // A known location gets lookup links — menus/prices, map & hours, reviews.
+  const knownLoc = entry && shownVal(entry, 'loc');
+  if (knownLoc) body.push(lookupLinks(knownLoc, type));
   field('notes', 'Notes');
 
   // Memories + rating make sense once it's happened (or when editing a past entry).
@@ -1149,8 +1201,8 @@ function renderBingo() {
     : 'Synced between your phones. No pressure, no order — just excuses to reach for each other.'));
 }
 
-// ---------- settings ----------
-function settingsModal() {
+// ---------- settings (a real tab since v15) ----------
+function renderSettings() {
   const s = DB.settings;
   const apiKey = el('input', { class: 'input', type: 'password', placeholder: 'sk-ant-…', value: s.apiKey || '' });
   const city = el('input', { class: 'input', placeholder: 'e.g. Chandler, AZ', value: s.city || '' });
@@ -1163,27 +1215,29 @@ function settingsModal() {
   const syncLine = el('p', { class: 'muted small', style: 'margin:6px 0 0' },
     s.gistToken && s.gistId ? `Sync configured${s.lastSyncAt ? ' · last synced ' + new Date(s.lastSyncAt).toLocaleString() : ''}` : 'Same setup as Home OS: both phones use the same private Gist + token. 🔒 Private ideas never leave this device.');
 
-  const m = modal('Settings', [
-    el('label', { class: 'field-label' }, 'This phone belongs to'), whoSel,
-    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Picks whose 💌 coupon book you send from. Kept on this device only.'),
-    el('label', { class: 'field-label' }, 'Home city (sharpens ideas)'), city,
-    el('label', { class: 'field-label' }, 'What you two enjoy'), interests,
-    el('label', { class: 'field-label' }, 'Claude API key (optional — for ✨ idea suggestions)'), apiKey,
-    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Kept on this device only. Get one at console.anthropic.com.'),
-    el('label', { class: 'field-label' }, 'Coupon email nudge (optional — Apps Script URL)'), couponHook,
-    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Emails the other of you a teaser when a coupon is sent. Setup steps: COUPON_EMAIL.md in the repo.'),
-    el('label', { class: 'field-label' }, 'Shared sync (optional — private Gist)'), gistToken, el('div', { style: 'height:8px' }), gistId,
-    syncLine,
-    el('div', { style: 'margin-top:10px' }, el('button', { class: 'btn btn-sm', onclick: () => syncNow(true) }, '⇅ Sync now')),
-    el('label', { class: 'field-label' }, 'Appearance'), themeSel,
+  view.append(
+    el('h1', {}, 'Settings'),
+    el('p', { class: 'sub' }, 'Everything on this page stays on this phone — none of it syncs.'),
+    el('div', { class: 'card' }, [
+      el('label', { class: 'field-label', style: 'margin-top:0' }, 'This phone belongs to'), whoSel,
+      el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Picks whose 💌 coupon book you send from.'),
+      el('label', { class: 'field-label' }, 'Home city (sharpens ideas)'), city,
+      el('label', { class: 'field-label' }, 'What you two enjoy'), interests,
+      el('label', { class: 'field-label' }, 'Claude API key (optional — for ✨ idea suggestions)'), apiKey,
+      el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Get one at console.anthropic.com.'),
+      el('label', { class: 'field-label' }, 'Coupon email nudge (optional — Apps Script URL)'), couponHook,
+      el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Emails the other of you a teaser when a coupon is sent. Setup steps: COUPON_EMAIL.md in the repo.'),
+      el('label', { class: 'field-label' }, 'Shared sync (optional — private Gist)'), gistToken, el('div', { style: 'height:8px' }), gistId,
+      syncLine,
+      el('div', { style: 'margin-top:10px' }, el('button', { class: 'btn btn-sm', onclick: () => syncNow(true) }, '⇅ Sync now')),
+      el('label', { class: 'field-label' }, 'Appearance'), themeSel,
+      el('div', { style: 'margin-top:16px' }, el('button', { class: 'btn btn-primary', onclick: () => {
+        DB.settings = { ...DB.settings, who: whoSel.value, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
+        commit(); applyTheme(); toast('Saved'); render();
+      } }, 'Save')),
+    ]),
     el('p', { class: 'muted small center', style: 'margin:16px 0 0' }, `Us OS · ${APP_VERSION}`),
-  ], [
-    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
-    el('button', { class: 'btn btn-primary', onclick: () => {
-      DB.settings = { ...s, who: whoSel.value, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
-      commit(); applyTheme(); m.close(); toast('Saved'); render();
-    } }, 'Save'),
-  ]);
+  );
 }
 const hasKey = () => Boolean(DB.settings.apiKey);
 
@@ -1296,7 +1350,6 @@ function setTab() {
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === current));
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { current = t.dataset.tab; if (current !== 'ideas') ideaFilter = 'all'; setTab(); render(); }));
-document.getElementById('settings-btn').addEventListener('click', settingsModal);
 
 // 💗 easter egg: six quick taps on the wordmark heart opens couples' bingo.
 let heartTaps = 0, heartTimer;

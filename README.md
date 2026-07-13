@@ -34,7 +34,7 @@ The app's whole job is making the current rung visible and the next rung easy.
 
 ## One-time setup (each phone)
 
-Open **⚙️ Settings** and set, top to bottom:
+Open the **⚙️ Settings tab** (bottom bar) and set, top to bottom:
 
 1. **This phone belongs to** — 💙 Chris or 💜 Kat. Powers the love-coupon
    books and surprises. *(Also promptable from the Goals tab.)*
@@ -67,7 +67,12 @@ after an update.
 - **✨ Ideas on a plan** (API key required) — real bookable options, scoped
   sensibly: date nights stay local, occasions roam the metro, getaways go
   statewide/~6 h drive, trips go anywhere. Anniversary and birthdays
-  auto-surface in ✅ Booked within 45 days.
+  auto-surface in ✅ Booked within 45 days — and tapping one opens a **🎁
+  private idea stash** for that person (gift ideas, trip thoughts, hints
+  they dropped): your phone only, never syncs.
+- **Lookup links** — curated picks and any event with a location get
+  link-outs for menu & prices (stays & prices for getaways/trips), map &
+  hours, and reviews. Built as live searches, so they can't go stale.
 - **Ideas tab** — a running backlog per cadence, plus **curated picks**:
   baked-in, hand-researched Phoenix-area recommendations with ratings and
   why — no API tokens needed. ✨ "Go deeper" fetches insider tips; ✨ also
@@ -110,6 +115,7 @@ locked it, the other phone already saw it.
 | Shared ideas & curated-pick reactions | 🔒 Private ideas |
 | Goal tickets, bingo squares | 🔒 Locked (surprise) field values |
 | **Sent** love coupons | Unsent love coupons (they're not data at all) |
+| | 🎁 Special-date idea stashes |
 
 Sync runs a couple of seconds after any change and whenever the app comes
 back into view; **⇅ Sync now** in Settings forces one.
