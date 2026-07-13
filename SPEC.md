@@ -95,10 +95,10 @@ Three sections with jump-chips (a mini table of contents) at the top:
 
 ### Ideas
 - A running backlog per cadence, freeform text entries.
-- **Curated picks** — baked-in, hand-researched Phoenix-area
-  recommendations (`RECS` in `app.js`): 17 date nights, 7 getaways, 5
-  destinations, each with area, star rating, a one-line why, and a longer
-  insider take behind a tap. Zero API tokens. "Add to ideas" copies one
+- **Curated picks** — baked-in, hand-researched recommendations (`RECS` in
+  `app.js`): 28 date nights (with a deliberate Chandler / Gilbert / Queen
+  Creek lean — home turf), 7 getaways, 5 destinations, each with area, star
+  rating, a one-line why, and a longer insider take behind a tap. Zero API tokens. "Add to ideas" copies one
   into the backlog; ✨ "Go deeper" (API key required) fetches current
   practical tips on demand. Picks can be ✕ dismissed (hidden, restorable
   via a "dismissed · show" toggle) or marked ✓ done (sinks to the bottom
