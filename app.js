@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v12 · details & surprises';
+const APP_VERSION = 'v13 · polish pass';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -653,7 +653,7 @@ async function planWithClaude(e) {
       // Date nights are a few hours, not a festival: options must be separate,
       // single-focus alternatives — never interests stacked into one itinerary.
       body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 500, thinking: { type: 'disabled' }, messages: [{ role: 'user', content:
-        `A married couple near ${s.city || 'Phoenix, AZ'} intends to book this ${c.title.toLowerCase()}: "${shownVal(e, 'title') || 'untitled'}" on ${e.date}${e.notes ? ` (notes: ${e.notes})` : ''}.`
+        `A married couple near ${s.city || 'Phoenix, AZ'} intends to book this ${c.title.toLowerCase()}: "${shownVal(e, 'title') || 'untitled'}" on ${e.date}${shownVal(e, 'loc') ? ` at/around ${shownVal(e, 'loc')}` : ''}${shownVal(e, 'notes') ? ` (notes: ${shownVal(e, 'notes')})` : ''}.`
         + ` ${IDEA_SCOPE[e.type]}`
         + (s.interests ? ` Their interests (pick ONE per option, don't combine them): ${s.interests}.` : '')
         + ((e.type === 'date' || e.type === 'occasion')
@@ -929,13 +929,14 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   const date = el('input', { class: 'input', type: 'date', value: entry ? entry.date : planned ? addDays(todayStr(), PLAN_LEAD[type]) : todayStr() });
   const body = [el('label', { class: 'field-label' }, planned ? 'Planned date' : 'Date'), date];
 
-  // Hideable fields carry a 🔒 toggle (planned events only — surprises live in
-  // the future). A locked field's value is written to DB.secrets (this device
-  // only); the synced entry keeps just the key in entry.hidden. On the
-  // partner's phone the field shows a read-only 🔒 teaser and is left untouched
-  // on save, so a merge from their edits can never wipe your secret.
+  // Hideable fields carry a 🔒 toggle. A locked field's value is written to
+  // DB.secrets (this device only); the synced entry keeps just the key in
+  // entry.hidden. On the partner's phone the field shows a read-only 🔒
+  // teaser and is left untouched on save, so a merge from their edits can
+  // never wipe your secret. Editing a PAST entry keeps the toggles too —
+  // that's how a surprise gets revealed after it happens (tap 🔒 off).
   const inputs = {}, locked = {};
-  const canHide = planned;
+  const canHide = planned || Boolean(entry);
   function field(k, labelText, { textarea = false } = {}) {
     // Partner's surprise: no input, nothing to save, just the teaser.
     if (entry && (entry.hidden || []).includes(k) && !iOwnSecret(entry, k)) {
@@ -943,9 +944,10 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
       return;
     }
     const val = entry ? (shownVal(entry, k) || '') : (k === 'title' ? prefill : '');
+    const hint = k === 'title' && !planned ? 'What did you do? (optional)' : PLAN_HINT[k] || 'optional';
     const input = textarea
-      ? el('textarea', { class: 'input', placeholder: PLAN_HINT[k] || 'optional' }, val)
-      : el('input', { class: 'input', type: FIELD_TYPE[k] || 'text', placeholder: PLAN_HINT[k] || 'optional', value: val });
+      ? el('textarea', { class: 'input', placeholder: hint }, val)
+      : el('input', { class: 'input', type: FIELD_TYPE[k] || 'text', placeholder: hint, value: val });
     inputs[k] = input;
     let lab;
     if (canHide) {
@@ -959,8 +961,10 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   }
 
   field('title', 'Title');
-  // Fresh plan or reopened event both show the detail fields now.
-  if (planned) for (const [k, label] of PLANQ[type]) field(k, label);
+  // Detail fields show on plans AND when editing any existing entry — a past
+  // event's location is worth recording, and a graduated surprise needs its
+  // fields visible to be unlockable. Only a fresh log stays lean.
+  if (planned || entry) for (const [k, label] of PLANQ[type]) field(k, label);
   field('notes', 'Notes');
 
   // Memories + rating make sense once it's happened (or when editing a past entry).

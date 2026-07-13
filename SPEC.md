@@ -52,36 +52,35 @@ Three sections with jump-chips (a mini table of contents) at the top:
   Details render on the event card and history rows ("Jul 20 – Jul 24 ·
   7:30 PM · Sedona").
 - **Per-event surprises** — every field but the date has a 🔒 toggle in the
-  sheet. Locking one keeps its value on your phone only (never synced); the
-  other of you sees "🔒 Kept as a surprise 💝" in its place. For hiding a
-  surprise getaway's location, a gift, a dressed-up plan — anything.
+  sheet (on plans and on existing entries). Locking one keeps its value on
+  your phone only (never synced); the other of you sees "🔒 Kept as a
+  surprise 💝" in its place. After the reveal, edit the event and toggle the
+  🔒 off — the field then syncs normally, so it reads right in History. For
+  hiding a surprise getaway's location, a gift, a dressed-up plan — anything.
 - **✨ Ideas** (was "Plan with Claude") — on planning cards with an API key,
   generates concrete options scoped by cadence: date nights stay local
   (Phoenix/Scottsdale/Tempe), special occasions range across the metro,
-  getaways reach statewide or within ~6 hours' drive, trips go destination-wide.
+  getaways reach statewide or within ~6 hours' drive, trips go
+  destination-wide. The prompt carries the plan's title, location, and notes
+  (via `shownVal`, so your own locked values still inform it).
 - **✅ Booked** — plans that are locked in, soonest first, with countdowns.
   Special dates (anniversary Sep 12, 2013 with years count; birthdays
   Chris Feb 26, Kat Aug 15) auto-surface here only when within 45 days —
   clean the rest of the year (defined in `SPECIAL` in `app.js`).
-- **🔨 Still planning** — plans with a date but details not locked. Every
+- **🔨 Still planning** — plans with a date but details not locked in. Every
   planned entry carries a `status` flag (`planning` default → `booked`),
-  toggled right on the card. Planning cards get **✨ Plan with Claude**
-  (API key required): concrete venue suggestions, what to reserve and how
-  far ahead, one upgrade idea. Getaways/trips in planning carry a reminder
-  to build a trip-guide app (like Jerome).
-- Cadence cards' status word speaks the ladder: `🔨 planning`, `✅ booked`,
-  `due in Nd` / `Nd overdue`, or `anytime` (occasions). No progress bars —
-  they read as noise.
-- **Log one** — record something that already happened: date, optional
-  title/notes, 1–5 ♥ rating, and **memory questions** (date night: favorite
-  moment / food / drink; getaway & trip: favorite activity / food / a moment
-  to keep). Memories show in History.
-- **Plan ahead** — schedule a future one; planning lead defaults scale with
-  the cadence (date +2wk, getaway +6wk, trip +6mo) to encourage planning
-  getaways and trips early with Kat.
-- Everything is **editable after submission** — ✎ on any upcoming or
-  history row reopens it. Editing a planned entry to a past date graduates
-  it to history.
+  toggled right on the card. Getaways/trips in planning carry a reminder to
+  build a trip-guide app (like Jerome).
+- **Logging** — via the flip link on the plan sheet, or automatically when a
+  planned event's date passes into history: 1–5 ♥ rating and **memory
+  questions** (date night: favorite moment / food / drink; getaway & trip:
+  favorite activity / food / a moment to keep). Memories show in History.
+- Plan-date defaults scale with the cadence (date +2wk, getaway +6wk, trip
+  +6mo) to encourage planning getaways and trips early.
+- Everything is **editable after submission** — tap an upcoming card, or ✎
+  on any history row. Editing a past entry shows the detail fields too, so
+  where-you-went can be recorded (or a surprise unlocked) after the fact.
+  Editing a planned entry to a past date graduates it to history.
 
 ### 💗 Easter eggs (two layers)
 - Tapping the topbar heart 6 times opens "Just us": a couples' bingo card,
@@ -97,7 +96,7 @@ Three sections with jump-chips (a mini table of contents) at the top:
 ### Ideas
 - A running backlog per cadence, freeform text entries.
 - **Curated picks** — baked-in, hand-researched Phoenix-area
-  recommendations (`RECS` in `app.js`): 10 date nights, 7 getaways, 5
+  recommendations (`RECS` in `app.js`): 17 date nights, 7 getaways, 5
   destinations, each with area, star rating, a one-line why, and a longer
   insider take behind a tap. Zero API tokens. "Add to ideas" copies one
   into the backlog; ✨ "Go deeper" (API key required) fetches current
