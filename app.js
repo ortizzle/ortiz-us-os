@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v15 · little extras';
+const APP_VERSION = 'v16 · stashes & keepers';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -32,6 +32,7 @@ let DB = load();
 DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,loc,time,dress,pack,notes,rating,planned,status,mem,hidden,updatedAt,deleted}
 DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: { field: value } } — never synced
 DB.stash ||= {};     // 🎁 per-person surprise scratchpads (gift/trip ideas), DEVICE-LOCAL: { kat: [{id,text,done,createdAt}] } — never synced
+DB.deepcache ||= {}; // paid-for ✨ results, DEVICE-LOCAL: { 'rec:<name>'|'plan:<entryId>': {text,at} } — kept ~30 days, never synced
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
 DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,note,updatedAt}
 DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seenAt,updatedAt,deleted}
@@ -49,6 +50,9 @@ function pruneTombstones() {
   // Drop hidden-field secrets whose entry is gone or tombstoned — nothing to overlay.
   const live = new Set(DB.entries.filter((e) => !e.deleted).map((e) => e.id));
   for (const id of Object.keys(DB.secrets)) if (!live.has(id)) delete DB.secrets[id];
+  // Paid-for ✨ results are worth keeping — for ~30 days, then they age out.
+  const dcut = new Date(Date.now() - 30 * 86400000).toISOString();
+  for (const k of Object.keys(DB.deepcache)) if ((DB.deepcache[k].at || '') < dcut) delete DB.deepcache[k];
 }
 const commit = () => { save(DB); scheduleSync(); };
 
@@ -103,7 +107,7 @@ function stashSheet(sp) {
     el('p', { class: 'muted small', style: 'margin:0 0 10px' }, 'Gift ideas, trip thoughts, sizes, hints they dropped. Lives on THIS phone only — never syncs, so the surprise holds.'),
     el('div', { class: 'addbox' }, [inp, el('button', { class: 'btn btn-primary', onclick: add }, 'Add')]),
     wrap,
-  ], [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Done')]);
+  ], [el('button', { class: 'btn btn-primary', onclick: () => { m.close(); render(); } }, 'Done')]);
   inp.focus();
 }
 
@@ -493,6 +497,20 @@ function renderGoals() {
     view.append(el('div', { class: 'card' }, kids));
   }
   view.append(couponsCard());
+  // 🎁 Year-round door to the surprise stashes — the special-date rows only
+  // surface near the date, but gift ideas accumulate all year. Booked stays
+  // clean; this card is the permanent way in.
+  view.append(el('div', { class: 'card' }, [
+    el('div', { class: 'card-top' }, [
+      el('div', { class: 'card-emoji' }, '🎁'),
+      el('div', {}, [el('div', { class: 'card-title' }, 'Surprise stashes'),
+        el('div', { class: 'card-cadence' }, 'Gift & trip ideas about each other, saved all year. Each phone keeps its own — nothing here syncs.')]),
+    ]),
+    el('div', { class: 'card-actions', style: 'margin-top:12px' }, SPECIAL.map((s) => {
+      const open = (DB.stash[s.label.toLowerCase()] || []).filter((x) => !x.done).length;
+      return el('button', { class: 'btn btn-sm', onclick: () => stashSheet(s) }, `${s.emoji} ${s.label}${open ? ` · ${open}` : ''}`);
+    })),
+  ]));
 }
 
 function ticketModal(x, p) {
@@ -722,10 +740,21 @@ const IDEA_SCOPE = {
 // The ladder: idea → plan (intention, dated) → ✅ booked. This "✨ Ideas"
 // button lives at the "plan" rung — concrete options to turn intention into a
 // booking, scoped by how far the cadence should reach.
-async function planWithClaude(e) {
+async function planWithClaude(e, force = false) {
   const c = cadenceOf(e.type);
-  const out = el('p', { class: 'small' }, el('span', { class: 'spinner' }));
-  const m = modal(`✨ Ideas: ${titleText(e)}`, [out], [el('button', { class: 'btn', onclick: () => m.close() }, 'Close')]);
+  // You paid for these tokens — cached ideas show instantly for ~30 days;
+  // only an explicit refresh spends again.
+  const cacheKey = 'plan:' + e.id;
+  const cached = !force && DB.deepcache[cacheKey];
+  const out = el('p', { class: 'small' }, cached ? cached.text : el('span', { class: 'spinner' }));
+  const m = modal(`✨ Ideas: ${titleText(e)}`, [
+    out,
+    cached ? el('p', { class: 'muted small' }, `Saved ${fmt(cached.at.slice(0, 10))} — refresh for new ones.`) : null,
+  ].filter(Boolean), [
+    cached ? el('button', { class: 'btn', onclick: () => { m.close(); planWithClaude(e, true); } }, '↻ Fresh ideas') : null,
+    el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close'),
+  ].filter(Boolean));
+  if (cached) return;
   try {
     const s = DB.settings;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -744,9 +773,12 @@ async function planWithClaude(e) {
     });
     if (!res.ok) throw new Error('Claude ' + res.status);
     const json = await res.json();
-    out.textContent = (json.content || []).filter((x) => x.type === 'text').map((x) => x.text).join('').trim();
+    const text = (json.content || []).filter((x) => x.type === 'text').map((x) => x.text).join('').trim();
+    out.textContent = text;
+    DB.deepcache[cacheKey] = { text, at: now() };
+    save(DB);
   } catch (err) {
-    out.textContent = 'Planning fetch failed: ' + err.message;
+    out.textContent = 'Ideas fetch failed: ' + err.message;
   }
 }
 
@@ -774,13 +806,13 @@ function renderRhythm() {
     const last = lastDone(c.type);
     const planned = nextPlanned(c.type);
 
-    // Status speaks the ladder: booked > planning > due-in / overdue. When
-    // something's on the calendar, show the concrete countdown to it.
-    let status, cls;
+    // Status speaks the ladder (planning/booked); the concrete countdown to
+    // a calendared event sits on the right in green.
+    let status, cls, count = '';
     if (planned) {
       const until = daysBetween(t, planned.date);
-      const when = until === 0 ? 'today!' : until === 1 ? 'tomorrow' : until < 0 ? `${-until}d ago` : `in ${until}d`;
-      status = `${planned.status === 'booked' ? '✅' : '🔨'} ${when}`;
+      count = until === 0 ? 'today!' : until === 1 ? 'tomorrow' : until < 0 ? `${-until}d ago` : `in ${until}d`;
+      status = planned.status === 'booked' ? '✅ booked' : '🔨 planning';
       cls = planned.status === 'booked' ? 'ok' : 'due';
     }
     else if (!c.days) { status = 'anytime'; cls = 'ok'; }
@@ -798,7 +830,10 @@ function renderRhythm() {
     return el('button', { class: 'stat', onclick: () => logModal(c.type, { planned: true }) }, [
       el('span', { class: 's-emoji' }, c.emoji),
       el('span', { class: 's-name' }, c.title),
-      el('span', { class: 's-status ' + cls }, status),
+      el('span', { class: 's-statusrow' }, [
+        el('span', { class: 's-status ' + cls }, status),
+        count ? el('span', { class: 's-count' }, count) : null,
+      ]),
       el('span', { class: 's-meta' }, meta),
     ]);
   })));
@@ -917,6 +952,13 @@ function setRecState(r, state) {
 function recModal(r) {
   const c = cadenceOf(r.type);
   const deeper = el('div', {});
+  const cacheKey = 'rec:' + r.name;
+  const showDeep = (d) => clear(deeper).append(
+    el('p', { class: 'small', style: 'background: var(--surface-2); border-radius: 12px; padding: 12px; margin-bottom: 4px' }, d.text),
+    el('p', { class: 'muted small', style: 'margin:0' }, `✨ saved ${fmt(d.at.slice(0, 10))}`),
+  );
+  // A paid deep-dive shows instantly for ~30 days; the button becomes refresh.
+  if (DB.deepcache[cacheKey]) showDeep(DB.deepcache[cacheKey]);
   const body = [
     el('p', { class: 'muted small', style: 'margin:0' }, `${c.emoji} ${c.title} · ${r.area} · ${starStr(r.stars)}`),
     el('p', {}, r.why),
@@ -944,10 +986,12 @@ function recModal(r) {
       });
       if (!res.ok) throw new Error('Claude ' + res.status);
       const json = await res.json();
-      clear(deeper).append(el('p', { class: 'small', style: 'background: var(--surface-2); border-radius: 12px; padding: 12px' }, (json.content || []).filter((x) => x.type === 'text').map((x) => x.text).join('').trim()));
-      b.remove();
+      const d = { text: (json.content || []).filter((x) => x.type === 'text').map((x) => x.text).join('').trim(), at: now() };
+      DB.deepcache[cacheKey] = d; save(DB);
+      showDeep(d);
+      b.disabled = false; b.textContent = '↻ Refresh take';
     } catch (err) { toast('Deep dive failed: ' + err.message); b.disabled = false; b.textContent = '✨ Go deeper'; }
-  } }, '✨ Go deeper'));
+  } }, DB.deepcache[cacheKey] ? '↻ Refresh take' : '✨ Go deeper'));
   const m = modal(r.name, body, actions);
 }
 
