@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v13 · polish pass';
+const APP_VERSION = 'v14 · closer to home';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -308,6 +308,39 @@ const RECS = [
   { type: 'date', name: 'Stand-up at Stand Up Live', area: 'Downtown Phoenix', stars: 4,
     why: 'A real comedy club — dinner-and-a-show energy without leaving downtown.',
     more: 'Touring headliners most weekends. Grab dinner at CityScape nearby, then two-drink-minimum your way through the late show. Book a booth, sit close-ish (not front-row unless you want in on it).' },
+  { type: 'date', name: 'The Ostrich', area: 'Downtown Chandler', stars: 4.5,
+    why: 'Speakeasy hidden beneath Crust — moody basement cocktails, ten minutes from home.',
+    more: 'Down the stairs inside Crust Simply Italian on San Marcos Place. Low ceilings, craft cocktails, 1920s basement bones (it really was a bootlegger-era cellar). Do dinner upstairs, descend for the nightcap. Weekends fill — go early or midweek.' },
+  { type: 'date', name: 'The Perch Brewery', area: 'Downtown Chandler', stars: 4,
+    why: 'Craft beer on a patio full of rescued tropical birds — the most Chandler thing there is.',
+    more: 'Dozens of rescued parrots and macaws around the beer garden. Casual, loud in the fun way, and walkable to the rest of downtown Chandler. Evening patio weather Oct–May is the move.' },
+  { type: 'date', name: 'Hidden House', area: 'Chandler', stars: 4,
+    why: 'A cocktail lounge tucked behind an unassuming little house — date-night speakeasy #2.',
+    more: 'Just off Dr. A.J. Chandler Park. Dark, intimate, serious cocktail list. Small enough that it feels like a secret even when it’s busy. Pair with dinner on the square and walk over.' },
+  { type: 'date', name: 'Downtown Gilbert crawl', area: 'Heritage District', stars: 4.5,
+    why: 'The water tower strip: Postino, OHSO, Barrio Queen, Culinary Dropout — pick two and wander.',
+    more: 'The southeast valley’s best walkable date. Snag a patio at Postino Annex for wine + bruschetta, wander under the tower, end with dessert or a game of cornhole at Culinary Dropout. Look for the White Rabbit if you know, you know.' },
+  { type: 'date', name: 'Hale Centre Theatre', area: 'Downtown Gilbert', stars: 4,
+    why: 'Live theatre in the round, then a Heritage District dinner — a proper dressed-up date.',
+    more: 'Family-run, musicals and comedies year-round, seats close to the action. Tickets are reasonable; book dinner nearby before the show. Check the season calendar and grab dates early for popular runs.' },
+  { type: 'date', name: 'Riparian Preserve + observatory night', area: 'Gilbert', stars: 4,
+    why: 'Sunset walk among the herons, then real telescope time at the Gilbert observatory.',
+    more: 'The Riparian Preserve at Water Ranch: 110 acres of ponds and trails that don’t feel like the suburbs. The Rotary Centennial Observatory next to the library opens for public viewing most Friday/Saturday nights — check hours. Cheap, unhurried, quietly romantic.' },
+  { type: 'date', name: 'Barnone at Agritopia', area: 'Gilbert', stars: 4.5,
+    why: 'A makers’ hall in a farm neighborhood — urban winery, wood-fired pizza, workshops.',
+    more: 'Garage-East pours wine made on site; grab pizza next door and walk Agritopia’s farm lanes after. First-Friday-style events some months. The “we did something different” date that’s 15 minutes away.' },
+  { type: 'date', name: 'Schnepf Farms', area: 'Queen Creek', stars: 4.5,
+    why: 'Peach-picking mornings in May, farm dinners in the orchard in season.',
+    more: 'The Dinner Down the Orchard series (fall–spring) is a genuinely special night — long table, string lights, chef-cooked courses between the trees. Book the moment dates drop. Peach season (roughly May) makes a great morning date with pie.' },
+  { type: 'date', name: 'Queen Creek Olive Mill', area: 'Queen Creek', stars: 4,
+    why: 'Olive-oil tasting, mill tours, and a long Tuscan-ish lunch under the trees.',
+    more: 'Arizona’s only working olive mill. Do the tasting bar, split a charcuterie board at del Piero, and bring home a bottle. Daytime date; pairs well with a Schnepf Farms or San Tan hike add-on.' },
+  { type: 'date', name: 'Koli Equestrian Center sunset ride', area: 'Chandler / Gila River', stars: 4,
+    why: 'Guided horseback through the Sonoran desert at golden hour — 20 minutes from home.',
+    more: 'On the Gila River Community just south of Chandler. The sunset rides are the ones worth booking — saguaros, mountains, that light. No experience needed; wear jeans. Reserve ahead, especially in cooler months.' },
+  { type: 'date', name: 'Desert Belle on Saguaro Lake', area: '45 min northeast', stars: 4,
+    why: 'A narrated sunset cruise between canyon walls — desert lake date, zero effort.',
+    more: 'The Desert Belle runs narrated cruises on Saguaro Lake; the twilight and live-music sailings are the date ones. Canyon walls, bighorn sightings if you’re lucky, and a bar on board. Book ahead in spring and fall, and grab dinner in Mesa on the way home.' },
 
   { type: 'getaway', name: 'Sedona', area: '2h north', stars: 5,
     why: 'Red rocks, spas, creekside dinners, stargazing — the classic for a reason.',
@@ -633,8 +666,8 @@ function upcomingCard(e) {
 
 // Geographic reach per cadence — date nights stay close, getaways range wide.
 const IDEA_SCOPE = {
-  date: 'Keep every option LOCAL to the immediate Phoenix–Scottsdale–Tempe area — a short drive, a normal evening out.',
-  occasion: 'Options can range across the greater Phoenix metro (Scottsdale, Mesa, Chandler, Gilbert, Glendale, downtown Phoenix) — worth a longer drive for something special.',
+  date: 'Keep every option LOCAL to the southeast valley — Chandler, Gilbert, Queen Creek, Mesa, Tempe — a short drive from home, a normal evening out. Downtown Chandler and downtown Gilbert (Heritage District) are the home turf; only reach to Scottsdale or Phoenix for something truly worth the drive.',
+  occasion: 'Options can range across the greater Phoenix metro (Chandler, Gilbert, Scottsdale, Mesa, Tempe, downtown Phoenix) — worth a longer drive for something special.',
   getaway: 'Options can be anywhere in Arizona or within about a 6-hour drive of Phoenix (Sedona, Flagstaff, Prescott, Tucson, Bisbee, even San Diego, Vegas, or Rocky Point).',
   trip: 'Options are bigger destination trips — flights and multiple nights are fine.',
 };
@@ -653,7 +686,7 @@ async function planWithClaude(e) {
       // Date nights are a few hours, not a festival: options must be separate,
       // single-focus alternatives — never interests stacked into one itinerary.
       body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 500, thinking: { type: 'disabled' }, messages: [{ role: 'user', content:
-        `A married couple near ${s.city || 'Phoenix, AZ'} intends to book this ${c.title.toLowerCase()}: "${shownVal(e, 'title') || 'untitled'}" on ${e.date}${shownVal(e, 'loc') ? ` at/around ${shownVal(e, 'loc')}` : ''}${shownVal(e, 'notes') ? ` (notes: ${shownVal(e, 'notes')})` : ''}.`
+        `A married couple near ${s.city || 'Chandler/Gilbert, AZ (southeast Phoenix valley)'} intends to book this ${c.title.toLowerCase()}: "${shownVal(e, 'title') || 'untitled'}" on ${e.date}${shownVal(e, 'loc') ? ` at/around ${shownVal(e, 'loc')}` : ''}${shownVal(e, 'notes') ? ` (notes: ${shownVal(e, 'notes')})` : ''}.`
         + ` ${IDEA_SCOPE[e.type]}`
         + (s.interests ? ` Their interests (pick ONE per option, don't combine them): ${s.interests}.` : '')
         + ((e.type === 'date' || e.type === 'occasion')
@@ -693,9 +726,15 @@ function renderRhythm() {
     const last = lastDone(c.type);
     const planned = nextPlanned(c.type);
 
-    // Status speaks the ladder: booked > planning > due-in / overdue.
+    // Status speaks the ladder: booked > planning > due-in / overdue. When
+    // something's on the calendar, show the concrete countdown to it.
     let status, cls;
-    if (planned) { status = planned.status === 'booked' ? '✅ booked' : '🔨 planning'; cls = planned.status === 'booked' ? 'ok' : 'due'; }
+    if (planned) {
+      const until = daysBetween(t, planned.date);
+      const when = until === 0 ? 'today!' : until === 1 ? 'tomorrow' : until < 0 ? `${-until}d ago` : `in ${until}d`;
+      status = `${planned.status === 'booked' ? '✅' : '🔨'} ${when}`;
+      cls = planned.status === 'booked' ? 'ok' : 'due';
+    }
     else if (!c.days) { status = 'anytime'; cls = 'ok'; }
     else if (!last) { status = 'let’s start'; cls = 'due'; }
     else {
@@ -852,7 +891,7 @@ function recModal(r) {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': s.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
         body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 400, thinking: { type: 'disabled' }, messages: [{ role: 'user', content:
-          `A married couple near ${s.city || 'Phoenix, AZ'} is considering this for a ${c.title.toLowerCase()}: ${r.name} (${r.area}). ${r.why} Give a short, practical deeper take: best time to go, 2-3 insider tips, what to book ahead, rough cost feel. Under 120 words, plain prose, no headers. Don't invent event dates.` }] }),
+          `A married couple near ${s.city || 'Chandler/Gilbert, AZ (southeast Phoenix valley)'} is considering this for a ${c.title.toLowerCase()}: ${r.name} (${r.area}). ${r.why} Give a short, practical deeper take: best time to go, 2-3 insider tips, what to book ahead, rough cost feel. Under 120 words, plain prose, no headers. Don't invent event dates.` }] }),
       });
       if (!res.ok) throw new Error('Claude ' + res.status);
       const json = await res.json();
@@ -1021,7 +1060,9 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   };
   const saveEdit = () => {
     apply(entry);
-    if (entry.planned && entry.date <= todayStr()) entry.planned = false; // past date → graduate to history
+    // Strictly past → graduate to history. Today stays upcoming — editing a
+    // plan the morning-of (adding the time, say) must not bury it pre-event.
+    if (entry.planned && entry.date < todayStr()) entry.planned = false;
     commit(); m.close(); toast('Updated 💞'); render();
   };
   const remove = () => {
@@ -1112,7 +1153,7 @@ function renderBingo() {
 function settingsModal() {
   const s = DB.settings;
   const apiKey = el('input', { class: 'input', type: 'password', placeholder: 'sk-ant-…', value: s.apiKey || '' });
-  const city = el('input', { class: 'input', placeholder: 'e.g. Phoenix, AZ', value: s.city || '' });
+  const city = el('input', { class: 'input', placeholder: 'e.g. Chandler, AZ', value: s.city || '' });
   const interests = el('input', { class: 'input', placeholder: 'e.g. live music, tacos, hiking, comedy', value: s.interests || '' });
   const themeSel = el('select', { class: 'input' }, ['auto','light','dark'].map((v) => el('option', { value: v, selected: (s.theme||'auto')===v ? 'selected' : null }, v[0].toUpperCase()+v.slice(1))));
   const whoSel = el('select', { class: 'input' }, [['', 'Choose…'], ['chris', '💙 Chris'], ['kat', '💜 Kat']].map(([v, label]) => el('option', { value: v, selected: (s.who || '') === v ? 'selected' : null }, label)));
@@ -1220,7 +1261,8 @@ async function generateIdeas(type, btn) {
     const existing = DB.ideas.filter((i) => i.type === type).map((i) => i.text).join('; ');
     const month = new Date().toLocaleDateString('en-US', { month: 'long' });
     const prompt = `You help a married couple, Chris & Kat, keep their relationship playful. Suggest 4 specific, doable ${c.title.toLowerCase()} ideas (${c.cadence}).`
-      + (s.city ? ` They live in ${s.city} — name real venues, neighborhoods, and destinations near there, the kind of thing locals actually do.` : '')
+      + ` They live in ${s.city || 'the Chandler/Gilbert area (southeast Phoenix valley)'} — name real venues, neighborhoods, and destinations near there, the kind of thing locals actually do.`
+      + (type === 'date' ? ` ${IDEA_SCOPE.date}` : '')
       + ` It's ${month}, so lean seasonal (weather, festivals-season, that time of year).`
       + (s.interests ? ` They enjoy: ${s.interests}.` : '')
       + (existing ? ` Avoid repeating these they already have: ${existing}.` : '')
