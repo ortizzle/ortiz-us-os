@@ -153,3 +153,7 @@ npx serve .
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Data model, sync/merge, privacy guarantees |
 | [COUPON_EMAIL.md](COUPON_EMAIL.md) | The email-nudge Apps Script + setup |
 | [CLAUDE.md](CLAUDE.md) | Working conventions for changing the code |
+
+---
+
+*Current build: v18 · the grand tour.*
