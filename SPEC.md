@@ -141,7 +141,9 @@ Three sections with jump-chips (a mini table of contents) at the top:
   keepsake, and the sender's book shows "opened 💗" once it's been seen.
   Optionally, a send also fires an elegant **teaser email** ("something's
   waiting for you" — never the coupon itself) via a self-hosted Google Apps
-  Script webhook; see [COUPON_EMAIL.md](COUPON_EMAIL.md). Coupons:
+  Script webhook; see [COUPON_EMAIL.md](COUPON_EMAIL.md). Chris's book
+  carries an 11th ✨ **introduction coupon** ("I made this for us 💞 …the
+  grand tour…", full-width in his book) meant to be the very first send. Coupons:
   worst-chore takeover, sleep-in morning, breakfast in bed, massage, night
   off, solo afternoon, full-date planning, your-pick night, coffee-in-bed
   week, one no-debate "you were right".
