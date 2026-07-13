@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v17 · big numbers';
+const APP_VERSION = 'v18 · the grand tour';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -139,6 +139,13 @@ const COUPON_ITEMS = [
   'Coffee delivered in bed for a whole week',
   'One “you were right” — no debate, no footnotes',
 ];
+// Chris's book carries one extra — the app-introduction coupon, meant to be
+// the very first send (and the live test of the whole coupon pipeline).
+const INTRO_COUPON = 'I made this for us 💞 Redeem for the grand tour of Us OS, every question answered, and our first plan made together';
+const COUPON_BOOK = {
+  chris: [...COUPON_ITEMS, INTRO_COUPON],
+  kat:   [...COUPON_ITEMS],
+};
 const COUPLE = {
   chris: { name: 'Chris', emoji: '💙' },
   kat:   { name: 'Kat',   emoji: '💜' },
@@ -576,15 +583,16 @@ function couponsCard() {
   }
 
   const theirs = COUPLE[other(who)];
+  const book = COUPON_BOOK[who];
   const sent = new Map(DB.coupons.filter((c) => c.from === who && !c.deleted).map((c) => [c.n, c]));
   kids.push(el('div', { class: 'pass-head' }, [
     el('span', {}, `❤️ Your book — tap one to send`),
-    el('span', { class: 'chip' + (sent.size < COUPON_ITEMS.length ? ' love' : '') }, `${COUPON_ITEMS.length - sent.size} of ${COUPON_ITEMS.length} to give`),
+    el('span', { class: 'chip' + (sent.size < book.length ? ' love' : '') }, `${book.length - sent.size} of ${book.length} to give`),
   ]));
-  kids.push(el('div', { class: 'tickets coupons' }, COUPON_ITEMS.map((text, i) => {
+  kids.push(el('div', { class: 'tickets coupons' }, book.map((text, i) => {
     const c = sent.get(i + 1);
-    if (!c) return el('button', { class: 'ticket', title: text, onclick: () => sendCouponModal(i + 1) }, [
-      el('span', { class: 't-emoji' }, '❤️'),
+    if (!c) return el('button', { class: 'ticket' + (text === INTRO_COUPON ? ' intro' : ''), title: text, onclick: () => sendCouponModal(i + 1) }, [
+      el('span', { class: 't-emoji' }, text === INTRO_COUPON ? '✨' : '❤️'),
       el('span', { class: 't-label' }, text),
     ]);
     return el('button', {
@@ -618,7 +626,7 @@ function sendCouponModal(n) {
   const who = me(), theirs = COUPLE[other(who)];
   const note = el('input', { class: 'input', placeholder: 'Add a little note (optional)' });
   const m = modal(`💌 Send this to ${theirs.name}?`, [
-    couponCardEl({ from: who, text: COUPON_ITEMS[n - 1] }),
+    couponCardEl({ from: who, text: COUPON_BOOK[who][n - 1] }),
     el('p', { class: 'muted small', style: 'margin:0' },
       `It’ll appear in ${theirs.name}’s app as a surprise${DB.settings.couponHook ? ', with a little email nudge' : ''}. A coupon is a promise — no expiration.`),
     el('label', { class: 'field-label' }, 'Note'), note,
@@ -639,7 +647,7 @@ function sendCoupon(n, note) {
   const id = `coupon:${who}:${n}`;
   let c = DB.coupons.find((x) => x.id === id);
   if (!c) { c = { id, from: who, n }; DB.coupons.push(c); }
-  Object.assign(c, { deleted: false, text: COUPON_ITEMS[n - 1], note, sentAt: todayStr(), seenAt: null, updatedAt: now() });
+  Object.assign(c, { deleted: false, text: COUPON_BOOK[who][n - 1], note, sentAt: todayStr(), seenAt: null, updatedAt: now() });
   commit();
   sendCouponNudge(who);
 }
