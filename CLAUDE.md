@@ -42,6 +42,12 @@ full shape. Key invariants:
   `sharedPayload()` filters them out before anything is written to the Gist.
   Don't change this filter without confirming with the user; it's a
   surprise-preserving privacy guarantee, not an implementation detail.
+- **`secrets` (locked 🔒 event fields) never leave the device either.** The
+  real value lives in `DB.secrets[entryId][field]` (excluded from
+  `sharedPayload`); the synced entry carries only the key in `entry.hidden`.
+  When saving an entry, fields hidden by the OTHER phone must be preserved
+  untouched (see the `!(k in inputs)` branch in `logModal`'s `apply`) —
+  breaking that lets one phone's save wipe the other's surprise.
 
 ## Sync model
 
