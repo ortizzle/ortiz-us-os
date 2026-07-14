@@ -75,10 +75,12 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - **✨ results are keepers** — deep dives and per-plan idea runs cache
   on-device for ~30 days (`deepcache`) and show instantly on reopen; an
   explicit ↻ refresh is the only thing that re-spends tokens.
-- **Lookup links** — curated-pick sheets and any event with a known location
-  get link-outs for menu & prices (or stays & prices for getaways/trips),
-  map & hours, and reviews. Links are constructed searches (Google/Maps/
-  Yelp), not hardcoded venue URLs, so they can't rot.
+- **Lookup links** — curated-pick sheets and any event with a known,
+  non-hidden location get link-outs for menu & prices (or stays & prices for
+  getaways/trips), map & hours, and reviews. Links are constructed searches
+  (Google/Maps/Yelp), not hardcoded venue URLs, so they can't rot. A locked
+  🔒 location shows **no** links (they'd name the surprise venue even on the
+  setter's own screen); ✨ Ideas is the private way to research it.
 - **🔨 Still planning** — plans with a date but details not locked in. Every
   planned entry carries a `status` flag (`planning` default → `booked`),
   toggled right on the card. Getaways/trips in planning carry a reminder to

@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v19 · what she sees';
+const APP_VERSION = 'v20 · quiet surprises';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -1123,8 +1123,12 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // event's location is worth recording, and a graduated surprise needs its
   // fields visible to be unlockable. Only a fresh log stays lean.
   if (planned || entry) for (const [k, label] of PLANQ[type]) field(k, label);
-  // A known location gets lookup links — menus/prices, map & hours, reviews.
-  const knownLoc = entry && shownVal(entry, 'loc');
+  // A known, NON-hidden location gets lookup links — menus/prices, map,
+  // reviews. Skip them when the location is a locked surprise: the links
+  // name the venue, so even on the setter's own phone they're a tell. The
+  // ✨ Ideas button stays the private way to research a hidden spot.
+  const locHidden = entry && (entry.hidden || []).includes('loc');
+  const knownLoc = entry && !locHidden && shownVal(entry, 'loc');
   if (knownLoc) body.push(lookupLinks(knownLoc, type));
   field('notes', 'Notes');
 
