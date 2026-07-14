@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v21 · glance-proof';
+const APP_VERSION = 'v22 · owned & tidy';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -29,7 +29,7 @@ function load() {
 }
 function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
 let DB = load();
-DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,loc,time,dress,pack,notes,rating,planned,status,mem,hidden,updatedAt,deleted}
+DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,loc,time,dress,pack,notes,rating,planned,status,owner,mem,hidden,updatedAt,deleted}
 DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: { field: value } } — never synced
 DB.stash ||= {};     // 🎁 per-person surprise scratchpads (gift/trip ideas), DEVICE-LOCAL: { kat: [{id,text,done,createdAt}] } — never synced
 DB.deepcache ||= {}; // paid-for ✨ results, DEVICE-LOCAL: { 'rec:<name>'|'plan:<entryId>': {text,at} } — kept ~30 days, never synced
@@ -122,6 +122,15 @@ function lookupLinks(query, type) {
     money,
     ['📍 Map & hours', `https://www.google.com/maps/search/?api=1&query=${q}`],
     ['⭐ Reviews', `https://www.yelp.com/search?find_desc=${q}`],
+  ].map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
+}
+// For a SECRET location: only the city ever reaches a search URL, never the
+// exact address — city context is fine, the actual spot is not.
+function areaLinks(city) {
+  const q = encodeURIComponent(city);
+  return el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
+    ['📍 Area map', `https://www.google.com/maps/search/?api=1&query=${q}`],
+    ['🔎 Things to do', `https://www.google.com/search?q=${q}+date+ideas`],
   ].map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
 }
 
@@ -730,35 +739,29 @@ function sendCouponNudge(from) {
     .catch(() => toast('Coupon sent in-app — the email nudge didn’t go through'));
 }
 
+// Cards carry NO buttons — tap anywhere to open the event's sheet, where
+// every action (booked/planning, save, remove) lives. The status shows as a
+// chip so the ladder is still readable at a glance.
 function upcomingCard(e) {
   const t = todayStr();
   const c = cadenceOf(e.type);
   const left = daysBetween(t, e.date);
   const when = left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left}d`;
   const booked = e.status === 'booked';
-  const details = el('button', { class: 'btn btn-sm' + (booked ? ' btn-ghost' : ' btn-primary'), title: 'Location, time, what to pack…',
-    onclick: (ev) => { ev.stopPropagation(); logModal(e.type, { entry: e }); } }, '✎ Details');
-  const bookToggle = el('button', { class: 'btn btn-sm', title: booked ? 'Mark as still planning' : 'It’s a done deal',
-    onclick: (ev) => { ev.stopPropagation(); e.status = booked ? 'planning' : 'booked'; e.updatedAt = now(); commit(); render(); } },
-    booked ? '↩ back to planning' : '✅ mark booked');
-  const ideas = !booked && hasKey() ? el('button', { class: 'btn btn-sm', onclick: (ev) => { ev.stopPropagation(); planWithClaude(e); } }, '✨ Ideas') : null;
   const kids = [
     el('div', { class: 'card-top' }, [
       el('div', { class: 'card-emoji' }, c.emoji),
       el('div', {}, [
         el('div', { class: 'card-title' }, titleText(e)),
         el('div', { class: 'card-cadence' }, `${whenWhere(e)}${notesSuffix(e)}`),
+        el('div', { style: 'margin-top:6px' }, el('span', { class: 'chip' + (booked ? ' love' : '') }, booked ? '✅ booked' : '🔨 planning')),
       ]),
       el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
     ]),
     lockBadge(e),
-    // Still planning? Details lead — that's what you need to book. Once booked,
-    // details step back and the "still planning" toggle leads.
-    el('div', { class: 'card-actions', style: 'margin-top:10px' }, booked ? [bookToggle, details] : [details, bookToggle, ideas]),
   ];
   // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
   if ((e.type === 'getaway' || e.type === 'trip') && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
-  // The whole card is the event — tap anywhere to open its details.
   return el('div', { class: 'card next-card clickable', onclick: () => logModal(e.type, { entry: e }) }, kids);
 }
 
@@ -769,50 +772,7 @@ const IDEA_SCOPE = {
   getaway: 'Options can be anywhere in Arizona or within about a 6-hour drive of Phoenix (Sedona, Flagstaff, Prescott, Tucson, Bisbee, even San Diego, Vegas, or Rocky Point).',
   trip: 'Options are bigger destination trips — flights and multiple nights are fine.',
 };
-// The ladder: idea → plan (intention, dated) → ✅ booked. This "✨ Ideas"
-// button lives at the "plan" rung — concrete options to turn intention into a
-// booking, scoped by how far the cadence should reach.
-async function planWithClaude(e, force = false) {
-  const c = cadenceOf(e.type);
-  // You paid for these tokens — cached ideas show instantly for ~30 days;
-  // only an explicit refresh spends again.
-  const cacheKey = 'plan:' + e.id;
-  const cached = !force && DB.deepcache[cacheKey];
-  const out = el('p', { class: 'small' }, cached ? cached.text : el('span', { class: 'spinner' }));
-  const m = modal(`✨ Ideas: ${titleText(e)}`, [
-    out,
-    cached ? el('p', { class: 'muted small' }, `Saved ${fmt(cached.at.slice(0, 10))} — refresh for new ones.`) : null,
-  ].filter(Boolean), [
-    cached ? el('button', { class: 'btn', onclick: () => { m.close(); planWithClaude(e, true); } }, '↻ Fresh ideas') : null,
-    el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close'),
-  ].filter(Boolean));
-  if (cached) return;
-  try {
-    const s = DB.settings;
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': s.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      // Date nights are a few hours, not a festival: options must be separate,
-      // single-focus alternatives — never interests stacked into one itinerary.
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 500, thinking: { type: 'disabled' }, messages: [{ role: 'user', content:
-        `A married couple near ${s.city || 'Chandler/Gilbert, AZ (southeast Phoenix valley)'} intends to book this ${c.title.toLowerCase()}: "${shownVal(e, 'title') || 'untitled'}" on ${e.date}${shownVal(e, 'loc') ? ` at/around ${shownVal(e, 'loc')}` : ''}${shownVal(e, 'notes') ? ` (notes: ${shownVal(e, 'notes')})` : ''}.`
-        + ` ${IDEA_SCOPE[e.type]}`
-        + (s.interests ? ` Their interests (pick ONE per option, don't combine them): ${s.interests}.` : '')
-        + ((e.type === 'date' || e.type === 'occasion')
-          ? ` They have only a few hours that evening. Offer 2-3 SEPARATE single-focus options — each is one thing to do (one restaurant OR one hike OR one show — never dinner plus an activity chained together). For each: the real place by name, why it fits, and what to reserve or check ahead.`
-          : ` Offer 2-3 concrete suggestions naming real places, what to reserve and how far ahead, and one upgrade worth considering.`)
-        + ` Under 150 words, plain prose, no headers, no invented event dates.` }] }),
-    });
-    if (!res.ok) throw new Error('Claude ' + res.status);
-    const json = await res.json();
-    const text = (json.content || []).filter((x) => x.type === 'text').map((x) => x.text).join('').trim();
-    out.textContent = text;
-    DB.deepcache[cacheKey] = { text, at: now() };
-    save(DB);
-  } catch (err) {
-    out.textContent = 'Ideas fetch failed: ' + err.message;
-  }
-}
+// Geographic reach note used when generating ideas (Ideas tab).
 
 function renderRhythm() {
   view.append(el('h1', {}, 'Your rhythm'), el('p', { class: 'sub' }, 'The 2-2-2 you two live by — kept on pace.'));
@@ -1093,7 +1053,28 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   const c = cadenceOf(type);
   if (entry) planned = Boolean(entry.planned);
   const date = el('input', { class: 'input', type: 'date', value: entry ? entry.date : planned ? addDays(todayStr(), PLAN_LEAD[type]) : todayStr() });
-  const body = [el('label', { class: 'field-label' }, planned ? 'Planned date' : 'Date'), date];
+  const body = [];
+
+  // Each event has an OWNER (its creator). Only the owner can add surprises
+  // (lock fields) — the other of you can view and edit shared fields but
+  // can't privatise. Legacy events with no owner stay open to whoever.
+  const iOwnEvent = !entry || !entry.owner || entry.owner === me() || !me();
+  if (entry && entry.owner) {
+    const o = COUPLE[entry.owner], mine = entry.owner === me();
+    body.push(el('p', { class: 'muted small', style: 'margin:0 0 8px' },
+      mine ? `${o.emoji} Your plan — you manage its surprises` : `${o.emoji} ${o.name}’s plan — only ${o.name} can add surprises here`));
+  }
+  body.push(el('label', { class: 'field-label', style: 'margin-top:0' }, planned ? 'Planned date' : 'Date'), date);
+
+  // The booked / still-planning toggle lives here now (cards carry no buttons).
+  let statusVal = entry ? (entry.status || 'planning') : (planned ? 'planning' : undefined);
+  if (entry && entry.planned) {
+    const stBtn = el('button', { type: 'button', class: 'btn btn-sm statustoggle' });
+    const paint = () => { stBtn.textContent = statusVal === 'booked' ? '✅ Booked — tap to move back to planning' : '🔨 Still planning — tap to mark booked'; stBtn.classList.toggle('booked', statusVal === 'booked'); };
+    stBtn.addEventListener('click', () => { statusVal = statusVal === 'booked' ? 'planning' : 'booked'; paint(); });
+    paint();
+    body.push(el('label', { class: 'field-label' }, 'Status'), stBtn);
+  }
 
   // Hideable fields carry a 🔒 toggle. A locked field's value is written to
   // DB.secrets (this device only); the synced entry keeps just the key in
@@ -1102,7 +1083,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // never wipe your secret. Editing a PAST entry keeps the toggles too —
   // that's how a surprise gets revealed after it happens (tap 🔒 off).
   const inputs = {}, locked = {};
-  const canHide = planned || Boolean(entry);
+  const canHide = (planned || Boolean(entry)) && iOwnEvent;
   function field(k, labelText, { textarea = false } = {}) {
     // Partner's surprise: no input, nothing to save, just the teaser.
     if (entry && (entry.hidden || []).includes(k) && !iOwnSecret(entry, k)) {
@@ -1134,13 +1115,16 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // event's location is worth recording, and a graduated surprise needs its
   // fields visible to be unlockable. Only a fresh log stays lean.
   if (planned || entry) for (const [k, label] of PLANQ[type]) field(k, label);
-  // A known, NON-hidden location gets lookup links — menus/prices, map,
-  // reviews. Skip them when the location is a locked surprise: the links
-  // name the venue, so even on the setter's own phone they're a tell. The
-  // ✨ Ideas button stays the private way to research a hidden spot.
+  // Lookup links. A non-hidden location gets exact-venue links (menu, map,
+  // reviews). A SECRET location gets city-only "area" links instead — the
+  // exact address never reaches a search URL (or your browser history),
+  // only the home city does. Non-owners see no location, so no links.
   const locHidden = entry && (entry.hidden || []).includes('loc');
-  const knownLoc = entry && !locHidden && shownVal(entry, 'loc');
-  if (knownLoc) body.push(lookupLinks(knownLoc, type));
+  const realLoc = entry && shownVal(entry, 'loc');
+  if (realLoc && !locHidden) body.push(lookupLinks(realLoc, type));
+  else if (realLoc && locHidden && DB.settings.city) body.push(
+    areaLinks(DB.settings.city),
+    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${DB.settings.city}” is searchable; the exact spot isn’t.`));
   field('notes', 'Notes');
 
   // Memories + rating make sense once it's happened (or when editing a past entry).
@@ -1158,6 +1142,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   }
 
   if (canHide) body.push(el('p', { class: 'muted small', style: 'margin:12px 0 0' }, '🔒 = kept a surprise: stays on this phone only, shows the other of you a locked teaser.'));
+  else if (entry && entry.owner && entry.owner !== me()) body.push(el('p', { class: 'muted small', style: 'margin:12px 0 0' }, `🔒 markers are ${COUPLE[entry.owner].name}’s — you can edit the open fields, but only ${COUPLE[entry.owner].name} sets surprises here.`));
   if (!entry && planned) body.push(el('p', { style: 'margin:10px 0 0' },
     el('button', { class: 'linklike', onclick: () => { m.close(); logModal(type, { prefill: inputs.title?.value || '', ideaId }); } }, '✓ …or log one that already happened')));
 
@@ -1174,6 +1159,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     }
     if (Object.keys(sec).length) DB.secrets[e.id] = sec; else delete DB.secrets[e.id];
     e.hidden = hidden;
+    if (entry && planned) e.status = statusVal; // toggle from the sheet
     if (showExtras) {
       const mem = {};
       for (const [k] of MEMQ[type]) if (memInputs[k]?.value.trim()) mem[k] = memInputs[k].value.trim();
@@ -1187,7 +1173,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     : planned ? `Plan a ${c.title.toLowerCase()}` : `Log a ${c.title.toLowerCase()}`;
 
   const saveNew = (status) => {
-    const e = { id: uid(), type, planned, status, deleted: false };
+    const e = { id: uid(), type, planned, status, owner: me() || '', deleted: false };
     apply(e);
     DB.entries.push(e);
     if (ideaId) { const it = DB.ideas.find((x) => x.id === ideaId); if (it) { it.done = true; it.updatedAt = now(); } }

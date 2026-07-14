@@ -45,12 +45,14 @@ Three sections with jump-chips (a mini table of contents) at the top:
   full per-type detail fields (`PLANQ`) right there: date nights & occasions
   get location / time / dress code / notes; getaways & trips get location /
   end date / what-to-pack / notes. New plans save via **Just plan it** (still
-  planning) or **✅ Book it** (booked); reopening an event (tap its card)
-  shows the same sheet with a **🗑 Remove** action, so plans can be deleted
-  without going to History. Still-planning cards lead with **✎ Details**
-  (details are what you need to book); booked cards lead with the toggle.
-  Details render on the event card and history rows ("Jul 20 – Jul 24 ·
-  7:30 PM · Sedona").
+  planning) or **✅ Book it** (booked). **Cards carry no buttons** — the whole
+  card opens the event's sheet, and every action lives there: the
+  booked/still-planning **toggle**, **Save**, **Cancel**, and **🗑 Remove**.
+  The status also shows as a chip on the card. Details render on the card and
+  history rows ("Jul 20 – Jul 24 · 7:30 PM · Sedona").
+- **Event owner** — each event belongs to its creator (`owner`). Only the
+  owner can lock fields (add surprises); the other of you can edit the open
+  fields but not privatise. The sheet names the owner when it isn't you.
 - **Per-event surprises** — every field but the date has a 🔒 toggle in the
   sheet (on plans and on existing entries). Locking one keeps its value on
   your phone only (never synced); the other of you sees "🔒 Kept as a
@@ -62,12 +64,12 @@ Three sections with jump-chips (a mini table of contents) at the top:
   set (device-local). After the reveal, edit the event and toggle the 🔒 off
   — the field then syncs normally, reads right in History. Booking never
   reveals a locked field.
-- **✨ Ideas** (was "Plan with Claude") — on planning cards with an API key,
-  generates concrete options scoped by cadence: date nights stay local
-  (Phoenix/Scottsdale/Tempe), special occasions range across the metro,
-  getaways reach statewide or within ~6 hours' drive, trips go
-  destination-wide. The prompt carries the plan's title, location, and notes
-  (via `shownVal`, so your own locked values still inform it).
+- **✨ idea generation lives in the Ideas tab** (was also a per-event "Plan
+  with Claude" button; removed to keep event cards button-free). The Ideas
+  tab's Claude suggestions are scoped by cadence via `IDEA_SCOPE`: date
+  nights stay local (Chandler/Gilbert/southeast valley), special occasions
+  range across the metro, getaways reach statewide or within ~6 hours'
+  drive, trips go destination-wide.
 - **✅ Booked** — plans that are locked in, soonest first, with countdowns.
   Special dates (anniversary Sep 12, 2013 with years count; birthdays
   Chris Feb 26, Kat Aug 15) auto-surface here only when within 45 days —
@@ -85,7 +87,9 @@ Three sections with jump-chips (a mini table of contents) at the top:
   getaways/trips), map & hours, and reviews. Links are constructed searches
   (Google/Maps/Yelp), not hardcoded venue URLs, so they can't rot. A locked
   🔒 location shows **no** links (they'd name the surprise venue even on the
-  setter's own screen); ✨ Ideas is the private way to research it.
+  setter's own screen). A secret location instead offers **city-only** area
+  links (from `settings.city`) so the exact address never reaches a search
+  URL, only the city.
 - **🔨 Still planning** — plans with a date but details not locked in. Every
   planned entry carries a `status` flag (`planning` default → `booked`),
   toggled right on the card. Getaways/trips in planning carry a reminder to

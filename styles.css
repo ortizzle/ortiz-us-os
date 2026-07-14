@@ -136,6 +136,10 @@ textarea.input { resize: vertical; min-height: 60px; }
 .lockbadge.them { font-weight: 600; }
 .hrow .lockbadge { margin-top: 5px; }
 .btn-danger-text { color: #c23b52; }
+/* status toggle inside the event sheet */
+.statustoggle { width: 100%; text-align: left; }
+.statustoggle:not(.booked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
+.statustoggle.booked { background: var(--good-soft); border-color: var(--good); color: var(--good); }
 
 .empty { text-align: center; color: var(--text-2); padding: 34px 16px; }
 .muted { color: var(--text-2); }
