@@ -68,6 +68,10 @@ h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; color: 
 .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* buttons */
+/* Bare <button>s (tiles, hearts) otherwise fall back to the UA's black text,
+   which vanishes on dark cards — inherit the theme colour by default; the
+   coloured buttons below still set their own. */
+button { color: inherit; }
 .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 12px; padding: 9px 14px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
 .btn:hover { border-color: var(--accent); }
 .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -157,7 +161,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 .sheet-actions { display: flex; gap: 8px; margin-top: 18px; }
 .sheet-actions .btn { flex: 1; }
 .rating { display: inline-flex; gap: 4px; }
-.rating button { background: none; border: 0; font-size: 24px; cursor: pointer; filter: grayscale(1) opacity(.4); padding: 0; }
+.rating button { background: none; border: 0; font-size: 24px; cursor: pointer; color: var(--accent); filter: grayscale(1) opacity(.4); padding: 0; }
 .rating button.on { filter: none; }
 
 /* curated picks */
