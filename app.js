@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v20 · quiet surprises';
+const APP_VERSION = 'v21 · glance-proof';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -39,7 +39,7 @@ DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seen
 DB.bingo ||= [];     // easter-egg bingo squares: {id,n,done,updatedAt}
 DB.bingo2 ||= [];    // the card behind the card
 DB.recstate ||= [];  // curated-pick reactions: {id,state:'dismissed'|'done'|'',updatedAt}
-DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt,who,couponHook} — never synced
+DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt,who,couponHook,petName} — never synced
 const now = () => new Date().toISOString();
 // Deletes are tombstones (deleted:true + updatedAt) so a removal on one phone
 // wins over the stale copy on the other; pruned after 60 days.
@@ -278,33 +278,44 @@ function shownVal(e, k) {
   if ((e.hidden || []).includes(k)) return null; // partner — kept a surprise
   return e[k];
 }
-// value → string for a card line: real value, '🔒' if the partner's surprise, '' if empty.
+// At-a-glance display (cards, tiles, history) masks EVERY hidden field —
+// even your own — so a glance at your phone by the other of you reveals
+// nothing. The real value is one deliberate tap away, in the event's sheet.
+// (shownVal still un-masks your own secrets for editing inside that sheet.)
+function cardVal(e, k) {
+  if ((e.hidden || []).includes(k)) return null;
+  return e[k];
+}
+// value → string for a card line: real value, '🔒' if hidden, '' if empty.
 function lineVal(e, k, fmtFn) {
-  const v = shownVal(e, k);
+  const v = cardVal(e, k);
   if (v === null) return '🔒';
   if (!v) return '';
   return fmtFn ? fmtFn(v) : v;
 }
 function titleText(e) {
-  const v = shownVal(e, 'title');
+  const v = cardVal(e, 'title');
   if (v === null) return '🔒 A surprise 💝';
   return v || cadenceOf(e.type).title;
 }
 function notesSuffix(e) {
-  const v = shownVal(e, 'notes');
+  const v = cardVal(e, 'notes');
   if (v === null) return ' · 🔒';
   return v ? ' · ' + v : '';
 }
 // One line that reads like a plan: "Jul 20 – Jul 24 · 7:30 PM · Sedona · dressy"
 function whenWhere(e) {
-  const end = shownVal(e, 'dateEnd');
+  const end = cardVal(e, 'dateEnd');
   const range = fmt(e.date) + (end === null ? ' – 🔒' : end ? ' – ' + fmt(end) : '');
   return [range, lineVal(e, 'time', fmtTime), lineVal(e, 'loc'), lineVal(e, 'dress')].filter(Boolean).join(' · ');
 }
 const FIELD_LABEL = { title: 'Title', loc: 'Location', time: 'Time', dress: 'Dress', dateEnd: 'End date', pack: 'Packing', notes: 'Notes' };
 // Fields THIS phone has locked as a surprise (the ones I set the secret for).
 const ownerHidden = (e) => (e.hidden || []).filter((k) => iOwnSecret(e, k));
-const partnerName = () => (me() ? COUPLE[other(me())].name : 'your partner');
+// A device-local pet name (settings.petName) can stand in for the partner's
+// name in these private surprise badges — "Hidden from Kitten" — so a glance
+// gives nothing away. Falls back to their real name.
+const partnerName = () => DB.settings.petName || (me() ? COUPLE[other(me())].name : 'your partner');
 // Owner-side confidence: a badge on the card naming exactly what the other
 // phone can't see, so a locked field is never a guess.
 function lockBadge(e) {
@@ -843,10 +854,10 @@ function renderRhythm() {
       status = left < 0 ? `${-left}d overdue` : left === 0 ? 'due today' : `due in ${left}d`;
       cls = left <= 3 ? 'due' : 'ok';
     }
-    const pt = planned ? shownVal(planned, 'title') : null;
-    const lockPre = planned && ownerHidden(planned).length ? '🔒 ' : '';
+    const pt = planned ? cardVal(planned, 'title') : null;
+    const anyHidden = planned && (planned.hidden || []).length;
     const meta = planned
-      ? `${lockPre}${pt === null ? '🔒 surprise' : pt || 'planned'} · ${fmt(planned.date)}`
+      ? `${anyHidden ? '🔒 ' : ''}${pt === null ? 'surprise' : pt || 'planned'} · ${fmt(planned.date)}`
       : last ? `last: ${fmt(last.date)}` : 'no history yet';
 
     return el('button', { class: 'stat', onclick: () => logModal(c.type, { planned: true }) }, [
@@ -1283,6 +1294,7 @@ function renderSettings() {
   const interests = el('input', { class: 'input', placeholder: 'e.g. live music, tacos, hiking, comedy', value: s.interests || '' });
   const themeSel = el('select', { class: 'input' }, ['auto','light','dark'].map((v) => el('option', { value: v, selected: (s.theme||'auto')===v ? 'selected' : null }, v[0].toUpperCase()+v.slice(1))));
   const whoSel = el('select', { class: 'input' }, [['', 'Choose…'], ['chris', '💙 Chris'], ['kat', '💜 Kat']].map(([v, label]) => el('option', { value: v, selected: (s.who || '') === v ? 'selected' : null }, label)));
+  const petName = el('input', { class: 'input', placeholder: 'e.g. Kitten (optional)', value: s.petName || '' });
   const couponHook = el('input', { class: 'input', placeholder: 'https://script.google.com/macros/s/…/exec', value: s.couponHook || '' });
   const gistToken = el('input', { class: 'input', type: 'password', placeholder: 'GitHub token (gist scope)', value: s.gistToken || '' });
   const gistId = el('input', { class: 'input', placeholder: 'Gist ID', value: s.gistId || '' });
@@ -1295,6 +1307,8 @@ function renderSettings() {
     el('div', { class: 'card' }, [
       el('label', { class: 'field-label', style: 'margin-top:0' }, 'This phone belongs to'), whoSel,
       el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Picks whose 💌 coupon book you send from.'),
+      el('label', { class: 'field-label' }, 'Pet name for your other half (optional)'), petName,
+      el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Used in the private “🔒 Hidden from …” surprise labels on this phone. Stays on this device.'),
       el('label', { class: 'field-label' }, 'Home city (sharpens ideas)'), city,
       el('label', { class: 'field-label' }, 'What you two enjoy'), interests,
       el('label', { class: 'field-label' }, 'Claude API key (optional — for ✨ idea suggestions)'), apiKey,
@@ -1306,7 +1320,7 @@ function renderSettings() {
       el('div', { style: 'margin-top:10px' }, el('button', { class: 'btn btn-sm', onclick: () => syncNow(true) }, '⇅ Sync now')),
       el('label', { class: 'field-label' }, 'Appearance'), themeSel,
       el('div', { style: 'margin-top:16px' }, el('button', { class: 'btn btn-primary', onclick: () => {
-        DB.settings = { ...DB.settings, who: whoSel.value, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
+        DB.settings = { ...DB.settings, who: whoSel.value, petName: petName.value.trim(), apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
         commit(); applyTheme(); toast('Saved'); render();
       } }, 'Save')),
     ]),

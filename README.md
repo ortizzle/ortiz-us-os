@@ -105,13 +105,18 @@ Classic use: a surprise getaway with the **date and what-to-pack visible**,
 location and title locked. After the reveal, edit the event and tap the 🔒
 off — the field syncs normally from then on and reads right in History.
 
-**How to tell what's hidden:** on your own phone a locked field still shows
-you its real value (it's your secret to see), but the event's card and its
-edit sheet both carry a **"🔒 Hidden from [partner]: Location, Title"**
-badge — so you always know exactly what they can't see. Their phone shows
-"🔒 Kept as a surprise 💝" in those fields. This holds through the whole
-lifecycle: planning, booked, and logged — **booking never reveals a locked
-field.**
+**How to tell what's hidden:** the event's card and edit sheet carry a
+**"🔒 Hidden from [partner]: Location, Title"** badge naming exactly what
+the other phone can't see.
+
+**Glance-proof:** at a glance — on cards, tiles, and history — a locked
+field is masked (🔒) on *your* phone too, so someone glancing over your
+shoulder sees nothing. The real value only appears when you deliberately
+**open the event** (its fields show it, tinted). Set a **pet name** in
+Settings ("Kitten") and the badges read "🔒 Hidden from Kitten" for extra
+discretion. The other phone shows "🔒 Kept as a surprise 💝" throughout.
+This holds through planning, booked, and logged — **booking never reveals a
+locked field.**
 
 Two honest caveats: a locked value lives *only* on the phone that set it —
 clear that phone's browser data and the hidden value is gone (the event
@@ -164,4 +169,4 @@ npx serve .
 
 ---
 
-*Current build: v19 · what she sees.*
+*Current build: v21 · glance-proof.*

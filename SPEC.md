@@ -54,9 +54,14 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - **Per-event surprises** — every field but the date has a 🔒 toggle in the
   sheet (on plans and on existing entries). Locking one keeps its value on
   your phone only (never synced); the other of you sees "🔒 Kept as a
-  surprise 💝" in its place. After the reveal, edit the event and toggle the
-  🔒 off — the field then syncs normally, so it reads right in History. For
-  hiding a surprise getaway's location, a gift, a dressed-up plan — anything.
+  surprise 💝" in its place. **Glance-proof:** at a glance (cards, tiles,
+  history) a locked field is masked with 🔒 on the setter's phone too
+  (`cardVal`), so a shoulder-surf reveals nothing — the real value shows
+  only inside the event's own sheet (`shownVal`, tinted). An owner-side
+  "🔒 Hidden from …" badge names what's hidden, using `settings.petName` if
+  set (device-local). After the reveal, edit the event and toggle the 🔒 off
+  — the field then syncs normally, reads right in History. Booking never
+  reveals a locked field.
 - **✨ Ideas** (was "Plan with Claude") — on planning cards with an API key,
   generates concrete options scoped by cadence: date nights stay local
   (Phoenix/Scottsdale/Tempe), special occasions range across the metro,
