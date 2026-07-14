@@ -136,6 +136,8 @@ textarea.input { resize: vertical; min-height: 60px; }
 .statustoggle { width: 100%; text-align: left; }
 .statustoggle:not(.booked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
 .statustoggle.booked { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.privtoggle { width: 100%; text-align: left; }
+.privtoggle.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
 
 .empty { text-align: center; color: var(--text-2); padding: 34px 16px; }
 .muted { color: var(--text-2); }

@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v23 · quiet front';
+const APP_VERSION = 'v24 · full surprises';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -29,7 +29,7 @@ function load() {
 }
 function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
 let DB = load();
-DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,loc,time,dress,pack,notes,rating,planned,status,owner,mem,hidden,updatedAt,deleted}
+DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,cover,loc,time,dress,pack,notes,rating,planned,status,owner,private,mem,hidden,updatedAt,deleted}
 DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: { field: value } } — never synced
 DB.stash ||= {};     // 🎁 per-person surprise scratchpads (gift/trip ideas), DEVICE-LOCAL: { kat: [{id,text,done,createdAt}] } — never synced
 DB.deepcache ||= {}; // paid-for ✨ results, DEVICE-LOCAL: { 'rec:<name>'|'plan:<entryId>': {text,at} } — kept ~30 days, never synced
@@ -132,6 +132,19 @@ function areaLinks(city) {
     ['📍 Area map', `https://www.google.com/maps/search/?api=1&query=${q}`],
     ['🔎 Things to do', `https://www.google.com/search?q=${q}+date+ideas`],
   ].map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
+}
+// Pull just the CITY out of a "street, City, ST zip" address — for the secret
+// location's area links, so the actual spot never lands in a search URL. Only
+// trusts the "…, City, ST…" shape; a city part with a digit reads as a street
+// and is rejected. Returns null when unsure (caller falls back to Home city).
+function cityOf(loc) {
+  const parts = loc.split(',').map((s) => s.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const st = parts[parts.length - 1].match(/^[A-Za-z]{2}\b/);
+  if (!st) return null;                 // last part isn't "ST …" — not a parseable address
+  const city = parts[parts.length - 2];
+  if (/\d/.test(city)) return null;     // the "city" slot still looks like a street
+  return `${city}, ${st[0].toUpperCase()}`;
 }
 
 // ---------- couple's goals ----------
@@ -289,10 +302,11 @@ function shownVal(e, k) {
 }
 // At-a-glance display (cards, tiles, history) masks EVERY hidden field —
 // even your own — so a glance at your phone by the other of you reveals
-// nothing. The real value is one deliberate tap away, in the event's sheet.
-// (shownVal still un-masks your own secrets for editing inside that sheet.)
+// nothing. A fully-private plan (e.private) masks all of its fields. The real
+// value is one deliberate tap away, in the event's sheet. (shownVal still
+// un-masks your own secrets for editing inside that sheet.)
 function cardVal(e, k) {
-  if ((e.hidden || []).includes(k)) return null;
+  if (e.private || (e.hidden || []).includes(k)) return null;
   return e[k];
 }
 // value → string for a card line: real value, '🔒' if hidden, '' if empty.
@@ -302,9 +316,11 @@ function lineVal(e, k, fmtFn) {
   if (!v) return '';
   return fmtFn ? fmtFn(v) : v;
 }
+// A masked title shows your editable cover name if you set one, else a
+// generic "A surprise". The cover is a normal (synced) field — a decoy.
 function titleText(e) {
   const v = cardVal(e, 'title');
-  if (v === null) return '🔒 A surprise 💝';
+  if (v === null) return e.cover || '🔒 A surprise 💝';
   return v || cadenceOf(e.type).title;
 }
 function notesSuffix(e) {
@@ -1062,6 +1078,20 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     body.push(el('label', { class: 'field-label' }, 'Status'), stBtn);
   }
 
+  // Full-surprise switch: hide the WHOLE plan from the other of you — they
+  // never see it exists (not even the date). Best set at creation. Great for
+  // a surprise getaway. (Per-field 🔒 locks are for partial surprises.)
+  let wholePrivate = entry ? Boolean(entry.private) : false;
+  const canOwn = !entry || iOwnEvent;
+  if ((planned || (entry && entry.planned)) && canOwn) {
+    const other2 = me() ? COUPLE[other(me())].name : 'the other of you';
+    const pvBtn = el('button', { type: 'button', class: 'btn btn-sm privtoggle' });
+    const paintPv = () => { pvBtn.textContent = wholePrivate ? `🙈 Hidden completely — ${other2} won’t see this plan` : `🙈 Hide the whole plan from ${other2}`; pvBtn.classList.toggle('on', wholePrivate); };
+    pvBtn.addEventListener('click', () => { wholePrivate = !wholePrivate; paintPv(); });
+    paintPv();
+    body.push(el('label', { class: 'field-label' }, 'Full surprise'), pvBtn);
+  }
+
   // Hideable fields carry a 🔒 toggle. A locked field's value is written to
   // DB.secrets (this device only); the synced entry keeps just the key in
   // entry.hidden. On the partner's phone the field shows a read-only 🔒
@@ -1070,7 +1100,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // that's how a surprise gets revealed after it happens (tap 🔒 off).
   const inputs = {}, locked = {};
   const canHide = (planned || Boolean(entry)) && iOwnEvent;
-  function field(k, labelText, { textarea = false } = {}) {
+  function field(k, labelText, { textarea = false, onToggle } = {}) {
     // Partner's surprise: no input, nothing to save, just the teaser.
     if (entry && (entry.hidden || []).includes(k) && !iOwnSecret(entry, k)) {
       body.push(el('label', { class: 'field-label' }, labelText), el('div', { class: 'input locked-note' }, '🔒 Kept as a surprise 💝'));
@@ -1085,10 +1115,10 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     let lab;
     if (canHide) {
       locked[k] = entry ? iOwnSecret(entry, k) : false;
-      const mark = el('span', { class: 'lockmark' }, locked[k] ? '🔒 surprise' : '');
-      const sync = () => { input.classList.toggle('locked', locked[k]); mark.textContent = locked[k] ? '🔒 surprise' : ''; };
+      const mark = el('span', { class: 'lockmark' }, locked[k] ? '🔒 Surprise' : '');
+      const sync = () => { input.classList.toggle('locked', locked[k]); mark.textContent = locked[k] ? '🔒 Surprise' : ''; };
       const lock = el('button', { type: 'button', class: 'lockmini' + (locked[k] ? ' on' : ''), title: 'Keep this a surprise', onclick: () => {
-        locked[k] = !locked[k]; lock.classList.toggle('on', locked[k]); lock.textContent = locked[k] ? '🔒' : '🔓'; sync();
+        locked[k] = !locked[k]; lock.classList.toggle('on', locked[k]); lock.textContent = locked[k] ? '🔒' : '🔓'; sync(); onToggle?.(locked[k]);
       } }, locked[k] ? '🔒' : '🔓');
       lab = el('label', { class: 'field-label lockrow' }, [el('span', {}, [labelText, ' ', mark]), lock]);
       if (locked[k]) input.classList.add('locked');
@@ -1096,7 +1126,13 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     body.push(lab, input);
   }
 
-  field('title', 'Title');
+  // Title + its optional COVER (an editable decoy that shows on the front
+  // while the real title is a surprise). The cover row appears only when the
+  // title is locked, and follows the lock toggle live.
+  const cover = el('input', { class: 'input', placeholder: 'Shown on the front instead — e.g. “Surprise date 💝”', value: entry?.cover || '' });
+  const coverRow = el('div', {}, [el('label', { class: 'field-label' }, 'Cover name (while the title’s a surprise)'), cover]);
+  field('title', 'Title', { onToggle: (on) => { coverRow.style.display = on ? '' : 'none'; } });
+  if (canHide) { coverRow.style.display = locked.title ? '' : 'none'; body.push(coverRow); }
   // Detail fields show on plans AND when editing any existing entry — a past
   // event's location is worth recording, and a graduated surprise needs its
   // fields visible to be unlockable. Only a fresh log stays lean.
@@ -1107,10 +1143,11 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // only the home city does. Non-owners see no location, so no links.
   const locHidden = entry && (entry.hidden || []).includes('loc');
   const realLoc = entry && shownVal(entry, 'loc');
+  const area = realLoc && locHidden && (cityOf(realLoc) || DB.settings.city);
   if (realLoc && !locHidden) body.push(lookupLinks(realLoc, type));
-  else if (realLoc && locHidden && DB.settings.city) body.push(
-    areaLinks(DB.settings.city),
-    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${DB.settings.city}” is searchable; the exact spot isn’t.`));
+  else if (area) body.push(
+    areaLinks(area),
+    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
   field('notes', 'Notes');
 
   // Memories + rating make sense once it's happened (or when editing a past entry).
@@ -1127,7 +1164,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     body.push(el('div', {}, [el('label', { class: 'field-label' }, 'How was it?'), el('div', { class: 'rating' }, stars)]));
   }
 
-  if (canHide) body.push(el('p', { class: 'muted small', style: 'margin:12px 0 0' }, '🔒 = kept a surprise: stays on this phone only, shows the other of you a locked teaser.'));
+  if (canHide) body.push(el('p', { class: 'muted small', style: 'margin:12px 0 0' }, '🔒 Surprise = stays on this phone only; the other of you sees a locked teaser. 🙈 hides the whole plan from them.'));
   else if (entry && entry.owner && entry.owner !== me()) body.push(el('p', { class: 'muted small', style: 'margin:12px 0 0' }, `🔒 markers are ${COUPLE[entry.owner].name}’s — you can edit the open fields, but only ${COUPLE[entry.owner].name} sets surprises here.`));
   if (!entry && planned) body.push(el('p', { style: 'margin:10px 0 0' },
     el('button', { class: 'linklike', onclick: () => { m.close(); logModal(type, { prefill: inputs.title?.value || '', ideaId }); } }, '✓ …or log one that already happened')));
@@ -1145,6 +1182,8 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     }
     if (Object.keys(sec).length) DB.secrets[e.id] = sec; else delete DB.secrets[e.id];
     e.hidden = hidden;
+    e.cover = cover.value.trim();
+    if (canOwn) e.private = wholePrivate;
     if (entry && planned) e.status = statusVal; // toggle from the sheet
     if (showExtras) {
       const mem = {};
@@ -1304,9 +1343,16 @@ const hasKey = () => Boolean(DB.settings.apiKey);
 // are stripped from the payload before it ever leaves the device.
 const GIST_FILE = 'ortiz-us-os.json';
 function sharedPayload() {
-  // Coupons need no privacy filter: only sent ones exist as records at all —
-  // the unsent book is static code, so it can't leak.
-  return { entries: DB.entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, coupons: DB.coupons, bingo: DB.bingo, bingo2: DB.bingo2, recstate: DB.recstate, savedAt: now() };
+  // A fully-private plan (e.private) is sent as a TOMBSTONE, never its
+  // content — so the other phone can't see it (and drops any copy it had
+  // from before it went private), while this phone keeps the real record.
+  // The tombstone carries the same updatedAt, so a pull can't clobber the
+  // local original (equal updatedAt keeps local in mergeCol). Coupons need
+  // no filter: only sent ones exist as records at all.
+  const entries = DB.entries.map((e) => e.private
+    ? { id: e.id, type: e.type, deleted: true, updatedAt: e.updatedAt }
+    : e);
+  return { entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, coupons: DB.coupons, bingo: DB.bingo, bingo2: DB.bingo2, recstate: DB.recstate, savedAt: now() };
 }
 function mergeCol(local, remote) {
   const byId = new Map(local.map((r) => [r.id, r]));
