@@ -59,9 +59,9 @@ Three sections with jump-chips (a mini table of contents) at the top:
   surprise 💝" in its place. **Glance-proof:** at a glance (cards, tiles,
   history) a locked field is masked with 🔒 on the setter's phone too
   (`cardVal`), so a shoulder-surf reveals nothing — the real value shows
-  only inside the event's own sheet (`shownVal`, tinted). An owner-side
-  "🔒 Hidden from …" badge names what's hidden, using `settings.petName` if
-  set (device-local). After the reveal, edit the event and toggle the 🔒 off
+  only inside the event's own sheet (`shownVal`, tinted, marked "🔒
+  surprise"). The front carries no per-field badge; the masked title already
+  reads as a surprise. After the reveal, edit the event and toggle the 🔒 off
   — the field then syncs normally, reads right in History. Booking never
   reveals a locked field.
 - **✨ idea generation lives in the Ideas tab** (was also a per-event "Plan

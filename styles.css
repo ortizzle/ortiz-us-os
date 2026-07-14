@@ -131,10 +131,6 @@ textarea.input { resize: vertical; min-height: 60px; }
 .lockmark { font-size: 10px; font-weight: 700; color: var(--accent-ink); text-transform: none; letter-spacing: 0; }
 .input.locked { border-style: dashed; border-color: var(--accent); background: var(--accent-soft); }
 .locked-note { color: var(--accent-ink); background: var(--accent-soft); border-style: dashed; border-color: var(--accent); font-weight: 600; }
-/* owner-side "what's hidden" badge on event cards + history rows */
-.lockbadge { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--accent-ink); background: var(--accent-soft); border: 1px dashed var(--accent); border-radius: 999px; padding: 3px 10px; }
-.lockbadge.them { font-weight: 600; }
-.hrow .lockbadge { margin-top: 5px; }
 .btn-danger-text { color: #c23b52; }
 /* status toggle inside the event sheet */
 .statustoggle { width: 100%; text-align: left; }
