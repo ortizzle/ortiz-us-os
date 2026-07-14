@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v25 · readable in the dark';
+const APP_VERSION = 'v26 · tidy-up';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -113,25 +113,21 @@ function stashSheet(sp) {
 
 // Guaranteed-valid lookup links: constructed searches (menu/prices, map &
 // hours, reviews) rather than hardcoded venue URLs that rot.
+// A row of open-in-new-tab link buttons from [label, href] pairs.
+const linkRow = (pairs) => el('div', { class: 'card-actions', style: 'margin-top:10px' },
+  pairs.map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
+const gSearch = (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+const gMap = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 function lookupLinks(query, type) {
-  const q = encodeURIComponent(query);
   const money = type === 'getaway' || type === 'trip'
-    ? ['🏨 Stays & prices', `https://www.google.com/search?q=${q}+hotels+prices`]
-    : ['📋 Menu & prices', `https://www.google.com/search?q=${q}+menu+prices`];
-  return el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
-    money,
-    ['📍 Map & hours', `https://www.google.com/maps/search/?api=1&query=${q}`],
-    ['⭐ Reviews', `https://www.yelp.com/search?find_desc=${q}`],
-  ].map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
+    ? ['🏨 Stays & prices', gSearch(query + ' hotels prices')]
+    : ['📋 Menu & prices', gSearch(query + ' menu prices')];
+  return linkRow([money, ['📍 Map & hours', gMap(query)], ['⭐ Reviews', `https://www.yelp.com/search?find_desc=${encodeURIComponent(query)}`]]);
 }
 // For a SECRET location: only the city ever reaches a search URL, never the
 // exact address — city context is fine, the actual spot is not.
 function areaLinks(city) {
-  const q = encodeURIComponent(city);
-  return el('div', { class: 'card-actions', style: 'margin-top:10px' }, [
-    ['📍 Area map', `https://www.google.com/maps/search/?api=1&query=${q}`],
-    ['🔎 Things to do', `https://www.google.com/search?q=${q}+date+ideas`],
-  ].map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
+  return linkRow([['📍 Area map', gMap(city)], ['🔎 Things to do', gSearch(city + ' date ideas')]]);
 }
 // Pull just the CITY out of a "street, City, ST zip" address — for the secret
 // location's area links, so the actual spot never lands in a search URL. Only
@@ -775,7 +771,6 @@ const IDEA_SCOPE = {
   getaway: 'Options can be anywhere in Arizona or within about a 6-hour drive of Phoenix (Sedona, Flagstaff, Prescott, Tucson, Bisbee, even San Diego, Vegas, or Rocky Point).',
   trip: 'Options are bigger destination trips — flights and multiple nights are fine.',
 };
-// Geographic reach note used when generating ideas (Ideas tab).
 
 function renderRhythm() {
   view.append(el('h1', {}, 'Your rhythm'), el('p', { class: 'sub' }, 'The 2-2-2 you two live by — kept on pace.'));
@@ -1068,28 +1063,31 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   }
   body.push(el('label', { class: 'field-label', style: 'margin-top:0' }, planned ? 'Planned date' : 'Date'), date);
 
-  // The booked / still-planning toggle lives here now (cards carry no buttons).
-  let statusVal = entry ? (entry.status || 'planning') : (planned ? 'planning' : undefined);
-  if (entry && entry.planned) {
-    const stBtn = el('button', { type: 'button', class: 'btn btn-sm statustoggle' });
-    const paint = () => { stBtn.textContent = statusVal === 'booked' ? '✅ Booked — tap to move back to planning' : '🔨 Still planning — tap to mark booked'; stBtn.classList.toggle('booked', statusVal === 'booked'); };
-    stBtn.addEventListener('click', () => { statusVal = statusVal === 'booked' ? 'planning' : 'booked'; paint(); });
+  // A full-width label + toggle button whose text/active-class follow isOn().
+  const toggleField = (labelText, cls, activeClass, isOn, flip, text) => {
+    const btn = el('button', { type: 'button', class: 'btn btn-sm ' + cls, onclick: () => { flip(); paint(); } });
+    const paint = () => { btn.textContent = text(isOn()); btn.classList.toggle(activeClass, isOn()); };
     paint();
-    body.push(el('label', { class: 'field-label' }, 'Status'), stBtn);
-  }
+    body.push(el('label', { class: 'field-label' }, labelText), btn);
+  };
+
+  // The booked / still-planning toggle lives here now (cards carry no buttons).
+  let statusVal = entry ? (entry.status || 'planning') : undefined;
+  if (entry && entry.planned) toggleField('Status', 'statustoggle', 'booked',
+    () => statusVal === 'booked',
+    () => { statusVal = statusVal === 'booked' ? 'planning' : 'booked'; },
+    (on) => on ? '✅ Booked — tap to move back to planning' : '🔨 Still planning — tap to mark booked');
 
   // Full-surprise switch: hide the WHOLE plan from the other of you — they
   // never see it exists (not even the date). Best set at creation. Great for
   // a surprise getaway. (Per-field 🔒 locks are for partial surprises.)
-  let wholePrivate = entry ? Boolean(entry.private) : false;
-  const canOwn = !entry || iOwnEvent;
-  if ((planned || (entry && entry.planned)) && canOwn) {
-    const other2 = me() ? COUPLE[other(me())].name : 'the other of you';
-    const pvBtn = el('button', { type: 'button', class: 'btn btn-sm privtoggle' });
-    const paintPv = () => { pvBtn.textContent = wholePrivate ? `🙈 Hidden completely — ${other2} won’t see this plan` : `🙈 Hide the whole plan from ${other2}`; pvBtn.classList.toggle('on', wholePrivate); };
-    pvBtn.addEventListener('click', () => { wholePrivate = !wholePrivate; paintPv(); });
-    paintPv();
-    body.push(el('label', { class: 'field-label' }, 'Full surprise'), pvBtn);
+  let wholePrivate = Boolean(entry?.private);
+  if ((planned || (entry && entry.planned)) && iOwnEvent) {
+    const them = me() ? COUPLE[other(me())].name : 'the other of you';
+    toggleField('Full surprise', 'privtoggle', 'on',
+      () => wholePrivate,
+      () => { wholePrivate = !wholePrivate; },
+      (on) => on ? `🙈 Hidden completely — ${them} won’t see this plan` : `🙈 Hide the whole plan from ${them}`);
   }
 
   // Hideable fields carry a 🔒 toggle. A locked field's value is written to
@@ -1141,13 +1139,15 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // reviews). A SECRET location gets city-only "area" links instead — the
   // exact address never reaches a search URL (or your browser history),
   // only the home city does. Non-owners see no location, so no links.
-  const locHidden = entry && (entry.hidden || []).includes('loc');
   const realLoc = entry && shownVal(entry, 'loc');
-  const area = realLoc && locHidden && (cityOf(realLoc) || DB.settings.city);
-  if (realLoc && !locHidden) body.push(lookupLinks(realLoc, type));
-  else if (area) body.push(
-    areaLinks(area),
-    el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
+  if (realLoc) {
+    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, type));
+    else {
+      const area = cityOf(realLoc) || DB.settings.city;
+      if (area) body.push(areaLinks(area),
+        el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
+    }
+  }
   field('notes', 'Notes');
 
   // Memories + rating make sense once it's happened (or when editing a past entry).
@@ -1182,8 +1182,8 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     }
     if (Object.keys(sec).length) DB.secrets[e.id] = sec; else delete DB.secrets[e.id];
     e.hidden = hidden;
-    e.cover = cover.value.trim();
-    if (canOwn) e.private = wholePrivate;
+    if (canHide) e.cover = cover.value.trim();  // owner-only, same gate as the locks
+    if (iOwnEvent) e.private = wholePrivate;
     if (entry && planned) e.status = statusVal; // toggle from the sheet
     if (showExtras) {
       const mem = {};
@@ -1358,6 +1358,10 @@ function mergeCol(local, remote) {
   const byId = new Map(local.map((r) => [r.id, r]));
   for (const r of remote || []) {
     const l = byId.get(r.id);
+    // Strict '>' (keep local on ties) is load-bearing: a fully-private plan
+    // (sharedPayload) round-trips as its own tombstone with the SAME
+    // updatedAt, and the owner must keep the real local record — do NOT
+    // relax this to '>=' or private plans self-clobber into tombstones.
     if (!l || (r.updatedAt || '') > (l.updatedAt || '')) byId.set(r.id, { ...r });
   }
   return [...byId.values()];
