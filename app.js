@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v22 · owned & tidy';
+const APP_VERSION = 'v23 · quiet front';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -39,7 +39,7 @@ DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seen
 DB.bingo ||= [];     // easter-egg bingo squares: {id,n,done,updatedAt}
 DB.bingo2 ||= [];    // the card behind the card
 DB.recstate ||= [];  // curated-pick reactions: {id,state:'dismissed'|'done'|'',updatedAt}
-DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt,who,couponHook,petName} — never synced
+DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt,who,couponHook} — never synced
 const now = () => new Date().toISOString();
 // Deletes are tombstones (deleted:true + updatedAt) so a removal on one phone
 // wins over the stale copy on the other; pruned after 60 days.
@@ -318,21 +318,9 @@ function whenWhere(e) {
   const range = fmt(e.date) + (end === null ? ' – 🔒' : end ? ' – ' + fmt(end) : '');
   return [range, lineVal(e, 'time', fmtTime), lineVal(e, 'loc'), lineVal(e, 'dress')].filter(Boolean).join(' · ');
 }
-const FIELD_LABEL = { title: 'Title', loc: 'Location', time: 'Time', dress: 'Dress', dateEnd: 'End date', pack: 'Packing', notes: 'Notes' };
-// Fields THIS phone has locked as a surprise (the ones I set the secret for).
-const ownerHidden = (e) => (e.hidden || []).filter((k) => iOwnSecret(e, k));
-// A device-local pet name (settings.petName) can stand in for the partner's
-// name in these private surprise badges — "Hidden from Kitten" — so a glance
-// gives nothing away. Falls back to their real name.
-const partnerName = () => DB.settings.petName || (me() ? COUPLE[other(me())].name : 'your partner');
-// Owner-side confidence: a badge on the card naming exactly what the other
-// phone can't see, so a locked field is never a guess.
-function lockBadge(e) {
-  const mine = ownerHidden(e);
-  if (mine.length) return el('div', { class: 'lockbadge' }, `🔒 Hidden from ${partnerName()}: ${mine.map((k) => FIELD_LABEL[k]).join(', ')}`);
-  if ((e.hidden || []).length) return el('div', { class: 'lockbadge them' }, '🔒 A surprise is set for you 💝');
-  return null;
-}
+// The front stays clean: a masked "🔒 A surprise 💝" title + 🔒 line markers
+// already say "surprise", so no per-field badge. The details sheet tints the
+// locked fields and marks each "🔒 surprise".
 
 // The most recent DONE (not future-planned) entry of a type.
 function lastDone(type) {
@@ -758,7 +746,6 @@ function upcomingCard(e) {
       ]),
       el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
     ]),
-    lockBadge(e),
   ];
   // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
   if ((e.type === 'getaway' || e.type === 'trip') && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
@@ -1023,7 +1010,6 @@ function historyRow(e, upcoming) {
       el('div', { class: 'r-title' }, titleText(e)),
       el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
       memLine(e),
-      lockBadge(e),
     ]),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => { e.deleted = true; e.updatedAt = now(); commit(); render(); } }, '✕'),
@@ -1099,8 +1085,8 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     let lab;
     if (canHide) {
       locked[k] = entry ? iOwnSecret(entry, k) : false;
-      const mark = el('span', { class: 'lockmark' }, locked[k] ? `🔒 hidden from ${partnerName()}` : '');
-      const sync = () => { input.classList.toggle('locked', locked[k]); mark.textContent = locked[k] ? `🔒 hidden from ${partnerName()}` : ''; };
+      const mark = el('span', { class: 'lockmark' }, locked[k] ? '🔒 surprise' : '');
+      const sync = () => { input.classList.toggle('locked', locked[k]); mark.textContent = locked[k] ? '🔒 surprise' : ''; };
       const lock = el('button', { type: 'button', class: 'lockmini' + (locked[k] ? ' on' : ''), title: 'Keep this a surprise', onclick: () => {
         locked[k] = !locked[k]; lock.classList.toggle('on', locked[k]); lock.textContent = locked[k] ? '🔒' : '🔓'; sync();
       } }, locked[k] ? '🔒' : '🔓');
@@ -1280,7 +1266,6 @@ function renderSettings() {
   const interests = el('input', { class: 'input', placeholder: 'e.g. live music, tacos, hiking, comedy', value: s.interests || '' });
   const themeSel = el('select', { class: 'input' }, ['auto','light','dark'].map((v) => el('option', { value: v, selected: (s.theme||'auto')===v ? 'selected' : null }, v[0].toUpperCase()+v.slice(1))));
   const whoSel = el('select', { class: 'input' }, [['', 'Choose…'], ['chris', '💙 Chris'], ['kat', '💜 Kat']].map(([v, label]) => el('option', { value: v, selected: (s.who || '') === v ? 'selected' : null }, label)));
-  const petName = el('input', { class: 'input', placeholder: 'e.g. Kitten (optional)', value: s.petName || '' });
   const couponHook = el('input', { class: 'input', placeholder: 'https://script.google.com/macros/s/…/exec', value: s.couponHook || '' });
   const gistToken = el('input', { class: 'input', type: 'password', placeholder: 'GitHub token (gist scope)', value: s.gistToken || '' });
   const gistId = el('input', { class: 'input', placeholder: 'Gist ID', value: s.gistId || '' });
@@ -1293,8 +1278,6 @@ function renderSettings() {
     el('div', { class: 'card' }, [
       el('label', { class: 'field-label', style: 'margin-top:0' }, 'This phone belongs to'), whoSel,
       el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Picks whose 💌 coupon book you send from.'),
-      el('label', { class: 'field-label' }, 'Pet name for your other half (optional)'), petName,
-      el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Used in the private “🔒 Hidden from …” surprise labels on this phone. Stays on this device.'),
       el('label', { class: 'field-label' }, 'Home city (sharpens ideas)'), city,
       el('label', { class: 'field-label' }, 'What you two enjoy'), interests,
       el('label', { class: 'field-label' }, 'Claude API key (optional — for ✨ idea suggestions)'), apiKey,
@@ -1306,7 +1289,7 @@ function renderSettings() {
       el('div', { style: 'margin-top:10px' }, el('button', { class: 'btn btn-sm', onclick: () => syncNow(true) }, '⇅ Sync now')),
       el('label', { class: 'field-label' }, 'Appearance'), themeSel,
       el('div', { style: 'margin-top:16px' }, el('button', { class: 'btn btn-primary', onclick: () => {
-        DB.settings = { ...DB.settings, who: whoSel.value, petName: petName.value.trim(), apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
+        DB.settings = { ...DB.settings, who: whoSel.value, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
         commit(); applyTheme(); toast('Saved'); render();
       } }, 'Save')),
     ]),
