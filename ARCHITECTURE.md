@@ -24,7 +24,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
 ```js
 {
   entries: [{ id, type, date, dateEnd, title, loc, time, dress, pack, notes,
-              rating, planned, status, mem, hidden, updatedAt, deleted }],
+              rating, planned, status, owner, mem, hidden, updatedAt, deleted }],
   secrets: { entryId: { field: value } },   // device-local, never synced
   stash:   { person: [{ id, text, done, createdAt }] }, // device-local, never synced
   deepcache: { key: { text, at } },         // device-local ✨ result cache, ~30 days
@@ -46,6 +46,11 @@ One `localStorage` key, `ortiz-us-os`, holding:
   Planning-detail fields (`PLANQ` in `app.js`) are per-type: date nights and
   occasions carry `loc`/`time`/`dress`; getaways and trips carry
   `loc`/`dateEnd`/`pack`. All optional, edited from the event's own sheet.
+  `owner` is the creator (`settings.who` at creation): **only the owner can
+  lock fields** (`canHide` gates on `iOwnEvent`); the other phone can edit
+  open fields but not privatise. Legacy owner-less entries stay open to
+  either. All event actions (booked/planning toggle, save, remove) live in
+  the sheet — cards carry no buttons.
 - **Per-event surprises.** Any hideable field (`HIDEABLE`: title, loc, time,
   dress, dateEnd, pack, notes) can be locked 🔒 on a planned event. The real
   value goes to `secrets[entryId][field]` — **device-local, never in

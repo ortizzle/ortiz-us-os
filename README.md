@@ -59,12 +59,15 @@ after an update.
   flips the sheet to *log one that already happened* instead.
 - **Details per type** — date nights & occasions: location, time, dress code,
   notes. Getaways & trips: location, end date, what to pack, notes. All
-  optional, all editable any time — tap the event's card to reopen it, and
-  **🗑 Remove** lives right in the sheet if plans fall through. Still-planning
-  cards lead with **✎ Details**, because details are what get you to booked.
-  Logging asks memory questions (favorite moment/food/drink for dates;
-  activity/food/a-moment-to-keep for getaways and trips).
-- **✨ Ideas on a plan** (API key required) — real bookable options, scoped
+  optional, all editable any time. **Cards have no buttons** — tap a card to
+  open its sheet, where every action lives: the booked/still-planning
+  **toggle**, **Save**, **Cancel**, and **🗑 Remove**. Logging asks memory
+  questions (favorite moment/food/drink for dates; activity/food/a-moment-to-
+  keep for getaways and trips).
+- **Event owner** — each event belongs to whoever created it. Only the owner
+  can lock fields (add surprises); the other of you can edit the open fields
+  but not privatise. The sheet names the owner when it isn't you.
+- **Idea generation lives in the Ideas tab** (API key required) — scoped
   sensibly: date nights stay local, occasions roam the metro, getaways go
   statewide/~6 h drive, trips go anywhere. Anniversary and birthdays
   auto-surface in ✅ Booked within 45 days — and tapping one opens a **🎁
@@ -169,4 +172,4 @@ npx serve .
 
 ---
 
-*Current build: v21 · glance-proof.*
+*Current build: v22 · owned & tidy.*
