@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v18 · the grand tour';
+const APP_VERSION = 'v19 · what she sees';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -300,6 +300,18 @@ function whenWhere(e) {
   const end = shownVal(e, 'dateEnd');
   const range = fmt(e.date) + (end === null ? ' – 🔒' : end ? ' – ' + fmt(end) : '');
   return [range, lineVal(e, 'time', fmtTime), lineVal(e, 'loc'), lineVal(e, 'dress')].filter(Boolean).join(' · ');
+}
+const FIELD_LABEL = { title: 'Title', loc: 'Location', time: 'Time', dress: 'Dress', dateEnd: 'End date', pack: 'Packing', notes: 'Notes' };
+// Fields THIS phone has locked as a surprise (the ones I set the secret for).
+const ownerHidden = (e) => (e.hidden || []).filter((k) => iOwnSecret(e, k));
+const partnerName = () => (me() ? COUPLE[other(me())].name : 'your partner');
+// Owner-side confidence: a badge on the card naming exactly what the other
+// phone can't see, so a locked field is never a guess.
+function lockBadge(e) {
+  const mine = ownerHidden(e);
+  if (mine.length) return el('div', { class: 'lockbadge' }, `🔒 Hidden from ${partnerName()}: ${mine.map((k) => FIELD_LABEL[k]).join(', ')}`);
+  if ((e.hidden || []).length) return el('div', { class: 'lockbadge them' }, '🔒 A surprise is set for you 💝');
+  return null;
 }
 
 // The most recent DONE (not future-planned) entry of a type.
@@ -728,6 +740,7 @@ function upcomingCard(e) {
       ]),
       el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
     ]),
+    lockBadge(e),
     // Still planning? Details lead — that's what you need to book. Once booked,
     // details step back and the "still planning" toggle leads.
     el('div', { class: 'card-actions', style: 'margin-top:10px' }, booked ? [bookToggle, details] : [details, bookToggle, ideas]),
@@ -831,8 +844,9 @@ function renderRhythm() {
       cls = left <= 3 ? 'due' : 'ok';
     }
     const pt = planned ? shownVal(planned, 'title') : null;
+    const lockPre = planned && ownerHidden(planned).length ? '🔒 ' : '';
     const meta = planned
-      ? `${pt === null ? '🔒 surprise' : pt || 'planned'} · ${fmt(planned.date)}`
+      ? `${lockPre}${pt === null ? '🔒 surprise' : pt || 'planned'} · ${fmt(planned.date)}`
       : last ? `last: ${fmt(last.date)}` : 'no history yet';
 
     return el('button', { class: 'stat', onclick: () => logModal(c.type, { planned: true }) }, [
@@ -1038,6 +1052,7 @@ function historyRow(e, upcoming) {
       el('div', { class: 'r-title' }, titleText(e)),
       el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
       memLine(e),
+      lockBadge(e),
     ]),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => { e.deleted = true; e.updatedAt = now(); commit(); render(); } }, '✕'),
@@ -1092,10 +1107,13 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     let lab;
     if (canHide) {
       locked[k] = entry ? iOwnSecret(entry, k) : false;
+      const mark = el('span', { class: 'lockmark' }, locked[k] ? `🔒 hidden from ${partnerName()}` : '');
+      const sync = () => { input.classList.toggle('locked', locked[k]); mark.textContent = locked[k] ? `🔒 hidden from ${partnerName()}` : ''; };
       const lock = el('button', { type: 'button', class: 'lockmini' + (locked[k] ? ' on' : ''), title: 'Keep this a surprise', onclick: () => {
-        locked[k] = !locked[k]; lock.classList.toggle('on', locked[k]); lock.textContent = locked[k] ? '🔒' : '🔓';
+        locked[k] = !locked[k]; lock.classList.toggle('on', locked[k]); lock.textContent = locked[k] ? '🔒' : '🔓'; sync();
       } }, locked[k] ? '🔒' : '🔓');
-      lab = el('label', { class: 'field-label lockrow' }, [el('span', {}, labelText), lock]);
+      lab = el('label', { class: 'field-label lockrow' }, [el('span', {}, [labelText, ' ', mark]), lock]);
+      if (locked[k]) input.classList.add('locked');
     } else lab = el('label', { class: 'field-label' }, labelText);
     body.push(lab, input);
   }
