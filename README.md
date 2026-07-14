@@ -116,6 +116,11 @@ fields show it, tinted pink and marked "🔒 surprise." The other phone shows
 "🔒 Kept as a surprise 💝" throughout. This holds through planning, booked,
 and logged — **booking never reveals a locked field.**
 
+For a **full** surprise (a surprise getaway, say), the sheet has a **🙈 Hide
+the whole plan** switch — the other of you never sees it exists, not even
+the date. And while the title is locked you can type a **cover name** (e.g.
+"Surprise date 💝") that shows on the front in place of the real one.
+
 Two honest caveats: a locked value lives *only* on the phone that set it —
 clear that phone's browser data and the hidden value is gone (the event
 itself survives). And locking isn't retroactive: if a field synced before you
@@ -167,4 +172,4 @@ npx serve .
 
 ---
 
-*Current build: v23 · quiet front.*
+*Current build: v24 · full surprises.*

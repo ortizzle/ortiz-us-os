@@ -64,6 +64,17 @@ Three sections with jump-chips (a mini table of contents) at the top:
   reads as a surprise. After the reveal, edit the event and toggle the 🔒 off
   — the field then syncs normally, reads right in History. Booking never
   reveals a locked field.
+- **Full surprise (`🙈 Hide the whole plan`)** — a per-event switch that hides
+  the *entire* plan from the other phone (not even the date/existence shows).
+  `entry.private`; `sharedPayload` sends a tombstone in its place, so they
+  drop any prior copy, while this phone keeps the real record. Best set at
+  creation; ideal for a surprise getaway. Toggling it off later cleanly
+  reveals the plan.
+- **Cover name** — while the title is locked, an optional editable decoy
+  (`entry.cover`) shows on the front instead of "🔒 A surprise 💝", so you
+  control the visible title. City-only area links for a secret location now
+  use the **location's own city** (parsed from the address) when it can be
+  read, falling back to the Home city.
 - **✨ idea generation lives in the Ideas tab** (was also a per-event "Plan
   with Claude" button; removed to keep event cards button-free). The Ideas
   tab's Claude suggestions are scoped by cadence via `IDEA_SCOPE`: date

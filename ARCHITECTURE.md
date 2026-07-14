@@ -23,8 +23,9 @@ One `localStorage` key, `ortiz-us-os`, holding:
 
 ```js
 {
-  entries: [{ id, type, date, dateEnd, title, loc, time, dress, pack, notes,
-              rating, planned, status, owner, mem, hidden, updatedAt, deleted }],
+  entries: [{ id, type, date, dateEnd, title, cover, loc, time, dress, pack,
+              notes, rating, planned, status, owner, private, mem, hidden,
+              updatedAt, deleted }],
   secrets: { entryId: { field: value } },   // device-local, never synced
   stash:   { person: [{ id, text, done, createdAt }] }, // device-local, never synced
   deepcache: { key: { text, at } },         // device-local ✨ result cache, ~30 days
@@ -60,6 +61,17 @@ One `localStorage` key, `ortiz-us-os`, holding:
   saves never touch those keys, so a merge from the partner's edits can't wipe
   the secret (same guarantee as private ideas, at field granularity). Secrets
   for deleted/pruned entries are dropped in `pruneTombstones`.
+- **`entry.private`** is a *full* surprise: the whole plan is hidden from the
+  other phone, not just some fields. `sharedPayload` sends a **tombstone**
+  (`{id, type, deleted:true, updatedAt}`) in its place — so the other phone
+  drops any copy it had and never sees the content — while this phone keeps
+  the real record (the tombstone carries the same `updatedAt`, so a pull
+  can't clobber the local original: `mergeCol` keeps local on ties). Setting
+  `private:false` later re-syncs the real record (bumped `updatedAt` wins
+  over the tombstone) — a clean reveal. `cardVal` masks every field of a
+  private plan on the setter's own front too (glance-proof).
+- **`entry.cover`** is an editable, synced decoy title shown on the front
+  while the real `title` is locked (`titleText`).
 - **`stash`** is the 🎁 per-person surprise scratchpad (gift/trip ideas about
   the other), opened from the Surprise-stashes card on Goals (year-round) or
   by tapping a special-date row in ✅ Booked when one is surfaced.
