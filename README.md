@@ -93,6 +93,8 @@ after an update.
   never sync, so the surprise always holds.
 - **History** — Coming up (with 🔨/✅ status) and Been there (♥ ratings,
   saved memories), newest first. Everything's editable after the fact (✎).
+  A booked plan **auto-retires** here once it's past and you've rated it —
+  until then it lingers in Rhythm's Booked list as a nudge to log how it went.
 - *…and if you tap the heart in the top corner six times, something's there
   for just you two.* 💗
 
@@ -172,4 +174,4 @@ npx serve .
 
 ---
 
-*Current build: v24 · full surprises.*
+*Current build: v27 · retire past plans.*

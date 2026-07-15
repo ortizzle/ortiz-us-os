@@ -114,7 +114,11 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - Everything is **editable after submission** — tap an upcoming card, or ✎
   on any history row. Editing a past entry shows the detail fields too, so
   where-you-went can be recorded (or a surprise unlocked) after the fact.
-  Editing a planned entry to a past date graduates it to history.
+- **Auto-retire to History** — a plan that is **booked, past, and rated**
+  graduates out of Rhythm to History's "Been there" (`shouldGraduate` /
+  `graduatePast`, run on open, after sync, and on save). Until it's rated, a
+  past booked plan stays in Rhythm's Booked list as a nudge to log how it
+  went; a still-*planning* past plan stays put (it never got confirmed).
 
 ### 💗 Easter eggs (two layers)
 - Tapping the topbar heart 6 times opens "Just us": a couples' bingo card,

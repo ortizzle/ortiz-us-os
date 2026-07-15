@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v26 · tidy-up';
+const APP_VERSION = 'v27 · retire past plans';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -55,6 +55,18 @@ function pruneTombstones() {
   for (const k of Object.keys(DB.deepcache)) if ((DB.deepcache[k].at || '') < dcut) delete DB.deepcache[k];
 }
 const commit = () => { save(DB); scheduleSync(); };
+
+// A booked plan that's now in the past AND has been rated is done — it retires
+// to History (planned:false) so it stops living in the Rhythm tab. Runs on
+// open and after a sync; the same rule graduates on save. Only bumps
+// updatedAt when it actually flips something, so it's a no-op once retired.
+const shouldGraduate = (e) => e.planned && e.status === 'booked' && e.date < todayStr() && (e.rating || 0) > 0;
+function graduatePast() {
+  let changed = false;
+  for (const e of DB.entries) if (!e.deleted && shouldGraduate(e)) { e.planned = false; e.updatedAt = now(); changed = true; }
+  if (changed) save(DB);
+  return changed;
+}
 
 // ---------- 2-2-2 model ----------
 const CADENCES = [
@@ -1208,9 +1220,9 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   };
   const saveEdit = () => {
     apply(entry);
-    // Strictly past → graduate to history. Today stays upcoming — editing a
-    // plan the morning-of (adding the time, say) must not bury it pre-event.
-    if (entry.planned && entry.date < todayStr()) entry.planned = false;
+    // Booked + past + rated → it happened and it's logged, so retire it to
+    // History. Until it's rated it stays in Rhythm's Booked list as a nudge.
+    if (shouldGraduate(entry)) entry.planned = false;
     commit(); m.close(); toast('Updated 💞'); render();
   };
   const remove = () => {
@@ -1397,6 +1409,7 @@ async function syncNow(manual) {
       pruneTombstones();
       save(DB);
     }
+    graduatePast(); // retire booked+past+rated plans (incl. ones the other phone just rated)
     const patch = await fetch(`https://api.github.com/gists/${DB.settings.gistId}`, {
       method: 'PATCH', headers: { ...headers, 'content-type': 'application/json' },
       body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(sharedPayload()) } } }),
@@ -1472,6 +1485,7 @@ pruneTombstones();
 seedTickets();
 seedBingo();
 migrateCoupons();
+graduatePast(); // a plan booked & rated last time that's now past retires to History
 render();
 maybeReveal(); // a coupon synced in while the app was closed still gets its moment
 syncNow(false); // pull the other phone's changes on open
