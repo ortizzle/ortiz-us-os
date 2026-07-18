@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v27 · retire past plans';
+const APP_VERSION = 'v28 · booked-event details view';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -751,9 +751,11 @@ function sendCouponNudge(from) {
     .catch(() => toast('Coupon sent in-app — the email nudge didn’t go through'));
 }
 
-// Cards carry NO buttons — tap anywhere to open the event's sheet, where
-// every action (booked/planning, save, remove) lives. The status shows as a
-// chip so the ladder is still readable at a glance.
+// Cards carry NO buttons — tap anywhere to open the event's sheet. A BOOKED
+// plan is locked in, so its tap opens a read-only details view (when/where,
+// map & lookup links, notes, memories) with ✎ Edit one tap further; a plan
+// that's still being figured out taps straight into the edit form. The status
+// shows as a chip so the ladder is readable at a glance.
 function upcomingCard(e) {
   const t = todayStr();
   const c = cadenceOf(e.type);
@@ -773,7 +775,80 @@ function upcomingCard(e) {
   ];
   // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
   if ((e.type === 'getaway' || e.type === 'trip') && !booked) kids.push(el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🗺️ while you plan: remember the trip-guide app (Jerome was a hit)'));
-  return el('div', { class: 'card next-card clickable', onclick: () => logModal(e.type, { entry: e }) }, kids);
+  const open = booked ? () => eventSheet(e) : () => logModal(e.type, { entry: e });
+  return el('div', { class: 'card next-card clickable', onclick: open }, kids);
+}
+
+// Read-only DETAILS sheet for a booked event: the plan at a glance — when,
+// where, quick lookup links (event search, map, menu/stays, reviews), notes,
+// and once it's happened its memories + rating. Editing is one tap away via
+// ✎ Edit → logModal. Privacy rules match the edit sheet exactly: shownVal
+// reveals THIS phone's own 🔒 secrets but keeps the partner's surprises as a
+// locked teaser, and a masked title still shows only its decoy cover.
+function eventSheet(entry) {
+  const c = cadenceOf(entry.type);
+  const t = todayStr();
+  const body = [];
+  const isSecret = (k) => (entry.hidden || []).includes(k) && !iOwnSecret(entry, k);
+  const valBox = (text, locked) => el('div', { class: 'input' + (locked ? ' locked-note' : '') }, text);
+  const pushRow = (label, node) => body.push(el('div', {}, [el('div', { class: 'field-label' }, label), node]));
+
+  const booked = entry.status === 'booked';
+  const head = [el('span', { class: 'chip' + (booked ? ' love' : '') }, booked ? '✅ Booked' : '🔨 Still planning')];
+  if (entry.private) head.push(el('span', { class: 'chip' }, '🙈 Full surprise'));
+  body.push(el('div', { class: 'card-actions', style: 'margin:0 0 4px' }, head));
+  if (entry.owner) {
+    const o = COUPLE[entry.owner];
+    body.push(el('p', { class: 'muted small', style: 'margin:0 0 6px' },
+      entry.owner === me() ? `${o.emoji} Your plan` : `${o.emoji} ${o.name}’s plan`));
+  }
+
+  // When — the start date, plus the countdown and (for getaways/trips) the end.
+  const left = daysBetween(t, entry.date);
+  const when = left < 0 ? `was ${fmt(entry.date)}` : left === 0 ? `${fmt(entry.date)} · today!` : `${fmt(entry.date)} · in ${left}d`;
+  let range = when;
+  if (isSecret('dateEnd')) range += ' – 🔒';
+  else { const end = shownVal(entry, 'dateEnd'); if (end) range += ` – through ${fmt(end)}`; }
+  pushRow('When', valBox(range));
+
+  // The rest of the planning fields, minus dateEnd (folded into When above).
+  for (const [k, label] of PLANQ[entry.type]) {
+    if (k === 'dateEnd') continue;
+    if (isSecret(k)) { pushRow(label, valBox('🔒 Kept as a surprise 💝', true)); continue; }
+    const v = shownVal(entry, k);
+    if (v) pushRow(label, valBox(k === 'time' ? fmtTime(v) : v));
+  }
+
+  // Lookup links — same privacy rules as the edit sheet. A visible title gets
+  // a straight web search (the venue's page, showtimes, tickets); a visible
+  // location adds map / menu / reviews. A SECRET location narrows to city-only
+  // "area" links so the exact spot never lands in a search URL.
+  const titleQ = shownVal(entry, 'title');
+  const realLoc = shownVal(entry, 'loc');
+  if (titleQ) body.push(linkRow([['🔗 Look it up', gSearch([titleQ, realLoc || ''].filter(Boolean).join(' '))]]));
+  if (realLoc) {
+    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, entry.type));
+    else {
+      const area = cityOf(realLoc) || DB.settings.city;
+      if (area) body.push(areaLinks(area),
+        el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
+    }
+  }
+
+  if (isSecret('notes')) pushRow('Notes', valBox('🔒 Kept as a surprise 💝', true));
+  else { const nv = shownVal(entry, 'notes'); if (nv) pushRow('Notes', valBox(nv)); }
+
+  // Memories + rating make sense once it's happened.
+  if (entry.date <= t) {
+    for (const [k, label] of MEMQ[entry.type]) if (entry.mem?.[k]) pushRow(label, valBox(entry.mem[k]));
+    if (entry.rating) pushRow('How it was',
+      el('div', { style: 'font-size:20px; color:var(--accent); letter-spacing:2px' }, '♥'.repeat(entry.rating) + '♡'.repeat(5 - entry.rating)));
+  }
+
+  const m = modal(`${c.emoji} ${titleText(entry)}`, body, [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+    el('button', { class: 'btn btn-primary', onclick: () => { m.close(); logModal(entry.type, { entry }); } }, '✎ Edit'),
+  ]);
 }
 
 // Geographic reach per cadence — date nights stay close, getaways range wide.
