@@ -1,7 +1,7 @@
 // sw.js — network-first shell with cache fallback. Online loads always get
 // current code; offline falls back to the last cached shell. Mirrors the
 // strategy used across the Ortiz suite.
-const CACHE = 'us-os-shell-v28';
+const CACHE = 'us-os-shell-v29';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {
@@ -14,7 +14,10 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return; // never touch API/CDN traffic
   e.respondWith(
-    fetch(e.request).then((res) => {
+    // cache:'reload' forces the outgoing fetch past the BROWSER's HTTP cache so
+    // an online load truly gets current code — a plain fetch() can be answered
+    // by a stale (max-age) copy, which is what made new deploys lag a refresh.
+    fetch(e.request, { cache: 'reload' }).then((res) => {
       const copy = res.clone();
       caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
       return res;
