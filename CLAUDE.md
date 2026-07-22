@@ -28,18 +28,23 @@ full shape. Key invariants:
 - **`settings` never syncs.** It's local-only (API key, Gist token, theme).
   Same for **`stash`** (🎁 per-person gift-idea scratchpads) — device-local,
   saved with `save()` not `commit()`.
-- **Goal tickets, bingo squares (both cards), curated-pick reactions, and
-  love coupons use deterministic ids** (`goal:kind:n`, `bingo:n`, `bingo2:n`,
-  `rec:<name>`, `coupon:<kind>:<n>`) — this is what keeps both phones from
-  doubling the seeded sets and lets any real tap win the merge. New goals go
-  in `GOALS`; never seed shared fixed-size collections with random ids.
+- **Goal tickets, bingo squares (both cards), curated-pick reactions, love
+  coupons, and couple-activity state use deterministic ids** (`goal:kind:n`,
+  `bingo:n`, `bingo2:n`, `rec:<name>`, `coupon:<kind>:<n>`, `ynm:<who>:<n>`,
+  `wyr:<who>:<n>`, `<game>:ready:<who>`, `q36:progress`) — this is what keeps
+  both phones from doubling the seeded sets and lets any real tap win the
+  merge. New goals go in `GOALS`; never seed shared fixed-size collections
+  with random ids.
 - **`coupons` holds SENT love coupons only.** The unsent book is static code
   (`COUPON_ITEMS`) rendered per `settings.who`, so unsent coupons never
   transit the Gist — same surprise guarantee as private ideas: never create
   records for unsent coupons.
 - **Curated picks (`RECS`), special dates (`SPECIAL`), memory questions
-  (`MEMQ`), and bingo items are static data in `app.js`** — edit in code,
-  don't move them into the store.
+  (`MEMQ`), bingo items, and activity content (`YNM_ITEMS`, `WYR_ITEMS`,
+  `Q36`) are static data in `app.js`** — edit in code, don't move them into
+  the store. The "hidden until both ready" reveal in the answer games is a
+  UI-level game mechanic — those answers DO sync (unlike secrets/private
+  ideas); don't promote it to a privacy guarantee or vice versa.
 - **Private ideas (`private: true`) never leave the device** —
   `sharedPayload()` filters them out before anything is written to the Gist.
   Don't change this filter without confirming with the user; it's a
