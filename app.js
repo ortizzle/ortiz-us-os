@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v29 · always-fresh online loads';
+const APP_VERSION = 'v30 · beyond the card';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -39,6 +39,7 @@ DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seen
 DB.bingo ||= [];     // easter-egg bingo squares: {id,n,done,updatedAt}
 DB.bingo2 ||= [];    // the card behind the card
 DB.recstate ||= [];  // curated-pick reactions: {id,state:'dismissed'|'done'|'',updatedAt}
+DB.acts ||= [];      // couple-activity state (yes/no/maybe, would-you-rather, 36Q): {id,v?,on?,n?,updatedAt} — deterministic ids, synced
 DB.settings ||= {};  // {apiKey,city,interests,theme,gistToken,gistId,lastSyncAt,who,couponHook} — never synced
 const now = () => new Date().toISOString();
 // Deletes are tombstones (deleted:true + updatedAt) so a removal on one phone
@@ -278,6 +279,113 @@ const BINGO2_ITEMS = [
   'Roleplay: strangers at a bar who go home together',
   'Sleepy morning sex — green-lit the night before',
 ];
+// ---------- beyond the card: content-driven couple activities ----------
+// All shared state lives in DB.acts with deterministic ids (`ynm:chris:3`,
+// `wyr:ready:kat`, `q36:progress`) so both phones converge without doubling.
+// Yes/No/Maybe and Would-You-Rather use an agreed-reveal: each of you answers
+// solo, and the other's answers stay hidden until BOTH have tapped ready.
+// (UI-level hiding — the answers do sync, this is a game not a vault.)
+const YNM_ITEMS = [
+  'Skinny dip together',
+  'Shower together, lights low',
+  'A bath for two — wine, candles, no clock',
+  'Massage night that goes wherever it goes',
+  'A boudoir photo shoot (either of us)',
+  'Read a spicy book aloud, trading chapters',
+  'Recreate our first date, beat for beat',
+  'Renew our vows, just the two of us',
+  'Matching tattoos, even tiny ones',
+  'Dance lessons — salsa, swing, or country',
+  'Karaoke duet in public',
+  'A “yes day” — one plans, the other agrees to everything',
+  'A surprise date where I know NOTHING in advance',
+  '24 hours in a hotel in our own town',
+  'Sleep under the stars, real tent optional',
+  'Hot-air balloon at sunrise',
+  'Flirt like strangers who just met tonight',
+  'A weekend with zero plans and phones off',
+  'Letters to open on our 20th anniversary',
+  'Slow-dance to our wedding song tonight',
+  'Go dancing until they kick us out',
+  'Take the scenic route home — no maps, no hurry',
+];
+const WYR_ITEMS = [
+  ['Beach house forever', 'Mountain cabin forever'],
+  ['Relive our first kiss', 'Fast-forward to our 50th anniversary party'],
+  ['A month in Italy together', 'A year of monthly weekend trips'],
+  ['Date night every single Friday', 'One big surprise getaway each season'],
+  ['Slow dancing in the kitchen', 'Making out in the car like teenagers'],
+  ['Breakfast in bed', 'Midnight snack run in pajamas'],
+  ['Know what I’m thinking for one day', 'Hear my unfiltered story of my 20s'],
+  ['A private chef for a year', 'A housekeeper for a year'],
+  ['Pick our next trip together', 'Be handed two mystery tickets at the airport'],
+  ['Dance in the rain', 'Watch the storm from the porch under one blanket'],
+  ['Front row at our favorite band', 'Backstage to meet them'],
+  ['A do-over of our wedding day (same spouse)', 'A giant party for no reason at all'],
+  ['Grow old somewhere sunny', 'Grow old somewhere with real seasons'],
+  ['Always hold hands in public', 'Always kiss goodbye, no exceptions'],
+  ['One year with no chores', 'One year with no bills'],
+  ['Learn a language together', 'Learn to ballroom dance together'],
+  ['Tell each other every dream we remember', 'Keep a shared journal we pass back and forth'],
+  ['A weekly bouquet of flowers', 'A weekly handwritten note'],
+];
+// The 36 questions from Aron et al.'s 1997 closeness study (the ones the
+// NYT "To Fall in Love With Anyone, Do This" essay made famous). Three sets,
+// each deeper than the last; the classic closer is 4 minutes of eye contact.
+const Q36 = [
+  'Given the choice of anyone in the world, whom would you want as a dinner guest?',
+  'Would you like to be famous? In what way?',
+  'Before making a telephone call, do you ever rehearse what you are going to say? Why?',
+  'What would constitute a “perfect” day for you?',
+  'When did you last sing to yourself? To someone else?',
+  'If you were able to live to the age of 90 and retain either the mind or body of a 30-year-old for the last 60 years of your life, which would you want?',
+  'Do you have a secret hunch about how you will die?',
+  'Name three things you and your partner appear to have in common.',
+  'For what in your life do you feel most grateful?',
+  'If you could change anything about the way you were raised, what would it be?',
+  'Take four minutes and tell your partner your life story in as much detail as possible.',
+  'If you could wake up tomorrow having gained any one quality or ability, what would it be?',
+  'If a crystal ball could tell you the truth about yourself, your life, the future, or anything else, what would you want to know?',
+  'Is there something that you’ve dreamed of doing for a long time? Why haven’t you done it?',
+  'What is the greatest accomplishment of your life?',
+  'What do you value most in a friendship?',
+  'What is your most treasured memory?',
+  'What is your most terrible memory?',
+  'If you knew that in one year you would die suddenly, would you change anything about the way you are now living? Why?',
+  'What does friendship mean to you?',
+  'What roles do love and affection play in your life?',
+  'Alternate sharing something you consider a positive characteristic of your partner. Share a total of five items.',
+  'How close and warm is your family? Do you feel your childhood was happier than most other people’s?',
+  'How do you feel about your relationship with your mother?',
+  'Make three true “we” statements each. For instance, “We are both in this room feeling…”',
+  'Complete this sentence: “I wish I had someone with whom I could share…”',
+  'If you were going to become a close friend with your partner, please share what would be important for him or her to know.',
+  'Tell your partner what you like about them; be very honest this time, saying things that you might not say to someone you’ve just met.',
+  'Share with your partner an embarrassing moment in your life.',
+  'When did you last cry in front of another person? By yourself?',
+  'Tell your partner something that you like about them already.',
+  'What, if anything, is too serious to be joked about?',
+  'If you were to die this evening with no opportunity to communicate with anyone, what would you most regret not having told someone? Why haven’t you told them yet?',
+  'Your house, containing everything you own, catches fire. After saving your loved ones and pets, you have time to safely make a final dash to save any one item. What would it be? Why?',
+  'Of all the people in your family, whose death would you find most disturbing? Why?',
+  'Share a personal problem and ask your partner’s advice on how he or she might handle it. Also, ask your partner to reflect back to you how you seem to be feeling about the problem you have chosen.',
+];
+
+const actRec = (id) => DB.acts.find((r) => r.id === id);
+function setAct(id, patch) {
+  let r = actRec(id);
+  if (!r) { r = { id }; DB.acts.push(r); }
+  Object.assign(r, patch, { updatedAt: now() });
+  commit();
+}
+const actAnswer = (game, who, n) => actRec(`${game}:${who}:${n}`)?.v;
+const actReady = (game, who) => Boolean(actRec(`${game}:ready:${who}`)?.on);
+const bothReady = (game) => actReady(game, 'chris') && actReady(game, 'kat');
+const answeredCount = (game, who, total) => {
+  let c = 0; for (let n = 0; n < total; n++) if (actAnswer(game, who, n) != null) c++;
+  return c;
+};
+
 const BINGO_FREE = 12; // center square
 function seedBingo() {
   for (const [col, key] of [[DB.bingo, 'bingo'], [DB.bingo2, 'bingo2']]) {
@@ -508,10 +616,13 @@ const view = document.getElementById('view');
 let current = 'rhythm';
 function render() {
   clear(view);
+  clearInterval(eyeTimer); // leaving the 36Q closer view stops its countdown
   if (current === 'rhythm') renderRhythm();
   else if (current === 'ideas') renderIdeas();
   else if (current === 'goals') renderGoals();
   else if (current === 'bingo' || current === 'bingo2') renderBingo();
+  else if (current === 'ynm' || current === 'wyr') renderRevealGame(current);
+  else if (current === 'q36') renderQ36();
   else if (current === 'settings') renderSettings();
   else renderHistory();
 }
@@ -1382,6 +1493,159 @@ function renderBingo() {
   view.append(el('p', { class: 'muted small center', style: 'margin-top:14px' }, deep
     ? 'Synced between your phones. A safeword and a sense of humor cover everything else.'
     : 'Synced between your phones. No pressure, no order — just excuses to reach for each other.'));
+
+  if (!deep) {
+    view.append(el('h2', { style: 'margin-top:24px' }, 'Beyond the card'));
+    const games = [
+      ['ynm', '💌', 'Yes / No / Maybe', () => {
+        const y = me(), mine = y ? `you ${answeredCount('ynm', y, YNM_ITEMS.length)}/${YNM_ITEMS.length}` : '';
+        return bothReady('ynm') ? `revealed 💞 · ${mine}` : mine ? `answers hide until you’re both ready · ${mine}` : 'answers hide until you’re both ready';
+      }],
+      ['q36', '🕯️', 'The 36 Questions', () => {
+        const n = actRec('q36:progress')?.n || 0;
+        return n >= Q36.length ? 'done — down to the eye contact 👀' : n ? `picking back up at question ${n + 1}` : 'the famous fall-in-love interview — save an evening';
+      }],
+      ['wyr', '🎲', 'Would You Rather', () => {
+        const y = me(), mine = y ? `you ${answeredCount('wyr', y, WYR_ITEMS.length)}/${WYR_ITEMS.length}` : '';
+        return bothReady('wyr') ? `revealed 🎯 · ${mine}` : mine ? `pick blind, reveal together · ${mine}` : 'pick blind, reveal together';
+      }],
+    ];
+    for (const [key, emoji, title, meta] of games) view.append(
+      el('div', { class: 'row rec', onclick: () => { current = key; render(); } }, [
+        el('span', { class: 'r-emoji' }, emoji),
+        el('div', { class: 'r-main' }, [el('div', { class: 'r-title' }, title), el('div', { class: 'r-meta' }, meta())]),
+        el('span', { class: 'chip' }, 'play'),
+      ]));
+  }
+}
+
+// ---------- yes/no/maybe + would-you-rather (agreed-reveal games) ----------
+const GAME_CFG = {
+  ynm: { title: '💌 Yes / No / Maybe', items: YNM_ITEMS,
+    sub: 'Answer on your own, no peeking over shoulders. The other list stays hidden until you BOTH tap ready — then the matches light up.',
+    opts: [['yes', 'Yes'], ['maybe', 'Maybe'], ['no', 'No']] },
+  wyr: { title: '🎲 Would You Rather', items: WYR_ITEMS,
+    sub: 'Pick blind. When you’ve both tapped ready, the picks flip over and you see where you match.',
+    opts: [['a', 'A'], ['b', 'B']] },
+};
+// Verdict line once revealed. YNM etiquette: either "no" retires the item —
+// shown flat and final, nobody argues with a no.
+function ynmVerdict(a, b) {
+  const pair = [a, b].sort().join('+');
+  if (a === 'no' || b === 'no') return ['— off the table', ''];
+  if (pair === 'yes+yes') return ['💚 Both yes — it’s a date', 'hit'];
+  if (pair === 'maybe+yes') return ['🌱 A yes and a maybe — worth a conversation', 'warm'];
+  if (pair === 'maybe+maybe') return ['🤍 Two maybes — someday, maybe', 'warm'];
+  return ['waiting on an answer', ''];
+}
+function renderRevealGame(game) {
+  const cfg = GAME_CFG[game];
+  const y = me(), them = y ? other(y) : '';
+  view.append(el('h1', {}, cfg.title), el('p', { class: 'sub' }, cfg.sub));
+  view.append(el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'bingo'; render(); } }, '← back'));
+
+  if (!y) {
+    view.append(el('p', { class: 'muted' }, 'First tell the app whose phone this is — Settings → “This phone belongs to”. Otherwise it can’t keep your answers apart.'));
+    view.append(el('button', { class: 'btn btn-primary', onclick: () => { current = 'settings'; setTab(); render(); } }, 'Open Settings'));
+    return;
+  }
+
+  const total = cfg.items.length;
+  const revealed = bothReady(game);
+  const myReady = actReady(game, y), theirReady = actReady(game, them);
+  const theirCount = answeredCount(game, them, total);
+
+  // Status strip: your ready toggle + where they are.
+  const readyBtn = el('button', { class: 'btn ' + (myReady ? '' : 'btn-primary'), onclick: () => {
+    setAct(`${game}:ready:${y}`, { on: !myReady });
+    toast(myReady ? 'Hidden again' : theirReady ? 'Revealed 💞' : `Ready — waiting on ${COUPLE[them].name}`);
+    render();
+  } }, myReady ? '🙈 Hide mine again' : '💌 I’m ready to reveal');
+  view.append(el('div', { class: 'card', style: 'margin-bottom:12px' }, [
+    el('div', { class: 'card-actions' }, [readyBtn]),
+    el('p', { class: 'muted small', style: 'margin:8px 0 0' }, revealed
+      ? 'Both ready — everything’s face up. You can still change answers.'
+      : `${COUPLE[them].name}: ${theirCount}/${total} answered · ${theirReady ? 'ready and waiting 💞' : 'not ready yet'}`),
+  ]));
+
+  cfg.items.forEach((item, n) => {
+    const mine = actAnswer(game, y, n);
+    const theirs = actAnswer(game, them, n);
+    const kids = [];
+    if (game === 'wyr') {
+      // The two choices ARE the content — full-width stacked buttons, "or" between.
+      kids.push(el('div', { class: 'opts stack' }, cfg.opts.flatMap(([v], i) => [
+        i ? el('span', { class: 'a-or' }, 'or') : null,
+        el('button', {
+          class: mine === v ? 'on' : '',
+          onclick: () => { setAct(`${game}:${y}:${n}`, { v: mine === v ? null : v }); render(); },
+        }, item[i]),
+      ])));
+      if (revealed && mine != null && theirs != null) {
+        kids.push(el('div', { class: 'a-verdict ' + (mine === theirs ? 'hit' : '') },
+          mine === theirs ? `🎯 Same! ${item[mine === 'a' ? 0 : 1]}` : `You: ${item[mine === 'a' ? 0 : 1]} · ${COUPLE[them].name}: ${item[theirs === 'a' ? 0 : 1]}`));
+      }
+    } else {
+      kids.push(el('div', { class: 'a-q' }, item));
+      kids.push(el('div', { class: 'opts' }, cfg.opts.map(([v, label]) => el('button', {
+        class: mine === v ? 'on' : '',
+        onclick: () => { setAct(`${game}:${y}:${n}`, { v: mine === v ? null : v }); render(); },
+      }, label))));
+      if (revealed && mine != null && theirs != null) {
+        const [text, cls] = ynmVerdict(mine, theirs);
+        kids.push(el('div', { class: 'a-verdict ' + cls }, `${text} · ${COUPLE[them].name}: ${theirs}`));
+      }
+    }
+    if (!revealed && theirs != null) kids.push(el('div', { class: 'a-verdict' }, `${COUPLE[them].name} answered 🤫`));
+    view.append(el('div', { class: 'act' }, kids));
+  });
+  view.append(el('p', { class: 'muted small center', style: 'margin-top:14px' }, 'A no is a no — celebrate the overlaps, don’t litigate the rest. 💗'));
+}
+
+// ---------- the 36 questions ----------
+let eyeTimer = null;
+function renderQ36() {
+  view.append(el('h1', {}, '🕯️ The 36 Questions'), el('p', { class: 'sub' },
+    'Arthur Aron’s closeness study, the one the NYT made famous. Set aside an evening — take turns reading each question aloud, and you BOTH answer before moving on. Three sets, each deeper than the last. Don’t rush the later ones.'));
+  view.append(el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'bingo'; render(); } }, '← back'));
+
+  const n = Math.min(actRec('q36:progress')?.n || 0, Q36.length);
+  const go = (to) => { setAct('q36:progress', { n: Math.max(0, Math.min(Q36.length, to)) }); render(); };
+
+  if (n >= Q36.length) {
+    // The closer: four minutes of silent eye contact.
+    const disp = el('div', { style: 'font-size:44px; font-weight:800; letter-spacing:0.02em; text-align:center; margin:10px 0' }, '4:00');
+    const startBtn = el('button', { class: 'btn btn-primary', onclick: () => {
+      clearInterval(eyeTimer);
+      let left = 240;
+      disp.textContent = '4:00';
+      eyeTimer = setInterval(() => {
+        left--;
+        disp.textContent = left <= 0 ? 'Now kiss 💋' : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+        if (left <= 0) clearInterval(eyeTimer);
+      }, 1000);
+    } }, '▶ Start 4 minutes');
+    view.append(el('div', { class: 'card' }, [
+      el('div', { class: 'card-meta' }, 'The closer · after question 36'),
+      el('div', { class: 'a-q', style: 'font-size:16px; margin-top:6px' }, 'Look into each other’s eyes for four minutes. No talking. Yes, it’s intense — that’s the point.'),
+      disp,
+      el('div', { class: 'card-actions' }, [startBtn]),
+    ]));
+    view.append(el('p', { style: 'margin-top:14px' }, el('button', { class: 'linklike', onclick: () => go(0) }, '↺ Start the questions over')));
+    return;
+  }
+
+  const setNo = Math.floor(n / 12) + 1;
+  view.append(el('div', { class: 'card' }, [
+    el('div', { class: 'card-meta' }, `Set ${['I','II','III'][setNo - 1]} · Question ${n + 1} of ${Q36.length}`),
+    el('div', { class: 'a-q', style: 'font-size:17px; line-height:1.45; margin-top:6px' }, Q36[n]),
+    el('p', { class: 'muted small', style: 'margin:10px 0 0' }, 'Both of you answer this one out loud before tapping next.'),
+    el('div', { class: 'card-actions', style: 'margin-top:12px' }, [
+      el('button', { class: 'btn', disabled: n === 0 ? 'disabled' : null, onclick: () => go(n - 1) }, '‹ Back'),
+      el('button', { class: 'btn btn-primary', onclick: () => go(n + 1) }, n === Q36.length - 1 ? 'To the closer ›' : 'Next ›'),
+    ]),
+  ]));
+  view.append(el('p', { class: 'muted small center', style: 'margin-top:14px' }, 'Your spot is saved (and synced) — pausing mid-set is allowed, quitting is not. 💗'));
 }
 
 // ---------- settings (a real tab since v15) ----------
@@ -1439,7 +1703,7 @@ function sharedPayload() {
   const entries = DB.entries.map((e) => e.private
     ? { id: e.id, type: e.type, deleted: true, updatedAt: e.updatedAt }
     : e);
-  return { entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, coupons: DB.coupons, bingo: DB.bingo, bingo2: DB.bingo2, recstate: DB.recstate, savedAt: now() };
+  return { entries, ideas: DB.ideas.filter((i) => !i.private), tickets: DB.tickets, coupons: DB.coupons, bingo: DB.bingo, bingo2: DB.bingo2, recstate: DB.recstate, acts: DB.acts, savedAt: now() };
 }
 function mergeCol(local, remote) {
   const byId = new Map(local.map((r) => [r.id, r]));
@@ -1478,6 +1742,7 @@ async function syncNow(manual) {
       DB.bingo = mergeCol(DB.bingo, remote.bingo);
       DB.bingo2 = mergeCol(DB.bingo2, remote.bingo2);
       DB.recstate = mergeCol(DB.recstate, remote.recstate);
+      DB.acts = mergeCol(DB.acts, remote.acts);
       // A not-yet-updated phone may still mark legacy coupon tickets — fold
       // any that arrived via merge into coupon records.
       migrateCoupons();
