@@ -60,10 +60,14 @@ after an update.
 - **Details per type** — date nights & occasions: location, time, dress code,
   notes. Getaways & trips: location, end date, what to pack, notes. All
   optional, all editable any time. **Cards have no buttons** — tap a card to
-  open its sheet, where every action lives: the booked/still-planning
-  **toggle**, **Save**, **Cancel**, and **🗑 Remove**. Logging asks memory
-  questions (favorite moment/food/drink for dates; activity/food/a-moment-to-
-  keep for getaways and trips).
+  open the event. A **🔨 still-planning card opens straight into the edit
+  sheet** (it's a work in progress), where every action lives: the
+  booked/still-planning **toggle**, **Save**, **Cancel**, and **🗑 Remove**.
+  A **✅ booked card opens a read-only details view** instead — the plan at
+  a glance: when & where, 🔗 look-it-up / 📍 map / menu & reviews links,
+  notes, and (once it's happened) memories and rating — with **✎ Edit** one
+  tap away. Logging asks memory questions (favorite moment/food/drink for
+  dates; activity/food/a-moment-to-keep for getaways and trips).
 - **Event owner** — each event belongs to whoever created it. Only the owner
   can lock fields (add surprises); the other of you can edit the open fields
   but not privatise. The sheet names the owner when it isn't you.
@@ -96,7 +100,7 @@ after an update.
   A booked plan **auto-retires** here once it's past and you've rated it —
   until then it lingers in Rhythm's Booked list as a nudge to log how it went.
 - *…and if you tap the heart in the top corner six times, something's there
-  for just you two.* 💗
+  for just you two — and it's grown lately.* 💗
 
 ## 🔒 Surprises
 
@@ -135,6 +139,7 @@ locked it, the other phone already saw it.
 | Logged & planned events (incl. details) | ⚙️ All Settings (keys, tokens, who) |
 | Shared ideas & curated-pick reactions | 🔒 Private ideas |
 | Goal tickets, bingo squares | 🔒 Locked (surprise) field values |
+| Couple-activity answers & progress 💗 | |
 | **Sent** love coupons | Unsent love coupons (they're not data at all) |
 | | 🎁 Surprise idea stashes |
 | | ✨ Cached Claude results (~30 days) |
@@ -144,9 +149,10 @@ back into view; **⇅ Sync now** in Settings forces one.
 
 ## When something looks off
 
-1. **Check the version line** (bottom of Settings) on both phones — if they
-   differ, fully close and reopen the stale one (swipe it out of the app
-   switcher) to pick up the new build.
+1. **Check the version line** (bottom of Settings) on both phones. Since
+   v29, an online open always fetches current code — a normal close-and-
+   reopen picks up a new build. If a phone is still stale (it skipped v29),
+   fully swipe it out of the app switcher and reopen once.
 2. **Changes not reaching the other phone?** Both need the same Gist token +
    ID; tap ⇅ Sync now on both and check the "last synced" line.
 3. **Coupon email didn't arrive?** The coupon itself still arrives in-app —
@@ -174,4 +180,4 @@ npx serve .
 
 ---
 
-*Current build: v27 · retire past plans.*
+*Current build: v30 · beyond the card.*

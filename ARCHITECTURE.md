@@ -52,7 +52,12 @@ One `localStorage` key, `ortiz-us-os`, holding:
   lock fields** (`canHide` gates on `iOwnEvent`); the other phone can edit
   open fields but not privatise. Legacy owner-less entries stay open to
   either. All event actions (booked/planning toggle, save, remove) live in
-  the sheet — cards carry no buttons.
+  the edit sheet (`logModal`) — cards carry no buttons. A ✅ **booked** card
+  opens a read-only details sheet first (`eventSheet`: when/where, lookup
+  links, notes, memories) with ✎ Edit one tap deeper; a 🔨 still-planning
+  card taps straight into the edit sheet. `eventSheet` reuses the exact
+  privacy rules of editing (`shownVal`/`iOwnSecret`, city-only links for a
+  secret location).
 - **Per-event surprises.** Any hideable field (`HIDEABLE`: title, loc, time,
   dress, dateEnd, pack, notes) can be locked 🔒 on a planned event. The real
   value goes to `secrets[entryId][field]` — **device-local, never in
@@ -180,10 +185,14 @@ blocks the direct API call over plain HTTP. Generated ideas respect
 
 `sw.js` is a network-first cache: every same-origin fetch tries the network
 first (so a real internet connection always gets current code), and falls
-back to the last cached shell response when offline. Cross-origin requests
-(the sync API, the Claude API) are passed through untouched — the SW never
-caches or intercepts them. `manifest.json` makes the app installable to a
-home screen with `display: standalone`.
+back to the last cached shell response when offline. Since v29 the outgoing
+fetch uses `cache: 'reload'`, forcing it past the **browser's** HTTP cache
+too — without it, GitHub Pages' `max-age=600` could hand the SW a stale
+`app.js` for up to ~10 minutes after a deploy, which is exactly the
+"new version won't show up" bug this family of apps keeps re-hitting.
+Cross-origin requests (the sync API, the Claude API) are passed through
+untouched — the SW never caches or intercepts them. `manifest.json` makes
+the app installable to a home screen with `display: standalone`.
 
 ## Why this architecture
 

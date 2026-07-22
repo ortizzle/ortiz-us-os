@@ -46,10 +46,18 @@ Three sections with jump-chips (a mini table of contents) at the top:
   get location / time / dress code / notes; getaways & trips get location /
   end date / what-to-pack / notes. New plans save via **Just plan it** (still
   planning) or **✅ Book it** (booked). **Cards carry no buttons** — the whole
-  card opens the event's sheet, and every action lives there: the
+  card opens the event. The status also shows as a chip on the card. Details
+  render on the card and history rows ("Jul 20 – Jul 24 · 7:30 PM · Sedona").
+- **Booked details view** — a 🔨 still-planning card taps straight into the
+  edit sheet (it's a work in progress), where every action lives: the
   booked/still-planning **toggle**, **Save**, **Cancel**, and **🗑 Remove**.
-  The status also shows as a chip on the card. Details render on the card and
-  history rows ("Jul 20 – Jul 24 · 7:30 PM · Sedona").
+  A ✅ **booked** card instead opens a **read-only details sheet**
+  (`eventSheet`): when (date, countdown, through-date), the per-type detail
+  fields, 🔗 look-it-up / 📍 map / menu-or-stays / reviews links, notes, and
+  — once the date has passed — memories and the ♥ rating. **✎ Edit** flips
+  into the normal edit sheet. Privacy rules match editing exactly: own 🔒
+  fields show, the partner's stay teasers, and a secret location gets
+  city-only links.
 - **Event owner** — each event belongs to its creator (`owner`). Only the
   owner can lock fields (add surprises); the other of you can edit the open
   fields but not privatise. The sheet names the owner when it isn't you.
@@ -130,6 +138,30 @@ Three sections with jump-chips (a mini table of contents) at the top:
   scenarios; non-graphic language). The door is two-stage: 6 taps earns
   "…keep going 👀", 6 more opens it. Separate synced card (`bingo2`),
   same rules.
+
+### 💗 Beyond the card (content-driven activities)
+Three activities below the sweet bingo card, each synced via the `acts`
+collection (deterministic ids — see ARCHITECTURE.md). The two answer games
+require `settings.who` (a friendly gate points to Settings otherwise) and
+use an **agreed-reveal** mechanic: each of you answers solo, the other's
+answers stay hidden (only counts and per-item "answered 🤫" hints show)
+until **both** tap "I'm ready to reveal" — then everything flips face up.
+Either can hide theirs again; answers stay editable throughout. The hiding
+is UI-level (a game mechanic, not a privacy guarantee — answers do sync,
+unlike 🔒 secrets).
+- **💌 Yes / No / Maybe** — 22 flirty-to-adventurous prompts (`YNM_ITEMS`).
+  Post-reveal verdicts: 💚 both-yes ("it's a date"), 🌱 yes+maybe ("worth a
+  conversation"), 🤍 two maybes; **any no retires the item flatly** — YNM
+  etiquette, nobody litigates a no.
+- **🕯️ The 36 Questions** — Aron et al.'s 1997 closeness-study interview
+  (the NYT-famous one), full text baked in (`Q36`), run as a paced card
+  runner: three sets of 12, both answer aloud before advancing, position
+  shared+synced (`q36:progress`) so pausing mid-set survives. The closer:
+  4 minutes of silent eye contact with a built-in countdown timer that
+  ends on "Now kiss 💋". "Start over" resets.
+- **🎲 Would You Rather** — 18 couple dilemmas (`WYR_ITEMS`) as stacked
+  either/or buttons; agreed-reveal shows 🎯 matches or both picks side by
+  side.
 
 ### Ideas
 - A running backlog per cadence, freeform text entries.
