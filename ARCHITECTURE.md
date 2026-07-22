@@ -35,6 +35,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
   bingo:   [{ id, n, done, updatedAt }],
   bingo2:  [{ id, n, done, updatedAt }],
   recstate: [{ id, state, updatedAt }],
+  acts:    [{ id, v?, on?, n?, updatedAt }],
   settings: { apiKey, city, interests, theme, gistToken, gistId, lastSyncAt,
               who, couponHook },
 }
@@ -112,6 +113,14 @@ One `localStorage` key, `ortiz-us-os`, holding:
 - `recstate` holds curated-pick reactions keyed `rec:<name>` with `state`
   `'dismissed'` | `'done'` | `''` (restored) — created lazily on first
   reaction, ids deterministic so both phones merge cleanly.
+- `acts` holds "Beyond the card" activity state (reached from the sweet
+  bingo card): yes/no/maybe answers (`ynm:<who>:<n>`, `v`), would-you-rather
+  picks (`wyr:<who>:<n>`, `v`), per-person reveal flags (`<game>:ready:<who>`,
+  `on`), and the shared 36-questions position (`q36:progress`, `n`). Created
+  lazily on first tap, deterministic ids, never tombstoned. The static
+  content (`YNM_ITEMS`, `WYR_ITEMS`, `Q36`) is baked into `app.js`. Answers
+  DO sync — the "hidden until both ready" reveal is UI-level, a game
+  mechanic, not a privacy guarantee like secrets/private ideas.
 - `RECS` (curated picks) and `SPECIAL` (anniversary/birthdays) are static
   data baked into `app.js` — not stored, not synced, edit in code.
 - `settings` is device-local only — it is never included in sync.
@@ -138,7 +147,7 @@ GitHub Gist — same mechanism as Home OS, but writing to its own file
 - **Trigger:** debounced 2s after any local write (`scheduleSync` →
   `syncNow`), plus on tab re-focus (`visibilitychange`), plus once on boot.
 - **Payload:** `sharedPayload()` — `entries`, `ideas`, `tickets`, `coupons`,
-  `bingo`, `bingo2`, and `recstate`, with `ideas` filtered to exclude
+  `bingo`, `bingo2`, `recstate`, and `acts`, with `ideas` filtered to exclude
   `private: true` records. `settings` is never included.
 - **Merge:** `mergeCol(local, remote)` — per-record by `id`; if the remote
   record's `updatedAt` is newer than the local one's, remote wins. Otherwise
