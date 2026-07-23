@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Open When — for Sedona &amp; River</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Lora:ital,wght@0,400;0,500;1,400&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #171226;
+    --night-2: #221b35;
+    --night-3: #2d2544;
+    --paper: #f2e8d6;
+    --paper-dim: #e3d5bd;
+    --ink: #2c2236;
+    --ink-soft: #5c4f66;
+    --gold: #c9a35c;
+    --gold-soft: rgba(201, 163, 92, 0.35);
+    --sedona: #c05b3d;
+    --sedona-wax: #9c3f24;
+    --river: #4f8fa3;
+    --river-wax: #2f6577;
+    --both: #8a6fae;
+    --both-wax: #6b5390;
+    --kat: #b06a8f;
+    --text: #efe9f5;
+    --text-dim: #a99fb8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html { font-size: 16px; }
+  body {
+    background: var(--night);
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.45) 50%, transparent 51%),
+      radial-gradient(1px 1px at 78% 9%, rgba(255,255,255,.35) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 55% 24%, rgba(255,255,255,.3) 50%, transparent 51%),
+      radial-gradient(1px 1px at 33% 6%, rgba(255,255,255,.4) 50%, transparent 51%),
+      radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,.25) 50%, transparent 51%),
+      linear-gradient(180deg, #100c1d 0%, var(--night) 38%, #1d1530 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: 'Lora', Georgia, serif;
+    min-height: 100vh;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 18px; }
+
+  /* ---------- Header ---------- */
+  header { padding: calc(22px + env(safe-area-inset-top)) 0 6px; text-align: center; position: relative; }
+  .eyebrow {
+    font-family: 'Lora', serif; font-size: .68rem; letter-spacing: .28em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
+  }
+  h1 {
+    font-family: 'Instrument Serif', serif; font-weight: 400;
+    font-size: 2.6rem; line-height: 1.05; letter-spacing: .01em;
+  }
+  h1 .amp { font-style: italic; color: var(--gold); }
+  .sub {
+    font-family: 'Caveat', cursive; font-size: 1.25rem; color: var(--text-dim);
+    margin-top: 6px;
+  }
+  .gear {
+    position: absolute; top: calc(16px + env(safe-area-inset-top)); right: 0;
+    min-width: 44px; min-height: 44px; background: none; border: none;
+    color: var(--text-dim); font-size: 1.3rem; cursor: pointer;
+  }
+
+  /* ---------- Mode toggle ---------- */
+  .mode-row { display: flex; justify-content: center; margin: 18px 0 4px; }
+  .mode-toggle {
+    display: flex; background: var(--night-2); border: 1px solid var(--night-3);
+    border-radius: 999px; padding: 4px; gap: 4px;
+  }
+  .mode-toggle button {
+    min-height: 44px; padding: 0 20px; border: none; border-radius: 999px;
+    background: transparent; color: var(--text-dim); font-family: 'Lora', serif;
+    font-size: .9rem; cursor: pointer; transition: background .2s, color .2s;
+  }
+  .mode-toggle button.active { background: var(--gold); color: var(--ink); font-weight: 500; }
+
+  .mode-note {
+    text-align: center; font-size: .78rem; color: var(--text-dim);
+    margin: 8px 0 2px; font-style: italic;
+  }
+  .sync-row {
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+    margin: 4px 0 2px; font-size: .72rem; color: var(--text-dim);
+  }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b6280; }
+  .sync-dot.ok { background: #6fae7c; }
+  .sync-dot.busy { background: var(--gold); }
+  .sync-dot.err { background: var(--sedona); }
+  .sync-btn {
+    background: none; border: none; color: var(--gold); font-family: 'Lora', serif;
+    font-size: .72rem; cursor: pointer; min-height: 32px; padding: 0 6px;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .nudge {
+    text-align: center; font-size: .78rem; color: var(--text-dim);
+    font-style: italic; margin: 10px 0 0;
+  }
+
+  /* ---------- Daughter tabs ---------- */
+  .tabs { display: flex; gap: 10px; margin: 18px 0 20px; }
+  .tab {
+    flex: 1; min-height: 48px; border-radius: 14px; border: 1px solid var(--night-3);
+    background: var(--night-2); color: var(--text-dim); font-family: 'Instrument Serif', serif;
+    font-size: 1.15rem; cursor: pointer; transition: all .2s; position: relative; overflow: hidden;
+  }
+  .tab::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: transparent; transition: background .2s;
+  }
+  .tab.active { color: var(--text); background: var(--night-3); }
+  .tab.active[data-who="sedona"]::after { background: var(--sedona); }
+  .tab.active[data-who="river"]::after { background: var(--river); }
+  .tab.active[data-who="both"]::after { background: var(--both); }
+
+  /* ---------- Prompt card (author mode) ---------- */
+  .prompt-card {
+    background: linear-gradient(160deg, var(--night-2), var(--night-3));
+    border: 1px solid var(--gold-soft); border-radius: 18px;
+    padding: 20px; margin-bottom: 26px;
+  }
+  .prompt-label {
+    font-size: .66rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 10px;
+  }
+  .prompt-q {
+    font-family: 'Instrument Serif', serif; font-size: 1.45rem; line-height: 1.3;
+    margin-bottom: 14px;
+  }
+  .prompt-card textarea {
+    width: 100%; min-height: 92px; background: rgba(0,0,0,.25);
+    border: 1px solid var(--night-3); border-radius: 12px; padding: 12px;
+    color: var(--text); font-family: 'Lora', serif; font-size: 1rem; resize: vertical;
+  }
+  .prompt-card textarea:focus { outline: 2px solid var(--gold-soft); }
+  .prompt-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .btn {
+    min-height: 44px; padding: 0 18px; border-radius: 12px; border: none;
+    font-family: 'Lora', serif; font-size: .92rem; cursor: pointer;
+  }
+  .btn-gold { background: var(--gold); color: var(--ink); font-weight: 500; flex: 1; }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--night-3); }
+
+  /* ---------- Section headings ---------- */
+  .section-h {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 4px 2px 14px;
+  }
+  .section-h h2 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 1.5rem; }
+  .section-h .count { font-size: .78rem; color: var(--text-dim); }
+
+  /* ---------- Envelope grid ---------- */
+  .shelf { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 30px; }
+  @media (max-width: 380px) { .shelf { grid-template-columns: 1fr; } }
+
+  .envelope {
+    position: relative; border-radius: 10px; cursor: pointer;
+    background: linear-gradient(175deg, var(--paper) 0%, var(--paper-dim) 100%);
+    color: var(--ink); padding: 44px 14px 14px; min-height: 128px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.4);
+    transition: transform .15s;
+  }
+  .envelope:active { transform: scale(.97); }
+  .envelope .flap {
+    position: absolute; top: 0; left: 0; right: 0; height: 34px;
+    background: linear-gradient(180deg, var(--paper-dim), rgba(0,0,0,.06));
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    border-radius: 10px 10px 0 0;
+  }
+  .envelope .seal {
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Instrument Serif', serif; font-style: italic; font-size: 1.15rem;
+    color: rgba(255, 240, 225, .92);
+    box-shadow: 0 2px 5px rgba(0,0,0,.35), inset 0 -2px 3px rgba(0,0,0,.3), inset 0 2px 3px rgba(255,255,255,.25);
+    z-index: 2;
+  }
+  .envelope.w-sedona .seal { background: radial-gradient(circle at 35% 30%, #c26545, var(--sedona-wax)); }
+  .envelope.w-river .seal { background: radial-gradient(circle at 35% 30%, #5f9cb0, var(--river-wax)); }
+  .envelope.w-both .seal { background: radial-gradient(circle at 35% 30%, #9a7fc0, var(--both-wax)); }
+  .envelope.opened .seal { opacity: .35; filter: grayscale(.5); }
+  .envelope.opened .flap { clip-path: polygon(0 0, 100% 0, 50% 30%); opacity: .6; }
+
+  .env-when {
+    font-family: 'Caveat', cursive; font-size: 1.28rem; line-height: 1.15;
+    color: var(--ink); text-align: center; margin-top: 2px;
+  }
+  .env-meta {
+    text-align: center; font-size: .72rem; color: var(--ink-soft);
+    margin-top: 8px; letter-spacing: .04em;
+  }
+  .env-status {
+    position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
+    font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .env-status.ready { color: var(--sedona-wax); font-weight: 600; }
+
+  /* ---------- Milestone detail / entry list ---------- */
+  .back-row { margin: 14px 0 10px; }
+  .back-btn {
+    background: none; border: none; color: var(--gold); font-family: 'Lora', serif;
+    font-size: .9rem; cursor: pointer; min-height: 44px; padding: 0 6px;
+  }
+  .detail-title { font-family: 'Caveat', cursive; font-size: 2rem; text-align: center; margin-bottom: 4px; }
+  .detail-sub { text-align: center; color: var(--text-dim); font-size: .82rem; margin-bottom: 20px; }
+  .unlock-row { text-align: center; margin: -8px 0 18px; }
+  .unlock-row .state { font-size: .78rem; color: var(--text-dim); font-style: italic; display: block; margin-bottom: 8px; }
+  .unlock-btn {
+    min-height: 40px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+    background: rgba(201,163,92,.08); border: 1px dashed var(--gold-soft);
+    color: var(--gold); font-family: 'Lora', serif; font-size: .8rem; margin: 0 4px 6px;
+  }
+
+  .entry-card {
+    background: var(--paper); color: var(--ink); border-radius: 14px;
+    padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+    position: relative;
+  }
+  .entry-card.by-kat { border-left: 4px solid var(--kat); }
+  .entry-type {
+    display: inline-block; font-size: .62rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 10px; color: #fff;
+  }
+  .t-letter { background: var(--sedona-wax); }
+  .t-answer { background: var(--both-wax); }
+  .t-photo { background: var(--river-wax); }
+  .t-voice { background: #7a6a3a; }
+  .entry-title { font-family: 'Instrument Serif', serif; font-size: 1.3rem; margin-bottom: 6px; }
+  .entry-q { font-style: italic; color: var(--ink-soft); font-size: .92rem; margin-bottom: 8px; }
+  .entry-body { font-size: .96rem; line-height: 1.55; white-space: pre-line; }
+  .entry-date { font-size: .72rem; color: var(--ink-soft); margin-top: 12px; }
+  .entry-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
+  .entry-actions button {
+    min-width: 40px; min-height: 40px; border: none; background: none;
+    color: var(--ink-soft); font-size: .95rem; cursor: pointer; border-radius: 8px;
+  }
+  .entry-actions button:active { background: rgba(0,0,0,.08); }
+  .photo-frame {
+    min-height: 130px; border-radius: 8px; margin-bottom: 10px; overflow: hidden;
+    border: 6px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    display: flex; align-items: flex-end; padding: 0; position: relative;
+    background: linear-gradient(135deg, #4f8fa3, #2d2544);
+  }
+  .photo-frame img { width: 100%; display: block; }
+  .photo-frame span {
+    position: absolute; left: 8px; bottom: 8px;
+    font-family: 'Caveat', cursive; font-size: 1.05rem; color: rgba(255,255,255,.95);
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+  }
+  .voice-bar {
+    display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.06);
+    border-radius: 10px; padding: 12px; margin-bottom: 6px;
+  }
+  .voice-dot { width: 44px; height: 44px; border-radius: 50%; background: var(--sedona); border: none;
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: .85rem; cursor: pointer; flex-shrink: 0; }
+  .voice-wave { flex: 1; height: 20px; background:
+    repeating-linear-gradient(90deg, var(--ink-soft) 0 2px, transparent 2px 6px);
+    opacity: .5; border-radius: 3px; }
+  .voice-time { font-size: .78rem; color: var(--ink-soft); }
+  .media-note { font-size: .75rem; color: var(--ink-soft); font-style: italic; margin-bottom: 8px; }
+  .retry-chip {
+    min-height: 36px; border-radius: 999px; border: 1px dashed var(--sedona-wax);
+    background: none; color: var(--sedona-wax); font-family: 'Lora', serif;
+    font-size: .75rem; cursor: pointer; padding: 0 12px; margin-bottom: 8px;
+  }
+
+  .add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0 30px; }
+  .add-btn {
+    min-height: 52px; border-radius: 12px; border: 1px dashed var(--gold-soft);
+    background: rgba(201,163,92,.06); color: var(--gold); font-family: 'Lora', serif;
+    font-size: .88rem; cursor: pointer;
+  }
+
+  /* ---------- Opened letter ---------- */
+  .letter-open {
+    background: var(--paper); color: var(--ink); border-radius: 4px;
+    padding: 30px 24px; margin: 10px 0 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    animation: rise .5s ease;
+  }
+  @keyframes rise { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .letter-open { animation: none; }
+    .seal-crack { animation: none !important; }
+  }
+  .letter-open .salutation { font-family: 'Caveat', cursive; font-size: 1.6rem; margin-bottom: 14px; }
+  .letter-open .body { font-size: 1.02rem; line-height: 1.7; white-space: pre-line; }
+  .letter-open .sig { font-family: 'Caveat', cursive; font-size: 1.5rem; margin-top: 20px; text-align: right; }
+  .letter-open .sig.by-kat { color: var(--kat); }
+
+  @keyframes crack {
+    0% { transform: translateX(-50%) scale(1) rotate(0); opacity: 1; }
+    40% { transform: translateX(-50%) scale(1.15) rotate(-6deg); }
+    100% { transform: translateX(-50%) scale(.6) rotate(14deg); opacity: 0; }
+  }
+  .seal-crack { animation: crack .55s ease forwards; }
+
+  /* ---------- Locked landing ---------- */
+  .locked {
+    text-align: center; padding: 60px 10px 40px;
+  }
+  .locked .big-seal {
+    width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 24px;
+    background: radial-gradient(circle at 35% 30%, #c26545, var(--sedona-wax));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Instrument Serif', serif; font-style: italic; font-size: 2.4rem;
+    color: rgba(255,240,225,.92);
+    box-shadow: 0 4px 10px rgba(0,0,0,.4), inset 0 -3px 5px rgba(0,0,0,.3), inset 0 3px 5px rgba(255,255,255,.25);
+  }
+  .locked h2 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 1.7rem; margin-bottom: 10px; }
+  .locked p { color: var(--text-dim); font-size: .95rem; line-height: 1.6; max-width: 400px; margin: 0 auto 26px; }
+  .locked .key-btn {
+    min-height: 48px; padding: 0 26px; border-radius: 999px; border: 1px solid var(--gold-soft);
+    background: rgba(201,163,92,.08); color: var(--gold); font-family: 'Lora', serif;
+    font-size: .95rem; cursor: pointer;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; bottom: calc(28px + env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%); background: var(--paper); color: var(--ink);
+    padding: 12px 20px; border-radius: 999px; font-size: .88rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4); z-index: 1200; max-width: 88vw; text-align: center;
+    animation: rise .3s ease;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10,7,18,.72); display: flex;
+    align-items: center; justify-content: center; z-index: 1000; padding: 18px;
+  }
+  .modal-box {
+    background: var(--night-2); border: 1px solid var(--night-3); border-radius: 16px;
+    padding: 22px; max-width: 420px; width: 100%; max-height: 84vh; overflow-y: auto;
+  }
+  .modal-box h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 1.4rem; margin-bottom: 6px; }
+  .modal-box p { color: var(--text-dim); font-size: .9rem; margin-bottom: 14px; }
+  .modal-box label { display: block; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin: 12px 0 6px; }
+  .modal-box input[type="text"], .modal-box input[type="password"], .modal-box input[type="date"],
+  .modal-box textarea, .modal-box select {
+    width: 100%; background: rgba(0,0,0,.28); border: 1px solid var(--night-3);
+    border-radius: 10px; padding: 12px; color: var(--text);
+    font-family: 'Lora', serif; font-size: .95rem; min-height: 44px;
+  }
+  .modal-box textarea { min-height: 110px; resize: vertical; }
+  .modal-box .hint { font-size: .72rem; color: var(--text-dim); font-style: italic; margin-top: 4px; }
+  .modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
+  .modal-buttons button { flex: 1; min-height: 44px; border-radius: 10px; font-size: 1rem; border: none; cursor: pointer; font-family: 'Lora', serif; }
+  .btn-primary { background: var(--gold); color: var(--ink); font-weight: 500; }
+  .btn-secondary { background: var(--night-3); color: var(--text-dim); }
+  .btn-danger-ghost { background: none; border: 1px solid var(--sedona-wax); color: var(--sedona); }
+  .settings-action {
+    display: block; width: 100%; min-height: 44px; margin-top: 8px; border-radius: 10px;
+    border: 1px solid var(--night-3); background: rgba(0,0,0,.15); color: var(--text);
+    font-family: 'Lora', serif; font-size: .9rem; cursor: pointer; text-align: left; padding: 0 14px;
+  }
+  .settings-sep { border: none; border-top: 1px solid var(--night-3); margin: 18px 0 4px; }
+  .version-line { text-align: center; font-size: .7rem; color: var(--text-dim); margin-top: 16px; }
+
+  /* ---------- Recorder ---------- */
+  .rec-wrap { text-align: center; padding: 8px 0; }
+  .rec-time { font-family: 'Instrument Serif', serif; font-size: 2rem; margin: 8px 0; }
+  .rec-btn {
+    width: 74px; height: 74px; border-radius: 50%; border: none; cursor: pointer;
+    background: radial-gradient(circle at 35% 30%, #c26545, var(--sedona-wax));
+    color: #fff; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  }
+  .rec-btn.recording { animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(192,91,61,.5); } 50% { box-shadow: 0 0 0 14px rgba(192,91,61,0); } }
+  .rec-note { font-size: .78rem; color: var(--text-dim); font-style: italic; margin-top: 10px; }
+  .upload-bar { height: 6px; background: var(--night-3); border-radius: 3px; overflow: hidden; margin-top: 12px; }
+  .upload-bar > div { height: 100%; width: 0%; background: var(--gold); transition: width .2s; }
+
+  footer { text-align: center; color: var(--text-dim); font-size: .7rem; padding: 20px 0 6px; font-style: italic; }
+
+  /* ---------- Print ---------- */
+  #printRoot { display: none; }
+  body.printing .wrap { display: none; }
+  body.printing { background: #fff; }
+  body.printing #printRoot { display: block; }
+  #printRoot { background: #fff; color: #2c2236; font-family: 'Lora', Georgia, serif; padding: 24px; max-width: 720px; margin: 0 auto; }
+  #printRoot h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 2.2rem; text-align: center; margin: 20px 0 4px; color: #2c2236; }
+  #printRoot .p-eyebrow { text-align: center; font-size: .7rem; letter-spacing: .26em; text-transform: uppercase; color: #9c7a3c; margin-top: 30px; }
+  #printRoot .p-sub { text-align: center; font-family: 'Caveat', cursive; font-size: 1.2rem; color: #5c4f66; margin-bottom: 30px; }
+  #printRoot .p-daughter { page-break-before: always; }
+  #printRoot .p-daughter h2 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 1.9rem; text-align: center; margin: 40px 0 6px; }
+  #printRoot .p-daughter .rule { width: 60px; height: 3px; margin: 0 auto 10px; border-radius: 2px; }
+  #printRoot .p-ms { margin: 34px 0 10px; }
+  #printRoot .p-ms h3 { font-family: 'Caveat', cursive; font-size: 1.6rem; color: #5c4f66; margin-bottom: 12px; }
+  #printRoot .p-entry { border: 1px solid #e3d5bd; background: #faf5ea; border-radius: 8px; padding: 20px 22px; margin-bottom: 16px; page-break-inside: avoid; }
+  #printRoot .p-entry.by-kat { border-left: 4px solid #b06a8f; }
+  #printRoot .p-entry .p-title { font-family: 'Instrument Serif', serif; font-size: 1.25rem; margin-bottom: 6px; }
+  #printRoot .p-entry .p-q { font-style: italic; color: #5c4f66; font-size: .9rem; margin-bottom: 8px; }
+  #printRoot .p-entry .p-body { font-size: .95rem; line-height: 1.65; white-space: pre-line; }
+  #printRoot .p-entry .p-meta { font-size: .72rem; color: #8a7d94; margin-top: 12px; }
+  #printRoot .p-entry img { max-width: 100%; border: 5px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); border-radius: 4px; margin-bottom: 10px; }
+  #printRoot .keeper-body { white-space: pre-line; font-size: 1rem; line-height: 1.75; }
+  .print-close {
+    position: fixed; top: 14px; right: 14px; z-index: 1300;
+    min-height: 44px; padding: 0 18px; border-radius: 999px; border: none;
+    background: #2c2236; color: #fff; font-family: 'Lora', serif; cursor: pointer;
+  }
+  @media print {
+    .print-close, .toast, .modal-overlay { display: none !important; }
+    body.printing { padding: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">A time capsule</div>
+      <h1>Open When</h1>
+      <div class="sub" id="subline">letters for Sedona &amp; River</div>
+      <button class="gear" id="gearBtn" aria-label="Settings">&#9881;</button>
+    </header>
+
+    <div class="mode-row" id="modeRow" hidden>
+      <div class="mode-toggle">
+        <button id="modeAuthor" class="active">Author</button>
+        <button id="modePreview">Preview as&hellip;</button>
+      </div>
+    </div>
+    <div class="mode-note" id="modeNote" hidden></div>
+    <div class="sync-row" id="syncRow" hidden>
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncText">Not connected</span>
+      <button class="sync-btn" id="syncBtn">Sync now</button>
+    </div>
+
+    <div id="app"></div>
+
+    <footer id="footerLine">written on ordinary nights, thinking of you</footer>
+  </div>
+  <div id="printRoot"></div>
+
+<script>
+'use strict';
+
+const APP_VERSION = '1.0.0';
+
+/* ============ Arizona time (no DST — never derive "today" from toISOString) ============ */
+
+const AZ = {
+  tz: 'America/Phoenix',
+  today() { return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date()); },
+  dateKey(d) { return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(d); },
+  monthYear(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, day] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  },
+  pretty(dateStr) {
+    const [y, m, day] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+};
+
+/* ============ Local storage ============ */
+
+const Store = {
+  ns: 'openwhen_',
+  get(key, fallback = null) {
+    try {
+      const raw = localStorage.getItem(this.ns + key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch (e) { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(this.ns + key, JSON.stringify(value)); return true; }
+    catch (e) { return false; }
+  },
+  remove(key) { localStorage.removeItem(this.ns + key); }
+};
+
+/* ============ Static content ============ */
+
+const MILESTONES = [
+  { id: 'turn13',    when: 'Open when you turn 13',           unlock: { type: 'age', years: 13 } },
+  { id: 'turn16',    when: 'Open when you turn 16',           unlock: { type: 'age', years: 16 } },
+  { id: 'turn18',    when: 'Open when you turn 18',           unlock: { type: 'age', years: 18 } },
+  { id: 'graduate',  when: 'Open when you graduate',          unlock: { type: 'manual' } },
+  { id: 'heartbreak',when: 'Open when your heart breaks',     unlock: { type: 'keeper' } },
+  { id: 'wedding',   when: 'Open on your wedding day',        unlock: { type: 'keeper' } },
+  { id: 'parent',    when: 'Open when you become a parent',   unlock: { type: 'keeper' } },
+  { id: 'hardday',   when: 'Open on a hard day',              unlock: { type: 'keeper' } },
+  { id: 'missme',    when: 'Open when you miss me',           unlock: { type: 'keeper' } }
+];
+
+const WHO_LABEL = { sedona: 'Sedona', river: 'River', both: 'Both girls' };
+const AUTHOR_LABEL = { chris: 'Dad', kat: 'Mom' };
+
+const PROMPTS = [
+  // Who she is now
+  'What does {name} do right now, at this age, that amazes you?',
+  'Describe a moment with {name} from this month you never want to forget.',
+  'What is {name} obsessed with right now, and what does it tell you about her?',
+  'What do you hope {name} never loses about herself?',
+  'How does {name} laugh? Describe it so she can hear it decades from now.',
+  'What is something {name} taught YOU this year?',
+  // Your story
+  'What do you want {name} to know about how you and Mom met?',
+  'What was your life like at the age she is right now?',
+  'What is a story about your own parents that {name} should carry forward?',
+  'What did you dream of becoming when you were a kid, and what happened to that dream?',
+  'What is the hardest thing you ever did before she was born?',
+  'What was the day {name} was born actually like — the parts photos never show?',
+  // Hard-won lessons
+  'What is a mistake you made that you want {name} to feel free to make too?',
+  'What did you learn about love that took you too long to learn?',
+  'What would you tell {name} on the night before her first real failure?',
+  'What do you know about fear now that you wish you had known at 18?',
+  'When did you change your mind about something big, and what changed it?',
+  'What is the best advice you ever ignored, and how did that go?',
+  // Us as a family
+  'What family story must not be lost?',
+  'What is a small ritual our family has that you hope she keeps alive?',
+  'Describe an ordinary Saturday at our house right now, in detail.',
+  'What do you love about watching {name} and her sister together?',
+  'What was a hard season for our family, and how did we get through it?',
+  'What do the holidays smell like, sound like, feel like at our house?',
+  // Practical life
+  'What should {name} know about money that school will never teach her?',
+  'How do you decide whether someone deserves your trust?',
+  'What should {name} look for in the people she chooses to build a life with?',
+  'What is your actual recipe — the food you make that she will miss one day?',
+  'How do you keep going on a day when nothing goes right?',
+  // Faith & meaning
+  'What does a good life look like to you, honestly?',
+  'What do you believe about God, the universe, and why we are here?',
+  'Where do you go — in your head or in the world — when you need peace?',
+  'What are you most grateful for, and how did you learn gratitude?',
+  'What do you hope happens after we die?',
+  // For the future her
+  'What song should {name} play when she needs to hear from you?',
+  'What do you hope {name} is doing the day she reads this?',
+  'What would you say to {name} on her wedding day if you only had one minute?',
+  'What do you want {name} to tell her own kids about you?',
+  'If {name} only remembers one sentence from you, what should it be?'
+];
+
+const KEEPER_TEMPLATE = [
+  'OPEN WHEN — The Keeper’s Sheet',
+  'For Kat, and for the important-documents folder.',
+  '',
+  'WHAT THIS IS',
+  'A book of letters, photos, and voice notes written for Sedona and River over the years, sealed into "open when…" envelopes that unlock as they grow up.',
+  '',
+  'WHERE IT LIVES',
+  'The app: https://ortizzle.github.io/open-when/',
+  'The key (GitHub token): stored in [our password manager, under "Open When"].',
+  '',
+  'TO OPEN THE BOOK ON A NEW PHONE',
+  '1. Open the app link above.',
+  '2. Tap "I have the key" and paste the token in Settings.',
+  '3. Choose "Reader" as who is using the device.',
+  'The birthday envelopes will unlock on their own, on the right days.',
+  '',
+  'THE KEEPER PASSPHRASE',
+  'Some envelopes don’t open on a date — heartbreak, a hard day, a wedding, becoming a parent, missing me. Those open when the moment is right, and you decide when that is. Enter the keeper passphrase on their device when it’s time. The passphrase is not written on this sheet on purpose.',
+  '',
+  'A NOTE FROM DAD',
+  'Girls — if you’re reading this, someone who loves you handed you the key. Take your time. There’s no order and no hurry. Everything in here was written on ordinary nights, thinking about you.',
+  '— Dad'
+].join('\n');
+
+/* ============ App state ============ */
+
+let DB = Store.get('data', { records: {} });
+let mode = 'author';            // 'author' | 'preview'  (author-role devices only)
+let who = 'sedona';
+let openMilestone = null;
+let promptIdx = Store.get('prompt_idx', Math.floor((Date.now() / 86400000)) % PROMPTS.length);
+let promptOverride = null;      // set by the ✨ Claude button
+const openedSeals = new Set(Store.get('opened_seals', []));
+const pendingMedia = new Map(); // entryId -> { blob, mime, kind } awaiting upload retry (session only)
+const mediaCache = new Map();   // repo path -> object URL
+
+const role = () => Store.get('role');                  // 'chris' | 'kat' | 'reader' | null
+const isAuthor = () => role() === 'chris' || role() === 'kat';
+const token = () => Store.get('token', '');
+const settingsRec = () => DB.records['settings'] || null;
+const birthdate = (w) => (settingsRec() && settingsRec().birthdates && settingsRec().birthdates[w]) || null;
+
+const uid = () => 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+
+const app = document.getElementById('app');
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+};
+
+function toast(msg) {
+  const t = el('div', 'toast', msg);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+async function sha256hex(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ============ Records ============ */
+
+function activeEntries() {
+  return Object.values(DB.records)
+    .filter(r => r.type === 'entry' && !r.deleted)
+    .sort((a, b) => (a.updatedAt || 0) - (b.updatedAt || 0));
+}
+
+function entriesFor(whoKey, msId) {
+  return activeEntries().filter(e =>
+    e.milestone === msId && (whoKey === 'both' ? e.who === 'both' : (e.who === whoKey || e.who === 'both'))
+  );
+}
+
+// commit = local write + schedule sync. Every mutation must set updatedAt (merge depends on it).
+function commit(mutate) {
+  mutate(DB.records);
+  Store.set('data', DB);
+  scheduleSync();
+}
+
+function tombstone(id) {
+  const r = DB.records[id];
+  if (!r) return;
+  commit(recs => { recs[id] = { ...r, deleted: true, updatedAt: Date.now() }; });
+}
+
+function updateSettingsRec(patch) {
+  const cur = settingsRec() || { id: 'settings', type: 'settings', birthdates: {} };
+  commit(recs => { recs['settings'] = { ...cur, ...patch, updatedAt: Date.now() }; });
+}
+
+/* ============ Unlocks ============ */
+
+const unlockId = (w, ms) => 'unlock_' + w + '_' + ms;
+
+function unlockRec(w, ms) {
+  const r = DB.records[unlockId(w, ms)];
+  return (r && !r.deleted) ? r : null;
+}
+
+function unlockDateFor(w, m) {
+  if (m.unlock.type !== 'age') return null;
+  const b = birthdate(w);
+  if (!b) return null;
+  const [y, mo, d] = b.split('-');
+  return (Number(y) + m.unlock.years) + '-' + mo + '-' + d;
+}
+
+function writeUnlock(w, ms, by) {
+  commit(recs => {
+    recs[unlockId(w, ms)] = {
+      id: unlockId(w, ms), type: 'unlock', who: w, milestone: ms,
+      unlockedAt: AZ.today(), unlockedBy: by, updatedAt: Date.now()
+    };
+  });
+}
+
+// Auto-unlock writes the record the first time any device notices a birthday has passed (AZ time).
+function ensureAutoUnlocks() {
+  let changed = false;
+  const today = AZ.today();
+  for (const w of ['sedona', 'river']) {
+    for (const m of MILESTONES) {
+      if (m.unlock.type !== 'age' || unlockRec(w, m.id)) continue;
+      const due = unlockDateFor(w, m);
+      if (due && today >= due) { writeUnlock(w, m.id, 'auto'); changed = true; }
+    }
+  }
+  return changed;
+}
+
+function unlockStateText(w, m) {
+  const rec = unlockRec(w, m.id);
+  if (rec) {
+    const byLabel = { auto: 'on her birthday', keeper: 'by the keeper', author: 'by hand' };
+    return 'Unlocked ' + (byLabel[rec.unlockedBy] || '') + ' · ' + AZ.pretty(rec.unlockedAt);
+  }
+  if (m.unlock.type === 'age') {
+    const due = unlockDateFor(w, m);
+    return due ? 'Unlocks on its own · ' + AZ.pretty(due) : 'Unlocks at ' + m.unlock.years + ' — set her birthdate in Settings';
+  }
+  if (m.unlock.type === 'keeper') return 'Sealed until the keeper decides the moment is right';
+  return 'Sealed until you unlock it by hand';
+}
+
+/* ============ Gist sync (safe merge + tombstones) ============ */
+
+const Sync = {
+  filename: 'data.json',
+  busy: false,
+  headers() {
+    return { 'Authorization': 'Bearer ' + token(), 'Accept': 'application/vnd.github+json' };
+  },
+  async pullRemote() {
+    const id = Store.get('gist_id', '');
+    if (!id) throw new Error('NO_GIST');
+    const res = await fetch('https://api.github.com/gists/' + id, { headers: this.headers() });
+    if (!res.ok) throw new Error('Gist fetch failed: ' + res.status);
+    const gist = await res.json();
+    const file = gist.files[this.filename];
+    if (!file) return { records: {} };
+    const text = file.truncated ? await (await fetch(file.raw_url)).text() : file.content;
+    return JSON.parse(text || '{"records":{}}');
+  },
+  // Per-record newest-updatedAt wins; deletes are tombstones so they win merges too.
+  merge(local, remote) {
+    const out = { records: { ...remote.records } };
+    for (const [id, rec] of Object.entries(local.records || {})) {
+      const r = out.records[id];
+      if (!r || (rec.updatedAt || 0) > (r.updatedAt || 0)) out.records[id] = rec;
+    }
+    const cutoff = Date.now() - 60 * 86400000;
+    for (const [id, rec] of Object.entries(out.records)) {
+      if (rec.deleted && rec.updatedAt < cutoff) delete out.records[id];
+    }
+    return out;
+  },
+  // Fetch-merge-write; never blind-overwrite (that's how one phone clobbers the other's letters).
+  async save() {
+    if (!token() || !Store.get('gist_id')) { setSyncUI('none'); return; }
+    if (this.busy) return;
+    this.busy = true;
+    setSyncUI('busy');
+    try {
+      let merged = DB;
+      try {
+        const remote = await this.pullRemote();
+        merged = this.merge(DB, remote);
+      } catch (e) { if (String(e.message).includes('NO_GIST')) throw e; }
+      const res = await fetch('https://api.github.com/gists/' + Store.get('gist_id'), {
+        method: 'PATCH',
+        headers: { ...this.headers(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: { [this.filename]: { content: JSON.stringify(merged, null, 2) } } })
+      });
+      if (!res.ok) throw new Error('Gist save failed: ' + res.status);
+      DB = merged;
+      Store.set('data', DB);
+      ensureAutoUnlocks();
+      setSyncUI('ok');
+      render();
+    } catch (e) {
+      setSyncUI('err');
+    } finally {
+      this.busy = false;
+    }
+  },
+  async load() {
+    if (!token() || !Store.get('gist_id')) { setSyncUI('none'); return; }
+    setSyncUI('busy');
+    try {
+      const remote = await this.pullRemote();
+      DB = this.merge(DB, remote);
+      Store.set('data', DB);
+      ensureAutoUnlocks();
+      setSyncUI('ok');
+      render();
+    } catch (e) {
+      setSyncUI('err');
+    }
+  }
+};
+
+let syncTimer = null;
+function scheduleSync() {
+  if (!token() || !Store.get('gist_id')) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => Sync.save(), 2000);
+}
+
+function setSyncUI(state) {
+  const row = document.getElementById('syncRow');
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncText');
+  if (!token()) { row.hidden = true; return; }
+  row.hidden = false;
+  dot.className = 'sync-dot';
+  if (!Store.get('gist_id')) { txt.textContent = 'Saved on this phone only — set up sync in Settings'; return; }
+  if (state === 'busy') { dot.classList.add('busy'); txt.textContent = 'Syncing…'; }
+  else if (state === 'ok') {
+    dot.classList.add('ok');
+    txt.textContent = 'Synced · ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: AZ.tz });
+  }
+  else if (state === 'err') { dot.classList.add('err'); txt.textContent = 'Couldn’t reach the shelf — saved here for now'; }
+  else { txt.textContent = 'Ready to sync'; }
+}
+
+async function createFreshGist() {
+  try {
+    const res = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: { ...Sync.headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: 'open-when-data',
+        public: false,
+        files: { 'data.json': { content: JSON.stringify(DB, null, 2) } }
+      })
+    });
+    if (!res.ok) throw new Error(res.status);
+    const gist = await res.json();
+    Store.set('gist_id', gist.id);
+    toast('Fresh shelf created. Everything will sync now.');
+    setSyncUI('ok');
+    return gist.id;
+  } catch (e) {
+    toast('Couldn’t create the Gist — check the token.');
+    return null;
+  }
+}
+
+/* ============ Media (private repo via contents API) ============ */
+
+const mediaRepo = () => Store.get('media_repo', 'ortizzle/open-when-media');
+
+function uploadMedia(path, blob, onProgress) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = () => {
+      const base64 = String(reader.result).split(',')[1];
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', 'https://api.github.com/repos/' + mediaRepo() + '/contents/' + path);
+      xhr.setRequestHeader('Authorization', 'Bearer ' + token());
+      xhr.setRequestHeader('Accept', 'application/vnd.github+json');
+      if (xhr.upload && onProgress) {
+        xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) onProgress(ev.loaded / ev.total); };
+      }
+      xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error('upload ' + xhr.status));
+      xhr.onerror = () => reject(new Error('network'));
+      xhr.send(JSON.stringify({ message: 'add ' + path, content: base64 }));
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Raw URLs don't work on private repos — fetch via the API with the auth header.
+async function fetchMedia(path) {
+  if (mediaCache.has(path)) return mediaCache.get(path);
+  const res = await fetch('https://api.github.com/repos/' + mediaRepo() + '/contents/' + path, {
+    headers: { 'Authorization': 'Bearer ' + token(), 'Accept': 'application/vnd.github.raw+json' }
+  });
+  if (!res.ok) throw new Error('media ' + res.status);
+  const url = URL.createObjectURL(await res.blob());
+  mediaCache.set(path, url);
+  return url;
+}
+
+function compressPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const src = URL.createObjectURL(file);
+    img.onerror = () => { URL.revokeObjectURL(src); reject(new Error('bad image')); };
+    img.onload = () => {
+      const MAX = 1600;
+      let { width: w, height: h } = img;
+      if (Math.max(w, h) > MAX) {
+        const scale = MAX / Math.max(w, h);
+        w = Math.round(w * scale); h = Math.round(h * scale);
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(src);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('encode failed')), 'image/jpeg', 0.8);
+    };
+    img.src = src;
+  });
+}
+
+// Entry text is already saved before this runs — media failure never loses the words.
+function attachMedia(entryId, blob, mime, ext, onProgress) {
+  const kind = mime.startsWith('audio') ? 'voice' : 'photos';
+  const path = kind + '/' + entryId + '.' + ext;
+  return uploadMedia(path, blob, onProgress).then(() => {
+    pendingMedia.delete(entryId);
+    const rec = DB.records[entryId];
+    if (rec) commit(recs => { recs[entryId] = { ...rec, media: { ...(rec.media || {}), path, mime }, updatedAt: Date.now() }; });
+  }).catch(err => {
+    pendingMedia.set(entryId, { blob, mime, ext });
+    throw err;
+  });
+}
+
+function retryMedia(entryId) {
+  const p = pendingMedia.get(entryId);
+  if (!p) return;
+  toast('Trying the upload again…');
+  attachMedia(entryId, p.blob, p.mime, p.ext)
+    .then(() => { toast('Attached. Safe and sound.'); render(); })
+    .catch(() => toast('Still no luck — the words are saved, try again on better signal.'));
+}
+
+/* ============ Modal ============ */
+
+function showModal({ title, message, confirmText = 'OK', cancelText = null, danger = false, onConfirm = null, buildBody = null }) {
+  const overlay = el('div', 'modal-overlay');
+  const box = el('div', 'modal-box');
+  box.appendChild(el('h3', null, title));
+  if (message) box.appendChild(el('p', null, message));
+  let bodyApi = null;
+  if (buildBody) bodyApi = buildBody(box);
+  const row = el('div', 'modal-buttons');
+  if (cancelText) {
+    const c = el('button', 'btn-secondary', cancelText);
+    c.addEventListener('click', () => overlay.remove());
+    row.appendChild(c);
+  }
+  const ok = el('button', danger ? 'btn-danger-ghost' : 'btn-primary', confirmText);
+  ok.addEventListener('click', () => {
+    const keep = onConfirm ? onConfirm(bodyApi, () => overlay.remove()) : null;
+    if (keep !== false) overlay.remove();
+  });
+  row.appendChild(ok);
+  box.appendChild(row);
+  overlay.appendChild(box);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+/* ============ Rendering ============ */
+
+const btnAuthor = document.getElementById('modeAuthor');
+const btnPreview = document.getElementById('modePreview');
+const modeRow = document.getElementById('modeRow');
+const modeNote = document.getElementById('modeNote');
+const subline = document.getElementById('subline');
+
+function render() {
+  if (!token()) { renderLocked(); return; }
+  if (role() === 'reader') {
+    modeRow.hidden = true;
+    modeNote.hidden = false;
+    modeNote.textContent = 'Some of these are ready for you. The rest are waiting for their day.';
+    subline.textContent = 'from Mom & Dad, whenever you are ready';
+    if (who === 'both') who = 'sedona';
+    renderReaderShelf(true);
+    return;
+  }
+  // Author-role device (Chris or Kat)
+  modeRow.hidden = false;
+  modeNote.hidden = false;
+  if (mode === 'author') {
+    modeNote.textContent = 'Your private writing desk. Only you see this.';
+    subline.textContent = 'letters for Sedona & River, from Mom & Dad';
+    renderAuthor();
+  } else {
+    modeNote.textContent = 'What she would see, today, with the real seals.';
+    subline.textContent = 'from Mom & Dad, whenever you are ready';
+    if (who === 'both') who = 'sedona';
+    renderReaderShelf(false);
+  }
+  btnAuthor.classList.toggle('active', mode === 'author');
+  btnPreview.classList.toggle('active', mode === 'preview');
+}
+
+/* ---------- Locked landing ---------- */
+
+function renderLocked() {
+  modeRow.hidden = true;
+  modeNote.hidden = true;
+  document.getElementById('syncRow').hidden = true;
+  subline.textContent = 'letters for Sedona & River';
+  app.textContent = '';
+  const box = el('div', 'locked');
+  box.appendChild(el('div', 'big-seal', 'C'));
+  box.appendChild(el('h2', null, 'This book belongs to the Ortiz family.'));
+  box.appendChild(el('p', null, 'If it’s yours, someone who loves you gave you the key. Nothing in here opens without it.'));
+  const b = el('button', 'key-btn', 'I have the key');
+  b.addEventListener('click', openSettings);
+  box.appendChild(b);
+  app.appendChild(box);
+}
+
+/* ---------- Author dashboard ---------- */
+
+function renderAuthor() {
+  app.textContent = '';
+
+  // Gentle nudge — one quiet line, nothing red, nothing guilt-based.
+  const entries = activeEntries();
+  if (entries.length) {
+    const last = entries.reduce((m, e) => e.createdAt > m ? e.createdAt : m, '0000');
+    const days = Math.round((new Date(AZ.today() + 'T12:00:00') - new Date(last + 'T12:00:00')) / 86400000);
+    const empty = MILESTONES.reduce((n, m) =>
+      n + ['sedona', 'river'].filter(w => entriesFor(w, m.id).length === 0).length, 0);
+    const parts = [days === 0 ? 'Last entry: today' : 'Last entry: ' + days + (days === 1 ? ' day ago' : ' days ago')];
+    if (empty > 0) parts.push(empty + (empty === 1 ? ' envelope still empty' : ' envelopes still empty'));
+    app.appendChild(el('div', 'nudge', parts.join(' · ')));
+  } else {
+    app.appendChild(el('div', 'nudge', 'The shelf is empty — start with whatever is easiest. Even one voice note counts.'));
+  }
+
+  const tabs = el('div', 'tabs');
+  ['sedona', 'river', 'both'].forEach(k => {
+    const b = el('button', 'tab' + (who === k ? ' active' : ''), WHO_LABEL[k]);
+    b.dataset.who = k;
+    b.addEventListener('click', () => { who = k; openMilestone = null; render(); });
+    tabs.appendChild(b);
+  });
+  app.appendChild(tabs);
+
+  if (openMilestone) { renderMilestoneDetail(); return; }
+
+  // Tonight's prompt
+  const card = el('div', 'prompt-card');
+  card.appendChild(el('div', 'prompt-label', 'Tonight’s prompt'));
+  const name = who === 'both' ? 'the girls' : WHO_LABEL[who];
+  const qText = (promptOverride || PROMPTS[((promptIdx % PROMPTS.length) + PROMPTS.length) % PROMPTS.length]).split('{name}').join(name);
+  card.appendChild(el('div', 'prompt-q', qText));
+  const ta = document.createElement('textarea');
+  ta.placeholder = 'Write it the way you would say it out loud…';
+  card.appendChild(ta);
+  const actions = el('div', 'prompt-actions');
+  const save = el('button', 'btn btn-gold', 'File this answer…');
+  save.addEventListener('click', () => {
+    if (!ta.value.trim()) { toast('Write a little something first.'); return; }
+    openFilePicker(qText, ta.value.trim());
+  });
+  const shuffle = el('button', 'btn btn-ghost', 'Shuffle');
+  shuffle.addEventListener('click', () => { promptIdx++; promptOverride = null; Store.set('prompt_idx', promptIdx); render(); });
+  actions.append(save, shuffle);
+  if (Store.get('anthropic_key')) {
+    const spark = el('button', 'btn btn-ghost', '✨ One just for tonight');
+    spark.addEventListener('click', () => generateClaudePrompt(spark));
+    actions.appendChild(spark);
+  }
+  card.appendChild(actions);
+  app.appendChild(card);
+
+  // Envelope shelf
+  const sh = el('div', 'section-h');
+  sh.appendChild(el('h2', null, who === 'both' ? 'Envelopes for both girls' : 'Envelopes for ' + WHO_LABEL[who]));
+  const total = MILESTONES.reduce((n, m) => n + entriesFor(who, m.id).length, 0);
+  sh.appendChild(el('span', 'count', total + (total === 1 ? ' entry so far' : ' entries so far')));
+  app.appendChild(sh);
+
+  const shelf = el('div', 'shelf');
+  MILESTONES.forEach(m => {
+    const count = entriesFor(who, m.id).length;
+    const env = el('div', 'envelope w-' + who);
+    env.appendChild(el('div', 'flap'));
+    env.appendChild(el('div', 'seal', 'C'));
+    env.appendChild(el('div', 'env-when', m.when.replace('Open ', '')));
+    env.appendChild(el('div', 'env-meta', count === 0 ? 'Empty — tap to begin' : count + (count === 1 ? ' entry inside' : ' entries inside')));
+    env.addEventListener('click', () => { openMilestone = m.id; render(); });
+    shelf.appendChild(env);
+  });
+  app.appendChild(shelf);
+}
+
+function renderMilestoneDetail() {
+  const m = MILESTONES.find(x => x.id === openMilestone);
+  const back = el('div', 'back-row');
+  const bb = el('button', 'back-btn', '← All envelopes');
+  bb.addEventListener('click', () => { openMilestone = null; render(); });
+  back.appendChild(bb);
+  app.appendChild(back);
+
+  app.appendChild(el('div', 'detail-title', m.when));
+  app.appendChild(el('div', 'detail-sub', 'For ' + WHO_LABEL[who] + ' · sealed until the day comes'));
+
+  // Unlock status + manual unlock (per girl; the 'both' tab is an authoring view only)
+  const girls = who === 'both' ? ['sedona', 'river'] : [who];
+  const un = el('div', 'unlock-row');
+  girls.forEach(g => {
+    un.appendChild(el('span', 'state', (who === 'both' ? WHO_LABEL[g] + ': ' : '') + unlockStateText(g, m)));
+    if (!unlockRec(g, m.id)) {
+      const b = el('button', 'unlock-btn', 'Break the seal for ' + WHO_LABEL[g] + ' now');
+      b.addEventListener('click', () => {
+        showModal({
+          title: 'Break the seal?',
+          message: 'This unlocks “' + m.when + '” for ' + WHO_LABEL[g] + ' on every device, starting now. It syncs like everything else.',
+          confirmText: 'Unlock it', cancelText: 'Not yet',
+          onConfirm() { writeUnlock(g, m.id, 'author'); toast('Unsealed for ' + WHO_LABEL[g] + '.'); render(); }
+        });
+      });
+      un.appendChild(b);
+    }
+  });
+  app.appendChild(un);
+
+  const list = entriesFor(who, m.id);
+  if (list.length === 0) {
+    const empty = el('p', 'detail-sub', 'Nothing inside yet. Start with whatever is easiest — even one voice note counts.');
+    empty.style.marginTop = '10px';
+    app.appendChild(empty);
+  }
+  list.forEach(e => app.appendChild(entryCard(e, true)));
+
+  const addRow = el('div', 'add-row');
+  [['letter', '+ Write a letter'], ['answer', '+ Answer a prompt'], ['photo', '+ Photo story'], ['voice', '+ Voice note']].forEach(([type, label]) => {
+    const b = el('button', 'add-btn', label);
+    b.addEventListener('click', () => openCompose(type, m));
+    addRow.appendChild(b);
+  });
+  app.appendChild(addRow);
+}
+
+/* ---------- Entry cards ---------- */
+
+function entryCard(e, editable) {
+  const c = el('div', 'entry-card' + (e.author === 'kat' ? ' by-kat' : ''));
+  const typeMap = { letter: ['t-letter', 'Letter'], answer: ['t-answer', 'Q & A'], photo: ['t-photo', 'Photo story'], voice: ['t-voice', 'Voice note'] };
+  const [cls, label] = typeMap[e.kind] || ['t-letter', 'Letter'];
+  c.appendChild(el('span', 'entry-type ' + cls, label));
+
+  if (e.kind === 'photo') {
+    const frame = el('div', 'photo-frame');
+    if (e.media && e.media.path) {
+      const img = document.createElement('img');
+      img.alt = e.caption || e.title || 'photo';
+      fetchMedia(e.media.path).then(url => { img.src = url; }).catch(() => {
+        frame.appendChild(el('span', null, 'photo unavailable right now'));
+      });
+      frame.appendChild(img);
+    }
+    if (e.caption) frame.appendChild(el('span', null, e.caption));
+    c.appendChild(frame);
+    if (!e.media && pendingMedia.has(e.id)) {
+      const r = el('button', 'retry-chip', 'Photo didn’t upload — tap to retry');
+      r.addEventListener('click', () => retryMedia(e.id));
+      c.appendChild(r);
+    } else if (!e.media) {
+      c.appendChild(el('div', 'media-note', 'The photo didn’t make it up — the story is safe.'));
+    }
+  }
+
+  if (e.kind === 'voice') {
+    const bar = el('div', 'voice-bar');
+    const play = el('button', 'voice-dot', '▶');
+    bar.appendChild(play);
+    bar.appendChild(el('div', 'voice-wave'));
+    if (e.media && e.media.duration) bar.appendChild(el('span', 'voice-time', fmtDur(e.media.duration)));
+    c.appendChild(bar);
+    if (e.media && e.media.path) {
+      let audio = null;
+      play.addEventListener('click', async () => {
+        try {
+          if (!audio) {
+            play.textContent = '…';
+            audio = new Audio(await fetchMedia(e.media.path));
+            audio.addEventListener('ended', () => { play.textContent = '▶'; });
+          }
+          if (audio.paused) { await audio.play(); play.textContent = '❚❚'; }
+          else { audio.pause(); play.textContent = '▶'; }
+        } catch (err) { play.textContent = '▶'; toast('Couldn’t load the recording right now.'); }
+      });
+    } else if (pendingMedia.has(e.id)) {
+      const r = el('button', 'retry-chip', 'Recording didn’t upload — tap to retry');
+      r.addEventListener('click', () => retryMedia(e.id));
+      c.appendChild(r);
+    } else {
+      c.appendChild(el('div', 'media-note', 'The recording didn’t make it up.'));
+    }
+  }
+
+  if (e.title) c.appendChild(el('div', 'entry-title', e.title));
+  if (e.q) c.appendChild(el('div', 'entry-q', '“' + e.q + '”'));
+  if (e.body) c.appendChild(el('div', 'entry-body', e.body));
+  c.appendChild(el('div', 'entry-date',
+    'Written ' + AZ.monthYear(e.createdAt) + ' · for ' + WHO_LABEL[e.who] + ' · from ' + (AUTHOR_LABEL[e.author] || 'Dad')));
+
+  if (editable) {
+    const actions = el('div', 'entry-actions');
+    const edit = el('button', null, '✎');
+    edit.setAttribute('aria-label', 'Edit');
+    edit.addEventListener('click', () => openEdit(e));
+    const del = el('button', null, '✕');
+    del.setAttribute('aria-label', 'Delete');
+    del.addEventListener('click', () => {
+      showModal({
+        title: 'Take this out of the envelope?',
+        message: 'It will be removed everywhere. This can’t be undone.',
+        confirmText: 'Remove it', cancelText: 'Keep it', danger: true,
+        onConfirm() { tombstone(e.id); toast('Removed.'); render(); }
+      });
+    });
+    actions.append(edit, del);
+    c.appendChild(actions);
+  }
+  return c;
+}
+
+function fmtDur(s) {
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+/* ---------- Composing ---------- */
+
+function saveEntry(fields) {
+  const id = uid();
+  const entry = {
+    id, type: 'entry', author: role() === 'kat' ? 'kat' : 'chris',
+    createdAt: AZ.today(), updatedAt: Date.now(), ...fields
+  };
+  commit(recs => { recs[id] = entry; });
+  return entry;
+}
+
+function openFilePicker(question, answer) {
+  showModal({
+    title: 'File this answer',
+    message: 'Which envelope should hold it?',
+    confirmText: 'Seal it', cancelText: 'Cancel',
+    buildBody(box) {
+      const sel = document.createElement('select');
+      MILESTONES.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.id; o.textContent = m.when;
+        sel.appendChild(o);
+      });
+      box.appendChild(sel);
+      return { sel };
+    },
+    onConfirm(api) {
+      saveEntry({ kind: 'answer', who, milestone: api.sel.value, q: question, body: answer });
+      promptIdx++; promptOverride = null; Store.set('prompt_idx', promptIdx);
+      toast('Sealed. ' + WHO_LABEL[who] + ' will read it one day.');
+      render();
+    }
+  });
+}
+
+function openCompose(type, milestone) {
+  if (type === 'voice') { openVoiceRecorder(milestone); return; }
+  if (type === 'answer') {
+    openMilestone = null; render();
+    toast('Pick tonight’s prompt up top — or shuffle it.');
+    return;
+  }
+  const isPhoto = type === 'photo';
+  let photoFile = null;
+  showModal({
+    title: isPhoto ? 'Photo story' : 'Write a letter',
+    message: milestone.when + ' · for ' + WHO_LABEL[who],
+    confirmText: 'Seal it', cancelText: 'Cancel',
+    buildBody(box) {
+      let fileNote = null;
+      if (isPhoto) {
+        box.appendChild(el('label', null, 'The photo'));
+        const file = document.createElement('input');
+        file.type = 'file'; file.accept = 'image/*';
+        file.addEventListener('change', () => {
+          photoFile = file.files[0] || null;
+          if (fileNote) fileNote.textContent = photoFile ? photoFile.name : '';
+        });
+        box.appendChild(file);
+        fileNote = el('div', 'hint', '');
+        box.appendChild(fileNote);
+      }
+      box.appendChild(el('label', null, 'Title'));
+      const title = document.createElement('input');
+      title.type = 'text';
+      title.placeholder = isPhoto ? 'The day at the lake' : 'Dear ' + (who === 'both' ? 'girls' : WHO_LABEL[who]) + '…';
+      box.appendChild(title);
+      if (isPhoto) {
+        box.appendChild(el('label', null, 'Caption'));
+        const caption = document.createElement('input');
+        caption.type = 'text'; caption.placeholder = 'You, mid-laugh, mile two';
+        box.appendChild(caption);
+        box.appendChild(el('label', null, 'The story, and why it matters'));
+        const body = document.createElement('textarea');
+        body.placeholder = 'What was happening, and why you should know about it…';
+        box.appendChild(body);
+        return { title, caption, body };
+      }
+      box.appendChild(el('label', null, 'The letter'));
+      const body = document.createElement('textarea');
+      body.placeholder = 'Write it the way you would say it out loud…';
+      box.appendChild(body);
+      return { title, body };
+    },
+    onConfirm(api) {
+      if (!api.body.value.trim()) { toast('Write a little something first.'); return false; }
+      const entry = saveEntry({
+        kind: type, who, milestone: milestone.id,
+        title: api.title.value.trim() || (isPhoto ? 'Untitled photo' : 'Untitled letter'),
+        caption: isPhoto ? (api.caption.value.trim() || '') : undefined,
+        body: api.body.value.trim()
+      });
+      toast('Sealed into “' + milestone.when + '”.');
+      // Entry text is saved; the photo attaches second so a failed upload never loses the words.
+      if (isPhoto && photoFile) {
+        compressPhoto(photoFile)
+          .then(blob => attachMedia(entry.id, blob, 'image/jpeg', 'jpg'))
+          .then(() => { toast('Photo tucked in too.'); render(); })
+          .catch(() => { toast('Photo upload failed — the story is saved. Tap retry on the card.'); render(); });
+      }
+      render();
+    }
+  });
+}
+
+function openEdit(e) {
+  showModal({
+    title: 'Edit this entry',
+    message: MILESTONES.find(m => m.id === e.milestone).when + ' · for ' + WHO_LABEL[e.who],
+    confirmText: 'Save it', cancelText: 'Cancel',
+    buildBody(box) {
+      let title = null, caption = null;
+      if (e.kind !== 'answer') {
+        box.appendChild(el('label', null, 'Title'));
+        title = document.createElement('input');
+        title.type = 'text'; title.value = e.title || '';
+        box.appendChild(title);
+      }
+      if (e.kind === 'photo') {
+        box.appendChild(el('label', null, 'Caption'));
+        caption = document.createElement('input');
+        caption.type = 'text'; caption.value = e.caption || '';
+        box.appendChild(caption);
+      }
+      box.appendChild(el('label', null, e.kind === 'answer' ? 'Your answer' : 'The words'));
+      const body = document.createElement('textarea');
+      body.value = e.body || '';
+      box.appendChild(body);
+      return { title, caption, body };
+    },
+    onConfirm(api) {
+      if (!api.body.value.trim()) { toast('It can’t be empty — delete it instead.'); return false; }
+      commit(recs => {
+        recs[e.id] = {
+          ...e,
+          title: api.title ? (api.title.value.trim() || e.title) : e.title,
+          caption: api.caption ? api.caption.value.trim() : e.caption,
+          body: api.body.value.trim(),
+          updatedAt: Date.now()
+        };
+      });
+      toast('Saved.');
+      render();
+    }
+  });
+}
+
+/* ---------- Voice recorder ---------- */
+
+function openVoiceRecorder(milestone) {
+  let mediaRecorder = null, chunks = [], stream = null, timerInt = null;
+  let seconds = 0, blob = null, mime = '', previewAudio = null;
+
+  const cleanup = () => {
+    clearInterval(timerInt);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (previewAudio) previewAudio.pause();
+  };
+
+  const overlay = showModal({
+    title: 'Voice note',
+    message: milestone.when + ' · for ' + WHO_LABEL[who],
+    confirmText: 'Seal it', cancelText: 'Cancel',
+    buildBody(box) {
+      const wrapEl = el('div', 'rec-wrap');
+      const time = el('div', 'rec-time', '0:00');
+      const btn = el('button', 'rec-btn', '●');
+      const note = el('div', 'rec-note', 'Tap to record. Take your time.');
+      wrapEl.append(time, document.createElement('br'), btn, note);
+      box.appendChild(wrapEl);
+      box.appendChild(el('label', null, 'Title'));
+      const title = document.createElement('input');
+      title.type = 'text'; title.placeholder = 'A pep talk for a rough one';
+      box.appendChild(title);
+      box.appendChild(el('label', null, 'A line about it (optional)'));
+      const body = document.createElement('textarea');
+      body.style.minHeight = '60px';
+      body.placeholder = 'What made you record this tonight…';
+      box.appendChild(body);
+
+      btn.addEventListener('click', async () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+          return;
+        }
+        // Re-record: throw away the old take
+        blob = null; chunks = []; seconds = 0; time.textContent = '0:00';
+        if (previewAudio) { previewAudio.pause(); previewAudio = null; }
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) { toast('Microphone said no — check permissions in Settings.'); return; }
+        // audio/mp4 is what mobile Safari can actually record; fall back to the browser default elsewhere.
+        const preferred = 'audio/mp4';
+        const opts = (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(preferred))
+          ? { mimeType: preferred } : {};
+        try { mediaRecorder = new MediaRecorder(stream, opts); }
+        catch (err) { toast('This browser can’t record audio.'); return; }
+        mime = mediaRecorder.mimeType || 'audio/mp4';
+        mediaRecorder.addEventListener('dataavailable', ev => { if (ev.data.size) chunks.push(ev.data); });
+        mediaRecorder.addEventListener('stop', () => {
+          clearInterval(timerInt);
+          stream.getTracks().forEach(t => t.stop());
+          blob = new Blob(chunks, { type: mime });
+          btn.classList.remove('recording');
+          btn.textContent = '↺';
+          note.textContent = fmtDur(seconds) + ' recorded · tap ▶ to listen, ↺ to re-record';
+          if (!wrapEl.querySelector('.play-preview')) {
+            const play = el('button', 'unlock-btn play-preview', '▶ Listen back');
+            play.addEventListener('click', () => {
+              if (!blob) return;
+              if (previewAudio && !previewAudio.paused) { previewAudio.pause(); return; }
+              previewAudio = new Audio(URL.createObjectURL(blob));
+              previewAudio.play();
+            });
+            wrapEl.appendChild(play);
+          }
+        });
+        mediaRecorder.start();
+        btn.classList.add('recording');
+        btn.textContent = '■';
+        note.textContent = 'Recording… tap to stop.';
+        timerInt = setInterval(() => { seconds++; time.textContent = fmtDur(seconds); }, 1000);
+      });
+
+      const bar = el('div', 'upload-bar');
+      bar.style.display = 'none';
+      bar.appendChild(el('div'));
+      box.appendChild(bar);
+      return { title, body, bar, getBlob: () => blob, getMime: () => mime, getSeconds: () => seconds };
+    },
+    onConfirm(api, close) {
+      if (!api.getBlob()) { toast('Record something first — even ten seconds counts.'); return false; }
+      const entry = saveEntry({
+        kind: 'voice', who, milestone: milestone.id,
+        title: api.title.value.trim() || 'A voice note',
+        body: api.body.value.trim(),
+        media: { duration: api.getSeconds() }
+      });
+      const ext = api.getMime().includes('mp4') ? 'm4a' : 'webm';
+      api.bar.style.display = 'block';
+      const fill = api.bar.firstChild;
+      attachMedia(entry.id, api.getBlob(), api.getMime(), ext, p => { fill.style.width = Math.round(p * 100) + '%'; })
+        .then(() => { toast('Sealed, voice and all.'); cleanup(); close(); render(); })
+        .catch(() => { toast('Upload failed — the note is saved. Tap retry on the card.'); cleanup(); close(); render(); });
+      return false; // we close ourselves after the upload settles
+    }
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) cleanup(); });
+}
+
+/* ---------- Reader / preview shelf ---------- */
+
+function renderReaderShelf(isRealReader) {
+  app.textContent = '';
+
+  const tabs = el('div', 'tabs');
+  ['sedona', 'river'].forEach(k => {
+    const b = el('button', 'tab' + (who === k ? ' active' : ''), (isRealReader ? '' : 'As ') + WHO_LABEL[k]);
+    b.dataset.who = k;
+    b.addEventListener('click', () => { who = k; openMilestone = null; render(); });
+    tabs.appendChild(b);
+  });
+  app.appendChild(tabs);
+
+  if (openMilestone) { renderReaderOpen(); return; }
+
+  const sh = el('div', 'section-h');
+  sh.appendChild(el('h2', null, 'Letters from Mom & Dad'));
+  const unlockedCount = MILESTONES.filter(m => unlockRec(who, m.id)).length;
+  sh.appendChild(el('span', 'count', unlockedCount + ' of ' + MILESTONES.length + ' unlocked'));
+  app.appendChild(sh);
+
+  const shelf = el('div', 'shelf');
+  MILESTONES.forEach(m => {
+    const unlocked = !!unlockRec(who, m.id);
+    const opened = openedSeals.has(who + ':' + m.id);
+    const env = el('div', 'envelope w-' + who + (opened ? ' opened' : ''));
+    env.appendChild(el('div', 'flap'));
+    const seal = el('div', 'seal', 'C');
+    env.appendChild(seal);
+    env.appendChild(el('div', 'env-when', m.when.replace('Open ', '')));
+    env.appendChild(el('div', 'env-status' + (unlocked && !opened ? ' ready' : ''),
+      opened ? 'Opened' : unlocked ? 'Ready — break the seal' : 'Still sealed'));
+    env.addEventListener('click', () => {
+      if (unlocked) { crackAndOpen(seal, m); return; }
+      if (m.unlock.type === 'keeper' && isRealReader) { openKeeperUnlock(m, seal); return; }
+      if (m.unlock.type === 'age') {
+        const due = unlockDateFor(who, m);
+        toast(due
+          ? 'Still sealed. This one opens ' + AZ.pretty(due) + '.'
+          : 'Still sealed. This one opens for a day that has not come yet.');
+      } else {
+        toast('Still sealed. This one waits for the right moment, not a date.');
+      }
+    });
+    shelf.appendChild(env);
+  });
+  app.appendChild(shelf);
+}
+
+function crackAndOpen(seal, m) {
+  seal.classList.add('seal-crack');
+  setTimeout(() => {
+    openedSeals.add(who + ':' + m.id);
+    Store.set('opened_seals', [...openedSeals]);
+    openMilestone = m.id;
+    render();
+  }, 480);
+}
+
+function openKeeperUnlock(m, seal) {
+  const hash = settingsRec() && settingsRec().keeperHash;
+  if (!hash) { toast('Still sealed. The keeper hasn’t set this one up yet.'); return; }
+  showModal({
+    title: 'The keeper’s envelope',
+    message: 'This one doesn’t open on a date. If the keeper is with you and says it’s time, she knows the words.',
+    confirmText: 'Break the seal', cancelText: 'Not yet',
+    buildBody(box) {
+      box.appendChild(el('label', null, 'Keeper passphrase'));
+      const input = document.createElement('input');
+      input.type = 'password';
+      input.autocomplete = 'off';
+      box.appendChild(input);
+      return { input };
+    },
+    onConfirm(api, close) {
+      sha256hex(api.input.value.trim()).then(h => {
+        if (h === hash) {
+          writeUnlock(who, m.id, 'keeper');
+          close();
+          crackAndOpen(seal, m);
+        } else {
+          toast('That’s not it. The envelope stays sealed.');
+        }
+      });
+      return false;
+    }
+  });
+}
+
+function renderReaderOpen() {
+  const m = MILESTONES.find(x => x.id === openMilestone);
+  const back = el('div', 'back-row');
+  const bb = el('button', 'back-btn', '← All letters');
+  bb.addEventListener('click', () => { openMilestone = null; render(); });
+  back.appendChild(bb);
+  app.appendChild(back);
+
+  app.appendChild(el('div', 'detail-title', m.when));
+
+  const list = entriesFor(who, m.id);
+  if (list.length === 0) {
+    app.appendChild(el('p', 'detail-sub', 'This envelope is empty. Maybe the next one isn’t.'));
+    return;
+  }
+  list.forEach(e => {
+    if (e.kind === 'letter') {
+      const L = el('div', 'letter-open');
+      L.appendChild(el('div', 'salutation', 'Dear ' + (e.who === 'both' ? 'girls' : WHO_LABEL[e.who]) + ','));
+      L.appendChild(el('div', 'body', e.body));
+      L.appendChild(el('div', 'sig' + (e.author === 'kat' ? ' by-kat' : ''), '— ' + (AUTHOR_LABEL[e.author] || 'Dad')));
+      app.appendChild(L);
+    } else {
+      app.appendChild(entryCard(e, false));
+    }
+  });
+}
+
+/* ============ Claude prompt (optional — the app never needs it) ============ */
+
+async function generateClaudePrompt(btn) {
+  const key = Store.get('anthropic_key');
+  if (!key) { toast('Add your API key in Settings first.'); return; }
+  btn.disabled = true;
+  const old = btn.textContent;
+  btn.textContent = '✨ thinking…';
+  try {
+    const recent = activeEntries().slice(-10).map(e => (e.title || e.q || '').slice(0, 80)).filter(Boolean);
+    const name = who === 'both' ? 'both daughters (Sedona and River)' : WHO_LABEL[who];
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 200,
+        system: 'You write single writing prompts for a parent building a time-capsule of letters for their young daughters to read as adults. Warm, specific, a little disarming. Never morbid. Respond with ONLY the prompt question, one sentence, no preamble, no quotes. Use {name} as a placeholder for the daughter’s name.',
+        messages: [{
+          role: 'user',
+          content: 'Tonight I’m writing for ' + name + '. Topics I’ve already covered recently: '
+            + (recent.length ? recent.join('; ') : '(nothing yet)') + '. Give me one fresh prompt.'
+        }]
+      })
+    });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const text = data.content.filter(b => b.type === 'text').map(b => b.text).join(' ').trim();
+    if (!text) throw new Error('empty');
+    promptOverride = text.replace(/^["“]|["”]$/g, '');
+    render();
+  } catch (e) {
+    toast('Claude couldn’t come tonight — the shuffle still works.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+}
+
+/* ============ Settings ============ */
+
+function openSettings() {
+  const s = settingsRec();
+  showModal({
+    title: 'Settings',
+    message: 'The key, who’s writing, and the practical bits.',
+    confirmText: 'Save', cancelText: 'Close',
+    buildBody(box) {
+      box.appendChild(el('label', null, 'Who is using this device?'));
+      const roleSel = document.createElement('select');
+      [['', 'Choose…'], ['chris', 'Chris — writing as Dad'], ['kat', 'Kat — writing as Mom'], ['reader', 'Reader — Sedona or River']].forEach(([v, l]) => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = l;
+        if ((Store.get('role') || '') === v) o.selected = true;
+        roleSel.appendChild(o);
+      });
+      box.appendChild(roleSel);
+
+      box.appendChild(el('label', null, 'GitHub token (the key)'));
+      const tok = document.createElement('input');
+      tok.type = 'password'; tok.autocomplete = 'off';
+      tok.value = token();
+      box.appendChild(tok);
+      box.appendChild(el('div', 'hint', 'Stays on this device. It is the real lock on the whole book.'));
+
+      box.appendChild(el('label', null, 'Gist ID (the shelf)'));
+      const gist = document.createElement('input');
+      gist.type = 'text'; gist.value = Store.get('gist_id', '');
+      box.appendChild(gist);
+      const mkGist = el('button', 'settings-action', 'Create a fresh Gist for this book');
+      mkGist.addEventListener('click', async () => {
+        Store.set('token', tok.value.trim());
+        if (!token()) { toast('Paste the token first.'); return; }
+        const id = await createFreshGist();
+        if (id) gist.value = id;
+      });
+      box.appendChild(mkGist);
+
+      box.appendChild(el('label', null, 'Media repo (photos & voice)'));
+      const repo = document.createElement('input');
+      repo.type = 'text'; repo.value = mediaRepo();
+      box.appendChild(repo);
+
+      let sedonaBd = null, riverBd = null, keeper = null, anthropic = null;
+      if ((Store.get('role') || 'chris') !== 'reader') {
+        box.appendChild(el('label', null, 'Sedona’s birthdate'));
+        sedonaBd = document.createElement('input');
+        sedonaBd.type = 'date'; sedonaBd.value = birthdate('sedona') || '';
+        box.appendChild(sedonaBd);
+
+        box.appendChild(el('label', null, 'River’s birthdate'));
+        riverBd = document.createElement('input');
+        riverBd.type = 'date'; riverBd.value = birthdate('river') || '';
+        box.appendChild(riverBd);
+        box.appendChild(el('div', 'hint', 'These live in the synced settings, never in the code. The birthday envelopes count on them.'));
+
+        box.appendChild(el('label', null, 'Keeper passphrase' + ((s && s.keeperHash) ? ' (set — type to change)' : '')));
+        keeper = document.createElement('input');
+        keeper.type = 'password'; keeper.autocomplete = 'off';
+        keeper.placeholder = (s && s.keeperHash) ? '••••••' : 'Kat’s words for the moment envelopes';
+        box.appendChild(keeper);
+
+        box.appendChild(el('label', null, 'Anthropic API key (optional ✨)'));
+        anthropic = document.createElement('input');
+        anthropic.type = 'password'; anthropic.autocomplete = 'off';
+        anthropic.value = Store.get('anthropic_key', '') || '';
+        box.appendChild(anthropic);
+
+        box.appendChild(document.createElement('hr')).className = 'settings-sep';
+        const exp = el('button', 'settings-action', '⬇ Download the archive (everything, as JSON)');
+        exp.addEventListener('click', exportArchive);
+        box.appendChild(exp);
+        const pr = el('button', 'settings-action', '🖨 Print edition — every letter on paper');
+        pr.addEventListener('click', () => { openPrintEdition(); });
+        box.appendChild(pr);
+        const ks = el('button', 'settings-action', '📄 Keeper sheet — the one-pager for Kat');
+        ks.addEventListener('click', openKeeperSheet);
+        box.appendChild(ks);
+      }
+
+      box.appendChild(el('div', 'version-line', 'Open When · v' + APP_VERSION));
+      return { roleSel, tok, gist, repo, sedonaBd, riverBd, keeper, anthropic };
+    },
+    onConfirm(api, close) {
+      if (api.roleSel.value) Store.set('role', api.roleSel.value);
+      Store.set('token', api.tok.value.trim());
+      Store.set('gist_id', api.gist.value.trim());
+      Store.set('media_repo', api.repo.value.trim() || 'ortizzle/open-when-media');
+      if (api.anthropic) Store.set('anthropic_key', api.anthropic.value.trim());
+
+      const finish = () => {
+        close();
+        render();
+        Sync.load();
+      };
+
+      if (api.sedonaBd) {
+        const bds = { ...(settingsRec() ? settingsRec().birthdates : {}) };
+        if (api.sedonaBd.value) bds.sedona = api.sedonaBd.value;
+        if (api.riverBd.value) bds.river = api.riverBd.value;
+        const patch = { birthdates: bds };
+        if (api.keeper && api.keeper.value.trim()) {
+          sha256hex(api.keeper.value.trim()).then(h => {
+            updateSettingsRec({ ...patch, keeperHash: h });
+            ensureAutoUnlocks();
+            finish();
+          });
+          return false;
+        }
+        updateSettingsRec(patch);
+        ensureAutoUnlocks();
+      }
+      finish();
+      return false;
+    }
+  });
+}
+
+/* ============ Exports ============ */
+
+function exportArchive() {
+  const payload = { app: 'open-when', version: APP_VERSION, exportedAt: new Date().toISOString(), records: DB.records };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'open-when-archive-' + AZ.today() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast('Archive saved. Keep a copy somewhere that isn’t a phone.');
+}
+
+function enterPrintMode(build) {
+  const root = document.getElementById('printRoot');
+  root.textContent = '';
+  const closeBtn = el('button', 'print-close', 'Close');
+  const exit = () => {
+    document.body.classList.remove('printing');
+    closeBtn.remove();
+    root.textContent = '';
+  };
+  closeBtn.addEventListener('click', exit);
+  window.addEventListener('afterprint', function onAp() {
+    window.removeEventListener('afterprint', onAp);
+  });
+  return Promise.resolve(build(root)).then(() => {
+    document.body.appendChild(closeBtn);
+    document.body.classList.add('printing');
+    setTimeout(() => window.print(), 350);
+  });
+}
+
+function openPrintEdition() {
+  toast('Laying out the pages…');
+  const imgJobs = [];
+  enterPrintMode(root => {
+    root.appendChild(el('div', 'p-eyebrow', 'A time capsule'));
+    root.appendChild(el('h1', null, 'Open When'));
+    root.appendChild(el('div', 'p-sub', 'letters for Sedona & River, from Mom & Dad · printed ' + AZ.pretty(AZ.today())));
+
+    ['sedona', 'river'].forEach(g => {
+      const d = el('div', 'p-daughter');
+      d.appendChild(el('h2', null, 'For ' + WHO_LABEL[g]));
+      const rule = el('div', 'rule');
+      rule.style.background = g === 'sedona' ? '#c05b3d' : '#4f8fa3';
+      d.appendChild(rule);
+      let any = false;
+      MILESTONES.forEach(m => {
+        const list = entriesFor(g, m.id);
+        if (!list.length) return;
+        any = true;
+        const ms = el('div', 'p-ms');
+        ms.appendChild(el('h3', null, m.when));
+        list.forEach(e => {
+          const card = el('div', 'p-entry' + (e.author === 'kat' ? ' by-kat' : ''));
+          if (e.kind === 'photo' && e.media && e.media.path) {
+            const img = document.createElement('img');
+            img.alt = e.caption || '';
+            imgJobs.push(fetchMedia(e.media.path).then(u => { img.src = u; }).catch(() => img.remove()));
+            card.appendChild(img);
+          }
+          if (e.title) card.appendChild(el('div', 'p-title', e.title));
+          if (e.q) card.appendChild(el('div', 'p-q', '“' + e.q + '”'));
+          if (e.kind === 'voice') card.appendChild(el('div', 'p-q', 'A voice note lives in the app for this one' + (e.media && e.media.duration ? ' (' + fmtDur(e.media.duration) + ')' : '') + '.'));
+          if (e.body) card.appendChild(el('div', 'p-body', e.body));
+          card.appendChild(el('div', 'p-meta', 'Written ' + AZ.monthYear(e.createdAt) + ' · from ' + (AUTHOR_LABEL[e.author] || 'Dad')));
+          ms.appendChild(card);
+        });
+        d.appendChild(ms);
+      });
+      if (!any) d.appendChild(el('p', 'p-sub', 'Nothing sealed for her yet.'));
+      root.appendChild(d);
+    });
+    return Promise.allSettled(imgJobs);
+  });
+}
+
+function openKeeperSheet() {
+  showModal({
+    title: 'The keeper sheet',
+    message: 'One page for Kat and the important-documents folder. Edit it here, then print.',
+    confirmText: 'Print it', cancelText: 'Cancel',
+    buildBody(box) {
+      const ta = document.createElement('textarea');
+      ta.style.minHeight = '260px';
+      ta.value = Store.get('keeper_sheet', KEEPER_TEMPLATE);
+      box.appendChild(ta);
+      return { ta };
+    },
+    onConfirm(api) {
+      Store.set('keeper_sheet', api.ta.value);
+      enterPrintMode(root => {
+        root.appendChild(el('div', 'p-eyebrow', 'Keep with the important documents'));
+        root.appendChild(el('h1', null, 'Open When'));
+        root.appendChild(el('div', 'keeper-body', api.ta.value));
+      });
+    }
+  });
+}
+
+/* ============ Wiring ============ */
+
+btnAuthor.addEventListener('click', () => { mode = 'author'; openMilestone = null; render(); });
+btnPreview.addEventListener('click', () => { mode = 'preview'; openMilestone = null; render(); });
+document.getElementById('gearBtn').addEventListener('click', openSettings);
+document.getElementById('syncBtn').addEventListener('click', () => Sync.save());
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') Sync.load();
+});
+
+// Debug/verification hooks (same idea as window.__us in Us OS)
+window.__ow = {
+  merge: (a, b) => Sync.merge(a, b),
+  records: () => DB.records,
+  unlockDateFor: (w, msId) => unlockDateFor(w, MILESTONES.find(m => m.id === msId)),
+  az: AZ
+};
+
+ensureAutoUnlocks();
+render();
+Sync.load();
+</script>
+</body>
+</html>
