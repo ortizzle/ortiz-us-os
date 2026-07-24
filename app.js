@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v32 · the fridge';
+const APP_VERSION = 'v33 · fridge polish';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -445,11 +445,30 @@ function fridgeEdit(w) {
   ]);
   inp.focus();
 }
-function saveToJar(fromWho, text, at) {
-  DB.acts.push({ id: `notekeep:${me()}:${uid()}`, from: fromWho, text, at: at || todayStr(), updatedAt: now() });
-  commit(); toast('Tucked into your jar 🫙');
+// Saved notes are `notekeep:<owner>:<uid>`. spicy:true ones live only in the
+// freezer 🔥 (kept out of the History jars and the warm comfort-food shelf) —
+// the same hidden-spicy-layer pattern as the After Dark bingo card. They still
+// sync (shared between the two of you), just gated behind the freezer.
+function saveToJar(fromWho, text, at, spicy) {
+  DB.acts.push({ id: `notekeep:${me()}:${uid()}`, from: fromWho, text, at: at || todayStr(), spicy: Boolean(spicy), updatedAt: now() });
+  commit(); toast(spicy ? 'On ice 🔥' : 'Tucked into your jar 🫙');
 }
-const bignoteEl = (who, text, at) => el('div', { class: 'bignote p-' + who }, [
+function spicyCompose() {
+  const inp = el('textarea', { class: 'input', placeholder: 'For their eyes only… 🔥' });
+  const m = modal('🔥 Leave one on ice', [
+    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `Frozen away in the freezer — ${COUPLE[other(me())].name} finds it the same way you did.`),
+    inp,
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      const v = inp.value.trim(); if (!v) { m.close(); return; }
+      saveToJar(me(), v, todayStr(), true); m.close(); render();
+    } }, 'Freeze it 🔥'),
+  ]);
+  inp.focus();
+}
+const bignoteEl = (who, text, at, spicy) => el('div', { class: 'bignote p-' + who }, [
+  spicy ? el('span', { class: 'spicypill', style: 'position:absolute; top:10px; right:14px' }, '🔥') : null,
   text, el('span', { class: 'bd' }, at ? fmt(at) : ''), el('span', { class: 'sig' }, `❤️ ${COUPLE[who].name}`),
 ]);
 function missedSheet(rec, them) {
@@ -505,8 +524,9 @@ function magnetEl(e) {
   } }, inner);
   return btn;
 }
-let fridgeOpen = false, doorTaps = 0, doorTimer = null, ckTaps = 0, ckTimer = null;
-const FRIDGE_FOOD = ['🥧', '🥡', '🍕', '🍨', '🫙'];
+let doorOpen = false, freezerOpen = false, doorTaps = 0, doorTimer = null, fzTaps = 0, fzTimer = null, ckTaps = 0, ckTimer = null;
+const FRIDGE_FOOD = ['🥧', '🥡', '🍕', '🧆', '🍲'];   // comfort — the warm keepsakes
+const FREEZER_TREATS = ['🍦', '🍧', '🍨', '🧁', '🍡']; // on ice — the spicy 🔥 notes
 function renderFridge() {
   const y = me();
   view.append(el('h1', {}, 'The fridge'), el('p', { class: 'sub' }, 'Where the two of you leave things for each other.'));
@@ -523,11 +543,12 @@ function renderFridge() {
     const v = tqAns(w);
     const kids = [el('span', { class: 'who ' + w }, COUPLE[w].name.toUpperCase())];
     if (v) kids.push(el('span', { class: 'a' }, `“${v}”`));
-    else if (w === y) kids.push(el('button', { onclick: answerModal }, '✍️ your answer…'));
+    else if (w === y) kids.push(el('button', { onclick: (ev) => { ev.stopPropagation(); answerModal(); } }, '✍️ your answer…'));
     else kids.push(el('span', { class: 'a pending' }, 'hasn’t answered yet'));
     return el('div', { class: 'q-ans' }, kids);
   };
-  const keepBtn = el('button', { class: 'keepbtn' + (kept ? ' kept' : ''), onclick: () => {
+  const keepBtn = el('button', { class: 'keepbtn' + (kept ? ' kept' : ''), onclick: (ev) => {
+    ev.stopPropagation();
     if (actRec(`tq:keep:${todayStr()}`)) return;
     setAct(`tq:keep:${todayStr()}`, { q: tonightsQuestion(), ca: tqAns('chris'), ka: tqAns('kat') });
     toast('A rose for the vase 🌹'); render();
@@ -586,32 +607,50 @@ function renderFridge() {
     if (ckTaps >= 6) { ckTaps = 0; current = 'bingo'; setTab(); render(); }
   } }, [el('span', { class: 'ltr c' }, 'C'), el('span', { class: 'ltr h' }, '♥'), el('span', { class: 'ltr k' }, 'K')]));
 
-  // the secret shelf: keepsakes as comfort food, behind 4 taps on the handle
-  const keepsAll = DB.acts.filter((r) => r.id.startsWith('notekeep:'));
-  const interior = el('div', { class: 'finterior' }, [
-    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(0, 3).map((f) => el('button', { class: 'food', onclick: () => serveFood() }, f))),
-    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(3).map((f) => el('button', { class: 'food', onclick: () => serveFood() }, f))),
-    el('button', { class: 'fclose', onclick: () => { fridgeOpen = false; render(); } }, 'close the door'),
-  ]);
-  function serveFood() {
-    if (!keepsAll.length) { toast('Nothing saved in here yet — ⭐ a note first 💗'); return; }
-    const r = keepsAll[Math.floor(Math.random() * keepsAll.length)];
-    const m = modal('🤍 From the good shelf', [bignoteEl(r.from, r.text, r.at)],
+  // The door hides a comfort shelf (sweet saved notes) behind 4 taps on its
+  // handle; the freezer hides ice cream (spicy 🔥 notes) behind 6 taps on it.
+  const sweet = DB.acts.filter((r) => r.id.startsWith('notekeep:') && !r.spicy);
+  const spicy = DB.acts.filter((r) => r.id.startsWith('notekeep:') && r.spicy);
+  const serve = (pool, title, empty) => {
+    if (!pool.length) { toast(empty); return; }
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    const m = modal(title, [bignoteEl(r.from, r.text, r.at, r.spicy)],
       [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, '💗')]);
-  }
+  };
+  const interior = el('div', { class: 'finterior' }, [
+    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(0, 3).map((f) => el('button', { class: 'food', onclick: () => serve(sweet, '🤍 From the good shelf', 'Nothing saved yet — ⭐ a note first 💗') }, f))),
+    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(3).map((f) => el('button', { class: 'food', onclick: () => serve(sweet, '🤍 From the good shelf', 'Nothing saved yet — ⭐ a note first 💗') }, f))),
+    el('button', { class: 'fclose', onclick: () => { doorOpen = false; render(); } }, 'close the door'),
+  ]);
+  const fzInterior = el('div', { class: 'fzinterior' }, [
+    el('div', { class: 'fzcaption' }, spicy.length ? '🔥 on ice' : 'nothing on ice yet — leave one 🔥'),
+    el('div', { class: 'fshelf' }, FREEZER_TREATS.slice(0, 3).map((f) => el('button', { class: 'food', onclick: () => serve(spicy, '🔥 Straight from the freezer', 'The freezer’s empty — leave one on ice 🔥') }, f))),
+    el('div', { class: 'fshelf' }, [
+      ...FREEZER_TREATS.slice(3).map((f) => el('button', { class: 'food', onclick: () => serve(spicy, '🔥 Straight from the freezer', 'The freezer’s empty — leave one on ice 🔥') }, f)),
+      el('button', { class: 'food', title: 'Leave one on ice', onclick: spicyCompose }, '➕'),
+    ]),
+    el('button', { class: 'fclose', onclick: () => { freezerOpen = false; render(); } }, 'close the freezer'),
+  ]);
   const doorHandle = el('div', { class: 'fhandle hd', onclick: () => {
     doorTaps++; clearTimeout(doorTimer); doorTimer = setTimeout(() => { doorTaps = 0; }, 1600);
-    if (doorTaps >= 4) { doorTaps = 0; fridgeOpen = true; render(); }
+    if (doorTaps >= 4) { doorTaps = 0; doorOpen = true; render(); }
   } });
+  // Six taps anywhere on the freezer face (its buttons stopPropagation) opens it.
+  const freezer = el('div', { class: 'freezer', onclick: () => {
+    if (freezerOpen) return;
+    fzTaps++; clearTimeout(fzTimer); fzTimer = setTimeout(() => { fzTaps = 0; }, 1600);
+    if (fzTaps >= 6) { fzTaps = 0; freezerOpen = true; render(); }
+  } }, [el('div', { class: 'fhandle hf' }), qcard, fzInterior]);
 
-  view.append(el('div', { class: 'fridge' + (fridgeOpen ? ' open' : '') }, [
-    el('div', { class: 'freezer' }, [el('div', { class: 'fhandle hf' }), qcard]),
+  view.append(el('div', { class: 'fridge' + (doorOpen ? ' door-open' : '') + (freezerOpen ? ' freezer-open' : '') }, [
+    freezer,
     el('div', { class: 'fdoor' }, [doorHandle, el('div', { class: 'fnotes' }, noteEls), el('div', { class: 'mags' }, magEls), interior]),
   ]));
 
   // Rendering the notes counts as reading them (both the ✨ chip and the
-  // synced seen-receipt the writer's phone shows as "seen 💗").
-  if (!fridgeOpen && noteRec(them)?.text) {
+  // synced seen-receipt the writer's phone shows as "seen 💗") — but not when
+  // the door is swung open, since the notes are hidden then.
+  if (!doorOpen && noteRec(them)?.text) {
     DB.settings.noteSeenAt = now(); save(DB);
     const seen = actRec(`note:seen:${y}`);
     if ((seen?.at || '') < (noteRec(them).updatedAt || '')) setAct(`note:seen:${y}`, { at: noteRec(them).updatedAt });
@@ -896,7 +935,7 @@ let current = 'rhythm';
 function render() {
   clear(view);
   clearInterval(eyeTimer); // leaving the 36Q closer view stops its countdown
-  if (current !== 'fridge') fridgeOpen = false; // the door shuts behind you
+  if (current !== 'fridge') { doorOpen = false; freezerOpen = false; } // doors shut behind you
   if (current === 'rhythm') renderRhythm();
   else if (current === 'fridge') renderFridge();
   else if (current === 'ideas') renderIdeas();
@@ -1612,8 +1651,10 @@ function keepsakesSheet(keeps) {
   ]));
   const m = modal('🌹 The vase', rows, [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
 }
+// Jars show only the SWEET keepsakes — spicy ones stay frozen in the freezer.
+const jarNotes = (w) => DB.acts.filter((r) => r.id.startsWith(`notekeep:${w}:`) && !r.spicy);
 function jarSheet(w) {
-  const notes = DB.acts.filter((r) => r.id.startsWith(`notekeep:${w}:`)).sort((a, b) => (a.at || '') < (b.at || '') ? 1 : -1);
+  const notes = jarNotes(w).sort((a, b) => (a.at || '') < (b.at || '') ? 1 : -1);
   const m = modal(`🫙 ${COUPLE[w].name}’s jar`, notes.map((r) => bignoteEl(r.from, r.text, r.at)),
     [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
 }
@@ -1649,8 +1690,8 @@ function renderHistory() {
   if (!done.length) view.append(el('div', { class: 'empty' }, 'Log your first one from the Rhythm tab.'));
   for (const e of done) view.append(historyRow(e, false));
 
-  // jars of ⭐-saved fridge notes, tucked at the bottom
-  const jarN = (w) => DB.acts.filter((r) => r.id.startsWith(`notekeep:${w}:`)).length;
+  // jars of ⭐-saved (sweet) fridge notes, tucked at the bottom
+  const jarN = (w) => jarNotes(w).length;
   if (jarN('chris') + jarN('kat') > 0) {
     const FN_POS = [[5, 8, -12], [7, 34, 9], [18, 20, 4], [6, 22, -5], [16, 9, 14]];
     const jarCol = (w) => {

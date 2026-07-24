@@ -160,10 +160,14 @@ Everything is discovery — the tab carries no instruction text.
   both phones render the identical fridge. Tap = wobble; double-tap opens
   the memory (`eventSheet`). Up to two ghost-outlined "someday" magnets
   from planned getaways/trips tap through to Ideas.
-- **Two easter eggs.** C ♥ K letter magnets: six quick taps opens Just us
-  💗 (the wordmark-heart door stays too). The door handle: four taps swings
-  the fridge open — handles disappear, the freezer hums, and comfort food
-  on the shelves serves your ⭐-saved notes one at a time.
+- **Three easter eggs.** C ♥ K letter magnets: six quick taps opens Just us
+  💗 (the wordmark-heart door stays too). The **door** handle: four taps
+  swings the fridge door open (handles disappear) onto comfort food that
+  serves your ⭐-saved **sweet** notes. The **freezer**: six taps on the
+  freezer face opens it onto a frosty shelf of ice cream that serves — and
+  where ➕ composes — **spicy 🔥** notes (`notekeep.spicy`), kept out of the
+  jars and comfort shelf so the freezer is their own private stash. The two
+  compartments open independently and each keeps the fridge's size.
 - **In History:** the 🌹 vase (top) — one rose per kept question, tap to
   read the Q&As; and 🫙 jars (bottom) — per-person collections of saved
   notes. Both appear only once they have contents.
