@@ -34,7 +34,14 @@ The app's whole job is making the current rung visible and the next rung easy.
 
 ## One-time setup (each phone)
 
-Open the **⚙️ Settings tab** (bottom bar) and set, top to bottom:
+Open the **⚙️ Settings tab** (bottom bar). **Appearance** (light/dark/auto)
+sits right at the top as a tap-to-apply pill — the thing you'll actually
+touch again and again. Everything below it — identity, keys, tokens — lives
+inside one **"Account, sync & advanced"** row, collapsed by default once
+it's set up (its subtitle shows a quick summary: who this phone is, whether
+sync/✨ are on). It auto-expands the first time, before "This phone belongs
+to" is set, and stays open through a Save so you can see the confirmation;
+tap the row anytime to expand or collapse it. Inside, set top to bottom:
 
 1. **This phone belongs to** — 💙 Chris or 💜 Kat. Powers the love-coupon
    books and surprises. *(Also promptable from the Goals tab.)*
@@ -209,4 +216,4 @@ npx serve .
 
 ---
 
-*Current build: v36 · handwriting + full roses.*
+*Current build: v37 · settings redesign.*

@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v36 · handwriting + full roses';
+const APP_VERSION = 'v37 · settings redesign';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -2207,12 +2207,29 @@ function renderQ36() {
 }
 
 // ---------- settings (a real tab since v15) ----------
+// Appearance is the one control worth surfacing every visit; everything else
+// (identity, keys, tokens) is set once and then forgotten, so it collapses
+// after that first setup. `settingsExpanded` resets to false on every app
+// boot — a fresh load defaults collapsed once `who` is set, but forces open
+// (and a Save keeps it open) until first-time setup is actually done.
+let settingsExpanded = false;
 function renderSettings() {
   const s = DB.settings;
+
+  view.append(el('h1', {}, 'Settings'), el('p', { class: 'sub' }, 'Everything on this page stays on this phone — none of it syncs.'));
+
+  // Appearance: a single divided pill, tap for instant effect — no Save needed.
+  view.append(
+    el('label', { class: 'field-label', style: 'margin-top:0' }, 'Appearance'),
+    el('div', { class: 'seg' }, [['auto', '🌗 Auto'], ['light', '☀️ Light'], ['dark', '🌙 Dark']].map(([v, label]) =>
+      el('button', { class: (s.theme || 'auto') === v ? 'active' : '', onclick: () => {
+        DB.settings.theme = v; commit(); applyTheme(); render();
+      } }, label))),
+  );
+
   const apiKey = el('input', { class: 'input', type: 'password', placeholder: 'sk-ant-…', value: s.apiKey || '' });
   const city = el('input', { class: 'input', placeholder: 'e.g. Chandler, AZ', value: s.city || '' });
   const interests = el('input', { class: 'input', placeholder: 'e.g. live music, tacos, hiking, comedy', value: s.interests || '' });
-  const themeSel = el('select', { class: 'input' }, ['auto','light','dark'].map((v) => el('option', { value: v, selected: (s.theme||'auto')===v ? 'selected' : null }, v[0].toUpperCase()+v.slice(1))));
   const whoSel = el('select', { class: 'input' }, [['', 'Choose…'], ['chris', '💙 Chris'], ['kat', '💜 Kat']].map(([v, label]) => el('option', { value: v, selected: (s.who || '') === v ? 'selected' : null }, label)));
   const couponHook = el('input', { class: 'input', placeholder: 'https://script.google.com/macros/s/…/exec', value: s.couponHook || '' });
   const gistToken = el('input', { class: 'input', type: 'password', placeholder: 'GitHub token (gist scope)', value: s.gistToken || '' });
@@ -2220,10 +2237,18 @@ function renderSettings() {
   const syncLine = el('p', { class: 'muted small', style: 'margin:6px 0 0' },
     s.gistToken && s.gistId ? `Sync configured${s.lastSyncAt ? ' · last synced ' + new Date(s.lastSyncAt).toLocaleString() : ''}` : 'Same setup as Home OS: both phones use the same private Gist + token. 🔒 Private ideas never leave this device.');
 
-  view.append(
-    el('h1', {}, 'Settings'),
-    el('p', { class: 'sub' }, 'Everything on this page stays on this phone — none of it syncs.'),
-    el('div', { class: 'card' }, [
+  const needsSetup = !s.who;
+  const open = settingsExpanded || needsSetup;
+  const summary = [s.who ? `${COUPLE[s.who].emoji} ${COUPLE[s.who].name}` : 'not set up yet',
+    s.gistToken && s.gistId ? 'sync on' : null, s.apiKey ? '✨ key set' : null].filter(Boolean).join(' · ');
+  view.append(el('div', { class: 'row rec', style: 'margin-top:16px', onclick: () => { settingsExpanded = !open; render(); } }, [
+    el('span', { class: 'r-emoji' }, '⚙️'),
+    el('div', { class: 'r-main' }, [el('div', { class: 'r-title' }, 'Account, sync & advanced'), el('div', { class: 'r-meta' }, summary)]),
+    el('span', { class: 'chip' }, open ? '▾' : '▸'),
+  ]));
+
+  if (open) view.append(
+    el('div', { class: 'card', style: 'margin-top:8px' }, [
       el('label', { class: 'field-label', style: 'margin-top:0' }, 'This phone belongs to'), whoSel,
       el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'Picks whose 💌 coupon book you send from.'),
       el('label', { class: 'field-label' }, 'Home city (sharpens ideas)'), city,
@@ -2235,10 +2260,10 @@ function renderSettings() {
       el('label', { class: 'field-label' }, 'Shared sync (optional — private Gist)'), gistToken, el('div', { style: 'height:8px' }), gistId,
       syncLine,
       el('div', { style: 'margin-top:10px' }, el('button', { class: 'btn btn-sm', onclick: () => syncNow(true) }, '⇅ Sync now')),
-      el('label', { class: 'field-label' }, 'Appearance'), themeSel,
       el('div', { style: 'margin-top:16px' }, el('button', { class: 'btn btn-primary', onclick: () => {
-        DB.settings = { ...DB.settings, who: whoSel.value, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), theme: themeSel.value, couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
-        commit(); applyTheme(); toast('Saved'); render();
+        DB.settings = { ...DB.settings, who: whoSel.value, apiKey: apiKey.value.trim(), city: city.value.trim(), interests: interests.value.trim(), couponHook: couponHook.value.trim(), gistToken: gistToken.value.trim(), gistId: gistId.value.trim() };
+        settingsExpanded = true; // stay open after saving, so the confirmation is visible
+        commit(); toast('Saved'); render();
       } }, 'Save')),
     ]),
     el('div', { class: 'card', style: 'margin-top:12px' }, [
@@ -2249,8 +2274,9 @@ function renderSettings() {
         el('button', { class: 'btn btn-sm', onclick: restorePick }, '⬆ Restore from file'),
       ]),
     ]),
-    el('p', { class: 'muted small center', style: 'margin:16px 0 0' }, `Us OS · ${APP_VERSION}`),
   );
+
+  view.append(el('p', { class: 'muted small center', style: 'margin:16px 0 0' }, `Us OS · ${APP_VERSION}`));
 }
 const hasKey = () => Boolean(DB.settings.apiKey);
 
