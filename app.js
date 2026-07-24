@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v31 · memory lane';
+const APP_VERSION = 'v32 · the fridge';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -131,10 +131,14 @@ const linkRow = (pairs) => el('div', { class: 'card-actions', style: 'margin-top
   pairs.map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
 const gSearch = (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`;
 const gMap = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-function lookupLinks(query, type) {
-  const money = type === 'getaway' || type === 'trip'
-    ? ['🏨 Stays & prices', gSearch(query + ' hotels prices')]
-    : ['📋 Menu & prices', gSearch(query + ' menu prices')];
+function lookupLinks(query, type, mode) {
+  // mode 'event': the location is a venue (dinner is elsewhere) — tickets
+  // beat a menu that doesn't exist.
+  const money = mode === 'event'
+    ? ['🎟 Tickets & info', gSearch(query + ' tickets')]
+    : type === 'getaway' || type === 'trip'
+      ? ['🏨 Stays & prices', gSearch(query + ' hotels prices')]
+      : ['📋 Menu & prices', gSearch(query + ' menu prices')];
   return linkRow([money, ['📍 Map & hours', gMap(query)], ['⭐ Reviews', `https://www.yelp.com/search?find_desc=${encodeURIComponent(query)}`]]);
 }
 // For a SECRET location: only the city ever reaches a search URL, never the
@@ -405,41 +409,213 @@ function onThisWeek() {
   return out.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff)).slice(0, 3);
 }
 
-// "The fridge door": one pinned note from each of you, replaceable anytime.
-// Notes live in DB.acts (`note:<who>`) so they sync; the "new ✨" flash is
-// per-device (settings.noteSeenAt) — it marks when THIS phone last looked.
+// ---------- 🧲 the fridge tab ----------
+// One pinned note from each of you (`note:<who>` in acts, synced). Note logic
+// is designed so nothing is ever lost unread:
+//  - Reading is free — a note on the fridge is just there; ⭐ saving is opt-in.
+//  - `note:seen:<who>` (synced) records what THIS phone's owner has seen, so
+//    the writer's note shows "seen 💗" (same trick as coupon opened-receipts).
+//  - Replacing a note the other of you HASN'T seen archives the old text to
+//    `notemiss:<writer>:<uid>` — it shows on their fridge as "💌 one you
+//    missed" until opened. Trashing your own note is an intentional
+//    retraction and does NOT archive.
+//  - ⭐ snapshots the other's note into YOUR jar (`notekeep:<owner>:<uid>`);
+//    the note itself stays on the fridge.
+const noteRec = (w) => actRec(`note:${w}`);
+const seenByOther = (w) => {
+  const s = actRec(`note:seen:${other(w)}`), n = noteRec(w);
+  return Boolean(n && s && (s.at || '') >= (n.updatedAt || ''));
+};
 function fridgeEdit(w) {
-  const cur = actRec(`note:${w}`)?.text || '';
-  const inp = el('textarea', { class: 'input', placeholder: 'Something small and true. Replace it whenever.' }, cur);
+  const prev = noteRec(w);
+  const inp = el('textarea', { class: 'input', placeholder: 'Something small and true. Replace it whenever.' }, prev?.text || '');
   const m = modal('📌 Your note on the fridge', [
-    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `${COUPLE[other(w)].name} sees this on their Rhythm tab. One note at a time — new one replaces the old.`),
+    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `${COUPLE[other(w)].name} sees this on their fridge. One note at a time — a new one replaces the old.`),
     inp,
   ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
     el('button', { class: 'btn btn-primary', onclick: () => {
-      setAct(`note:${w}`, { text: inp.value.trim() });
-      m.close(); toast(inp.value.trim() ? 'Pinned 📌' : 'Note taken down'); render();
+      const v = inp.value.trim();
+      const replacingUnseen = prev?.text && v !== prev.text && !seenByOther(w);
+      if (replacingUnseen && !confirm(`${COUPLE[other(w)].name} hasn’t seen this note yet — replace it? They’ll still get the old one as a missed note.`)) return;
+      if (replacingUnseen) DB.acts.push({ id: `notemiss:${w}:${uid()}`, text: prev.text, at: (prev.updatedAt || '').slice(0, 10), read: false, updatedAt: now() });
+      setAct(`note:${w}`, { text: v });
+      m.close(); toast(v ? 'Pinned 📌' : 'Note taken down'); render();
     } }, 'Pin it'),
   ]);
   inp.focus();
 }
-function fridgeCard() {
+function saveToJar(fromWho, text, at) {
+  DB.acts.push({ id: `notekeep:${me()}:${uid()}`, from: fromWho, text, at: at || todayStr(), updatedAt: now() });
+  commit(); toast('Tucked into your jar 🫙');
+}
+const bignoteEl = (who, text, at) => el('div', { class: 'bignote p-' + who }, [
+  text, el('span', { class: 'bd' }, at ? fmt(at) : ''), el('span', { class: 'sig' }, `❤️ ${COUPLE[who].name}`),
+]);
+function missedSheet(rec, them) {
+  const m = modal('💌 One you missed', [
+    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `${COUPLE[them].name} replaced this before you saw it.`),
+    bignoteEl(them, rec.text, rec.at),
+  ], [
+    el('button', { class: 'btn', onclick: () => { setAct(rec.id, { read: true }); m.close(); render(); } }, 'Got it 🤍'),
+    el('button', { class: 'btn btn-primary', onclick: () => { saveToJar(them, rec.text, rec.at); setAct(rec.id, { read: true }); m.close(); render(); } }, '⭐ Save to my jar'),
+  ]);
+}
+// Today's answers live in ONE record per person (`tq:ans:<who>`, overwritten
+// daily) so the gist never accumulates stale answers; keeping snapshots them.
+const tqAns = (w) => { const r = actRec(`tq:ans:${w}`); return r && r.d === todayStr() ? (r.v || '') : ''; };
+function answerModal() {
+  const inp = el('textarea', { class: 'input', placeholder: 'Your answer — a line is plenty' }, tqAns(me()));
+  const m = modal('💬 ' + tonightsQuestion(), [inp], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      setAct(`tq:ans:${me()}`, { d: todayStr(), v: inp.value.trim() });
+      m.close(); render();
+    } }, 'Save'),
+  ]);
+  inp.focus();
+}
+// Deterministic souvenir-magnet shape from the memory itself; both phones
+// derive the same fridge from the same synced entries.
+function magnetShape(e) {
+  const s = `${e.title || ''} ${e.loc || ''}`.toLowerCase();
+  if (/mine|jerome/.test(s)) return 'minecar';
+  if (/sedona|red rock|mesa|canyon/.test(s)) return 'mesa';
+  if (/concert|show|band|music|gig|symphony|theatre|theater/.test(s)) return 'enote';
+  if (/beach|island|point|bay|coast|ocean|lake|cruise|hawaii|kauai|maui|diego/.test(s)) return 'sunwave';
+  if (/cabin|pine|greer|forest|flagstaff|mountain|ski|creek/.test(s)) return 'pine';
+  return 'oval';
+}
+const OVAL_HUES = [['#d67a50', '#b85632'], ['#5a82c9', '#3a5fa5'], ['#4b8f63', '#2e6b45'], ['#a06fd0', '#7a44ad'], ['#e0637f', '#c22d55'], ['#c9a04a', '#946a2c']];
+function magnetEl(e) {
+  const shape = magnetShape(e);
+  let inner;
+  if (shape === 'enote') inner = el('span', { class: 'mshape m-enote' }, [el('i', { class: 'nh' }), el('i', { class: 'ns' }), el('i', { class: 'nf' })]);
+  else if (shape === 'oval') {
+    let h = 0; for (const ch of e.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const [a, b] = OVAL_HUES[h % OVAL_HUES.length];
+    inner = el('span', { class: 'mshape m-oval', style: `background:linear-gradient(160deg,${a},${b})` }, cadenceOf(e.type).emoji);
+  } else inner = el('span', { class: 'mshape m-' + shape });
+  // one tap wobbles, a second within 350ms opens the memory
+  let pending = null;
+  const btn = el('button', { class: 'magwrap', onclick: () => {
+    btn.classList.remove('wobm'); void btn.offsetWidth; btn.classList.add('wobm');
+    if (pending) { clearTimeout(pending); pending = null; eventSheet(e); }
+    else pending = setTimeout(() => { pending = null; }, 350);
+  } }, inner);
+  return btn;
+}
+let fridgeOpen = false, doorTaps = 0, doorTimer = null, ckTaps = 0, ckTimer = null;
+const FRIDGE_FOOD = ['🥧', '🥡', '🍕', '🍨', '🫙'];
+function renderFridge() {
   const y = me();
-  const slots = ['chris', 'kat'].map((w) => {
-    const r = actRec(`note:${w}`);
-    const mine = w === y;
-    const fresh = Boolean(r?.text) && !mine && (r.updatedAt || '') > (DB.settings.noteSeenAt || '');
-    return el('div', { class: 'fridge-note' + (mine ? ' mine' : ''), onclick: mine ? () => fridgeEdit(w) : null }, [
-      el('div', { class: 'r-meta' }, [
-        `${COUPLE[w].emoji} ${COUPLE[w].name}${mine ? ' — tap to write' : ''} `,
-        fresh ? el('span', { class: 'chip love' }, 'new ✨') : null,
-      ]),
-      el('div', { class: 'f-text' + (r?.text ? '' : ' empty') }, r?.text || (mine ? 'Leave a note on the fridge…' : 'Nothing pinned yet')),
-    ]);
-  });
-  // Rendering counts as reading — next open, the ✨ is gone.
-  DB.settings.noteSeenAt = now(); save(DB);
-  return el('div', { class: 'card fridge' }, slots);
+  view.append(el('h1', {}, 'The fridge'), el('p', { class: 'sub' }, 'Where the two of you leave things for each other.'));
+  if (!y) {
+    view.append(el('p', { class: 'muted' }, 'First tell the app whose phone this is — Settings → “This phone belongs to”.'));
+    view.append(el('button', { class: 'btn btn-primary', onclick: () => { current = 'settings'; setTab(); render(); } }, 'Open Settings'));
+    return;
+  }
+  const them = other(y);
+
+  // freezer: tonight's question
+  const kept = actRec(`tq:keep:${todayStr()}`);
+  const ansRow = (w) => {
+    const v = tqAns(w);
+    const kids = [el('span', { class: 'who ' + w }, COUPLE[w].name.toUpperCase())];
+    if (v) kids.push(el('span', { class: 'a' }, `“${v}”`));
+    else if (w === y) kids.push(el('button', { onclick: answerModal }, '✍️ your answer…'));
+    else kids.push(el('span', { class: 'a pending' }, 'hasn’t answered yet'));
+    return el('div', { class: 'q-ans' }, kids);
+  };
+  const keepBtn = el('button', { class: 'keepbtn' + (kept ? ' kept' : ''), onclick: () => {
+    if (actRec(`tq:keep:${todayStr()}`)) return;
+    setAct(`tq:keep:${todayStr()}`, { q: tonightsQuestion(), ca: tqAns('chris'), ka: tqAns('kat') });
+    toast('A rose for the vase 🌹'); render();
+  } }, kept ? '🌹 Kept' : '🌹 Keep this one');
+  const qcard = el('div', { class: 'qcard' }, [
+    el('span', { class: 'tape' }),
+    el('div', { class: 'q-k' }, `💬 Tonight's question · ${fmt(todayStr())}`),
+    el('div', { class: 'q-q' }, tonightsQuestion()),
+    ansRow('chris'), ansRow('kat'),
+    keepBtn,
+  ]);
+
+  // door: notes
+  const freshTheirs = Boolean(noteRec(them)?.text) && (noteRec(them).updatedAt || '') > (DB.settings.noteSeenAt || '');
+  const postit = (w) => {
+    const r = noteRec(w), mine = w === y;
+    const kids = [el('span', { class: 'pmagnet ' + w[0] })];
+    if (!mine && freshTheirs) kids.push(el('span', { class: 'newchip' }, 'new ✨'));
+    kids.push(r?.text || el('span', { class: 'p-empty' }, mine ? 'Leave a note…' : 'Nothing pinned yet'));
+    if (mine) {
+      if (r?.text) kids.push(el('span', { class: 'ptools' }, [
+        el('button', { title: 'Take it down', onclick: (ev) => {
+          ev.stopPropagation();
+          if (confirm('Take your note down?')) { setAct(`note:${w}`, { text: '' }); render(); }
+        } }, '🗑'),
+        el('span', { class: 'pstatus' }, seenByOther(w) ? 'seen 💗' : 'not seen yet'),
+      ]));
+    } else if (r?.text) kids.push(el('span', { class: 'ptools' }, el('button', { title: 'Save to my jar', onclick: (ev) => {
+      ev.stopPropagation(); saveToJar(w, r.text, (r.updatedAt || '').slice(0, 10)); render();
+    } }, '⭐')));
+    kids.push(el('span', { class: 'sig' }, `❤️ ${COUPLE[w].name}`));
+    const p = el('div', { class: `postit p-${w} ${w === 'chris' ? 'tilt-l' : 'tilt-r'}`, onclick: () => {
+      if (mine) { fridgeEdit(w); return; }
+      p.classList.remove('wob'); void p.offsetWidth; p.classList.add('wob');
+    } }, kids);
+    return p;
+  };
+  const noteEls = [postit('chris'), postit('kat')];
+  const misses = DB.acts.filter((r) => r.id.startsWith(`notemiss:${them}:`) && !r.read).sort((a, b) => (a.at || '') < (b.at || '') ? -1 : 1);
+  if (misses.length) noteEls.push(el('span', { class: 'missnote from-' + them, onclick: () => missedSheet(misses[0], them) },
+    misses.length === 1 ? '💌 one you missed' : `💌 ${misses.length} you missed`));
+
+  // door: souvenir magnets from logged getaways & trips
+  const t = todayStr();
+  const trips = DB.entries.filter((e) => !e.deleted && !e.private && (e.type === 'getaway' || e.type === 'trip') && !e.planned && e.date <= t)
+    .sort((a, b) => a.date < b.date ? -1 : 1);
+  const dreams = DB.entries.filter((e) => !e.deleted && !e.private && (e.type === 'getaway' || e.type === 'trip') && (e.planned || e.date > t));
+  const magEls = trips.map(magnetEl);
+  for (const d of dreams.slice(0, 2)) magEls.push(el('button', { class: 'magwrap', onclick: () => { ideaFilter = d.type; current = 'ideas'; setTab(); render(); } },
+    el('span', { class: 'm-ghost' }, `${titleText(d).slice(0, 14)}…`)));
+  // C ♥ K — and you two know what six quick taps does.
+  magEls.push(el('button', { class: 'mletters', onclick: (ev) => {
+    const n = ev.currentTarget;
+    n.classList.remove('wobm'); void n.offsetWidth; n.classList.add('wobm');
+    ckTaps++; clearTimeout(ckTimer); ckTimer = setTimeout(() => { ckTaps = 0; }, 1500);
+    if (ckTaps >= 6) { ckTaps = 0; current = 'bingo'; setTab(); render(); }
+  } }, [el('span', { class: 'ltr c' }, 'C'), el('span', { class: 'ltr h' }, '♥'), el('span', { class: 'ltr k' }, 'K')]));
+
+  // the secret shelf: keepsakes as comfort food, behind 4 taps on the handle
+  const keepsAll = DB.acts.filter((r) => r.id.startsWith('notekeep:'));
+  const interior = el('div', { class: 'finterior' }, [
+    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(0, 3).map((f) => el('button', { class: 'food', onclick: () => serveFood() }, f))),
+    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(3).map((f) => el('button', { class: 'food', onclick: () => serveFood() }, f))),
+    el('button', { class: 'fclose', onclick: () => { fridgeOpen = false; render(); } }, 'close the door'),
+  ]);
+  function serveFood() {
+    if (!keepsAll.length) { toast('Nothing saved in here yet — ⭐ a note first 💗'); return; }
+    const r = keepsAll[Math.floor(Math.random() * keepsAll.length)];
+    const m = modal('🤍 From the good shelf', [bignoteEl(r.from, r.text, r.at)],
+      [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, '💗')]);
+  }
+  const doorHandle = el('div', { class: 'fhandle hd', onclick: () => {
+    doorTaps++; clearTimeout(doorTimer); doorTimer = setTimeout(() => { doorTaps = 0; }, 1600);
+    if (doorTaps >= 4) { doorTaps = 0; fridgeOpen = true; render(); }
+  } });
+
+  view.append(el('div', { class: 'fridge' + (fridgeOpen ? ' open' : '') }, [
+    el('div', { class: 'freezer' }, [el('div', { class: 'fhandle hf' }), qcard]),
+    el('div', { class: 'fdoor' }, [doorHandle, el('div', { class: 'fnotes' }, noteEls), el('div', { class: 'mags' }, magEls), interior]),
+  ]));
+
+  // Rendering the notes counts as reading them (both the ✨ chip and the
+  // synced seen-receipt the writer's phone shows as "seen 💗").
+  if (!fridgeOpen && noteRec(them)?.text) {
+    DB.settings.noteSeenAt = now(); save(DB);
+    const seen = actRec(`note:seen:${y}`);
+    if ((seen?.at || '') < (noteRec(them).updatedAt || '')) setAct(`note:seen:${y}`, { at: noteRec(them).updatedAt });
+  }
 }
 
 // "Tonight's question": dinner-table weight (the 36 Questions are the deep
@@ -512,7 +688,7 @@ function fmtTime(t) { if (!t) return ''; const [h, m] = t.split(':').map(Number)
 // keys) so the other phone knows to show a 🔒 teaser. shownVal returns the
 // real value if THIS phone owns the secret, null if it's the partner's
 // surprise, or the plain synced value otherwise.
-const HIDEABLE = ['title', 'loc', 'time', 'dress', 'dateEnd', 'pack', 'notes'];
+const HIDEABLE = ['title', 'loc', 'eat', 'time', 'dress', 'dateEnd', 'pack', 'notes'];
 const iOwnSecret = (e, k) => Boolean(DB.secrets[e.id] && k in DB.secrets[e.id]);
 function shownVal(e, k) {
   if (iOwnSecret(e, k)) return DB.secrets[e.id][k];
@@ -720,7 +896,9 @@ let current = 'rhythm';
 function render() {
   clear(view);
   clearInterval(eyeTimer); // leaving the 36Q closer view stops its countdown
+  if (current !== 'fridge') fridgeOpen = false; // the door shuts behind you
   if (current === 'rhythm') renderRhythm();
+  else if (current === 'fridge') renderFridge();
   else if (current === 'ideas') renderIdeas();
   else if (current === 'goals') renderGoals();
   else if (current === 'bingo' || current === 'bingo2') renderBingo();
@@ -1099,15 +1277,20 @@ function eventSheet(entry) {
   // "area" links so the exact spot never lands in a search URL.
   const titleQ = shownVal(entry, 'title');
   const realLoc = shownVal(entry, 'loc');
+  const realEat = shownVal(entry, 'eat');
+  const eatVisible = Boolean(realEat) && !(entry.hidden || []).includes('eat');
   if (titleQ) body.push(linkRow([['🔗 Look it up', gSearch([titleQ, realLoc || ''].filter(Boolean).join(' '))]]));
   if (realLoc) {
-    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, entry.type));
+    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, entry.type, eatVisible ? 'event' : undefined));
     else {
       const area = cityOf(realLoc) || DB.settings.city;
       if (area) body.push(areaLinks(area),
         el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
     }
   }
+  if (eatVisible) body.push(
+    el('div', { class: 'card-meta', style: 'margin-top:10px' }, '🍽 The dinner spot'),
+    lookupLinks(realEat, 'date'));
 
   if (isSecret('notes')) pushRow('Notes', valBox('🔒 Kept as a surprise 💝', true));
   else { const nv = shownVal(entry, 'notes'); if (nv) pushRow('Notes', valBox(nv)); }
@@ -1190,16 +1373,6 @@ function renderRhythm() {
       el('span', { class: 's-meta' }, meta),
     ]);
   })));
-
-  if (me()) {
-    view.append(el('h2', {}, '📌 The fridge door'));
-    view.append(fridgeCard());
-  }
-
-  view.append(el('div', { class: 'card', style: 'margin-bottom:8px' }, [
-    el('div', { class: 'card-meta' }, '💬 Tonight’s question · same one on both phones'),
-    el('div', { class: 'a-q', style: 'margin:5px 0 0; font-size:15px' }, tonightsQuestion()),
-  ]));
 
   const otw = onThisWeek();
   if (otw.length) {
@@ -1420,9 +1593,50 @@ function recModal(r) {
   const m = modal(r.name, body, actions);
 }
 
+// The vase: one rose per kept question (`tq:keep:<date>`). Preset stem
+// layouts up to 9 roses; past that the bouquet stays full and the count talks.
+const ROSE_POS = [
+  { l: 50, h: 58, r: -1, s: 15 }, { l: 44, h: 52, r: -9, s: 14 }, { l: 57, h: 62, r: 7, s: 16 },
+  { l: 39, h: 44, r: -15, s: 12 }, { l: 62, h: 48, r: 14, s: 13 }, { l: 47, h: 66, r: -4, s: 13 },
+  { l: 54, h: 42, r: 4, s: 12 }, { l: 35, h: 54, r: -20, s: 12 }, { l: 66, h: 56, r: 19, s: 12 },
+];
+function keepsakesSheet(keeps) {
+  const rows = keeps.map((r) => el('div', { class: 'keep-row' }, [
+    el('div', { class: 'kd' }, fmt(r.id.split(':')[2])),
+    el('div', { class: 'kq' }, r.q),
+    el('div', { class: 'ka' }, [
+      r.ca ? el('span', {}, [el('b', { class: 'c' }, 'Chris: '), `${r.ca}  `]) : null,
+      r.ka ? el('span', {}, [el('b', { class: 'k' }, 'Kat: '), r.ka]) : null,
+      !r.ca && !r.ka ? 'answers left unsaid — the question was the souvenir' : null,
+    ]),
+  ]));
+  const m = modal('🌹 The vase', rows, [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
+}
+function jarSheet(w) {
+  const notes = DB.acts.filter((r) => r.id.startsWith(`notekeep:${w}:`)).sort((a, b) => (a.at || '') < (b.at || '') ? 1 : -1);
+  const m = modal(`🫙 ${COUPLE[w].name}’s jar`, notes.map((r) => bignoteEl(r.from, r.text, r.at)),
+    [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
+}
 function renderHistory() {
   view.append(el('h1', {}, 'History'), el('p', { class: 'sub' }, 'Everything you’ve shared, most recent first.'));
   view.append(el('button', { class: 'btn btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'rewind'; render(); } }, '🎞 Rewind — your year together'));
+
+  const keeps = DB.acts.filter((r) => r.id.startsWith('tq:keep:')).sort((a, b) => a.id < b.id ? 1 : -1);
+  if (keeps.length) {
+    const stems = keeps.slice(0, ROSE_POS.length).map((_, i) => {
+      const p = ROSE_POS[i];
+      return el('span', { class: 'rstem', style: `left:${p.l}%; height:${p.h}px; transform:rotate(${p.r}deg)` },
+        el('span', { class: 'rose', style: `width:${p.s}px; height:${p.s}px` }));
+    });
+    view.append(el('div', { class: 'vasecard', onclick: () => keepsakesSheet(keeps) }, [
+      el('div', { class: 'vasezone' }, [...stems, el('span', { class: 'rvase' })]),
+      el('div', { class: 'vasetxt' }, [
+        el('b', {}, `🌹 The vase — ${keeps.length} kept question${keeps.length === 1 ? '' : 's'}`),
+        'Each rose is a question you two decided to keep. Tap to read.',
+      ]),
+    ]));
+  }
+
   const t = todayStr();
   const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date <= t).sort((a,b) => a.date < b.date ? 1 : -1);
   const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
@@ -1434,6 +1648,22 @@ function renderHistory() {
   view.append(el('h2', {}, 'Been there'));
   if (!done.length) view.append(el('div', { class: 'empty' }, 'Log your first one from the Rhythm tab.'));
   for (const e of done) view.append(historyRow(e, false));
+
+  // jars of ⭐-saved fridge notes, tucked at the bottom
+  const jarN = (w) => DB.acts.filter((r) => r.id.startsWith(`notekeep:${w}:`)).length;
+  if (jarN('chris') + jarN('kat') > 0) {
+    const FN_POS = [[5, 8, -12], [7, 34, 9], [18, 20, 4], [6, 22, -5], [16, 9, 14]];
+    const jarCol = (w) => {
+      const n = jarN(w);
+      const bits = FN_POS.slice(0, Math.min(n, FN_POS.length)).map(([b, l, r]) =>
+        el('span', { class: 'fnote ' + other(w)[0], style: `bottom:${b}px; left:${l}px; transform:rotate(${r}deg)` }));
+      return el('button', { class: 'jarcol', onclick: () => n && jarSheet(w) }, [
+        el('span', { class: 'jarv' }, bits),
+        el('span', { class: 'jn-n' }, [el('b', { class: w === 'chris' ? 'c' : 'k', style: `color:var(--${w}-ink)` }, `${COUPLE[w].name}’s jar`), ` · ${n} kept`]),
+      ]);
+    };
+    view.append(el('div', { class: 'jarscard' }, [jarCol('chris'), jarCol('kat')]));
+  }
 }
 const MEM_ICONS = { moment: '💫', food: '🍴', drink: '🍸', activity: '🥾', gift: '🎁' };
 function memLine(e) {
@@ -1474,13 +1704,15 @@ const MEMQ = {
 };
 const PLAN_LEAD = { date: 14, getaway: 45, trip: 180, occasion: 30 }; // getaways & trips get planned early
 // Planning details per cadence — the stuff worth knowing before you go.
+// `eat` covers the concert-plus-dinner shape: the event's location is the
+// venue, dinner is somewhere else — each gets its own lookup links.
 const PLANQ = {
-  date:     [['loc', 'Location'], ['time', 'Time'], ['dress', 'Dress code']],
-  occasion: [['loc', 'Location'], ['time', 'Time'], ['dress', 'Dress code']],
+  date:     [['loc', 'Location'], ['eat', 'Dinner spot (if different)'], ['time', 'Time'], ['dress', 'Dress code']],
+  occasion: [['loc', 'Location'], ['eat', 'Dinner spot (if different)'], ['time', 'Time'], ['dress', 'Dress code']],
   getaway:  [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
   trip:     [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
 };
-const PLAN_HINT = { title: 'Name it — “Odyssey at Harkins”', loc: 'Where is it?', dress: 'casual / dressy / fancy', pack: 'Swimsuits, sunscreen, hiking shoes…', notes: 'Anything worth remembering' };
+const PLAN_HINT = { title: 'Name it — “Odyssey at Harkins”', loc: 'Where is it?', eat: 'Eating somewhere else? Name it', dress: 'casual / dressy / fancy', pack: 'Swimsuits, sunscreen, hiking shoes…', notes: 'Anything worth remembering' };
 const FIELD_TYPE = { time: 'time', dateEnd: 'date' };
 function logModal(type, { planned = false, prefill = '', ideaId = null, entry = null } = {}) {
   const c = cadenceOf(type);
@@ -1576,14 +1808,19 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // exact address never reaches a search URL (or your browser history),
   // only the home city does. Non-owners see no location, so no links.
   const realLoc = entry && shownVal(entry, 'loc');
+  const realEat = entry && shownVal(entry, 'eat');
+  const eatShown = Boolean(realEat) && !(entry.hidden || []).includes('eat');
   if (realLoc) {
-    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, type));
+    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, type, eatShown ? 'event' : undefined));
     else {
       const area = cityOf(realLoc) || DB.settings.city;
       if (area) body.push(areaLinks(area),
         el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
     }
   }
+  if (eatShown) body.push(
+    el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🍽 The dinner spot'),
+    lookupLinks(realEat, 'date'));
   field('notes', 'Notes');
 
   // Shared-album link (iCloud / Google Photos) — the deliberate photo

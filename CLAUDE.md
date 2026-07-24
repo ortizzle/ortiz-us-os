@@ -31,10 +31,13 @@ full shape. Key invariants:
 - **Goal tickets, bingo squares (both cards), curated-pick reactions, love
   coupons, and couple-activity state use deterministic ids** (`goal:kind:n`,
   `bingo:n`, `bingo2:n`, `rec:<name>`, `coupon:<kind>:<n>`, `ynm:<who>:<n>`,
-  `wyr:<who>:<n>`, `<game>:ready:<who>`, `q36:progress`, `note:<who>`) — this is what keeps
+  `wyr:<who>:<n>`, `<game>:ready:<who>`, `q36:progress`, `note:<who>`,
+  `note:seen:<who>`, `tq:ans:<who>`, `tq:keep:<date>`) — this is what keeps
   both phones from doubling the seeded sets and lets any real tap win the
   merge. New goals go in `GOALS`; never seed shared fixed-size collections
-  with random ids.
+  with random ids. (`notemiss:`/`notekeep:` records are uid-keyed event
+  records like sent coupons — created by one tap on one phone, so no
+  collision risk.)
 - **`coupons` holds SENT love coupons only.** The unsent book is static code
   (`COUPON_ITEMS`) rendered per `settings.who`, so unsent coupons never
   transit the Gist — same surprise guarantee as private ideas: never create
