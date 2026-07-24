@@ -129,18 +129,44 @@ Three sections with jump-chips (a mini table of contents) at the top:
   went; a still-*planning* past plan stays put (it never got confirmed).
 
 ### Rhythm delights (v31)
-- **📌 The fridge door** — one pinned note per person (`acts` record
-  `note:<who>`, synced; replace anytime, save-empty takes it down). A fresh
-  note from the other of you flashes "new ✨" once per device
-  (`settings.noteSeenAt`, local-only — rendering counts as reading).
-  Requires `settings.who`.
-- **💬 Tonight's question** — 40 dinner-table-weight questions (`TQ_ITEMS`,
-  static; the 36 Questions stay the deep end), picked deterministically from
-  the date so both phones show the same one each day with zero sync.
 - **💫 This week in your story** — past entries whose month-day falls within
   ±3 days of today, from any earlier year, shown as tappable memory rows
   (years-ago, hearts, a saved memory quote). Straight month-day window — no
   Dec/Jan wrap-around, deliberately.
+- *(v31 note: the fridge door and tonight's question debuted on Rhythm and
+  moved to the dedicated 🧲 Fridge tab in v32.)*
+
+### 🧲 The Fridge tab (v32)
+A sixth tab: one skeuomorphic fridge (steel door, left-hand handles), three
+zones. Requires `settings.who` (a friendly gate points to Settings).
+Everything is discovery — the tab carries no instruction text.
+- **Freezer — tonight's question.** 40 dinner-table questions (`TQ_ITEMS`,
+  static), picked deterministically from the date so both phones match with
+  zero sync. Each of you answers on your own phone (`tq:ans:<who>` — one
+  record per person, overwritten daily). **🌹 Keep this one** snapshots the
+  question + both answers (`tq:keep:<date>`) — it becomes a rose in
+  History's vase.
+- **Door — the post-its.** One note each (`note:<who>`), blue paper for
+  Chris, blush for Kat, auto-signed ❤️ in your ink colors. Sound note
+  logic: reading is free (⭐ saving is opt-in); a synced seen-receipt
+  (`note:seen:<who>`) shows the writer "seen 💗" (coupon-style); replacing
+  a note the other hasn't read warns first and archives the old text as
+  **💌 one you missed** (`notemiss:`) on their fridge until opened; 🗑 on
+  your own note is an intentional retraction — no archive. ⭐ snapshots the
+  other's note into your jar (`notekeep:`); the note stays pinned.
+- **Door — souvenir magnets.** One per logged getaway/trip, shape derived
+  from title/loc keywords (mine cart, mesa, pine, eighth-note, sun-over-
+  wave; hashed-color oval + cadence emoji as fallback) — deterministic, so
+  both phones render the identical fridge. Tap = wobble; double-tap opens
+  the memory (`eventSheet`). Up to two ghost-outlined "someday" magnets
+  from planned getaways/trips tap through to Ideas.
+- **Two easter eggs.** C ♥ K letter magnets: six quick taps opens Just us
+  💗 (the wordmark-heart door stays too). The door handle: four taps swings
+  the fridge open — handles disappear, the freezer hums, and comfort food
+  on the shelves serves your ⭐-saved notes one at a time.
+- **In History:** the 🌹 vase (top) — one rose per kept question, tap to
+  read the Q&As; and 🫙 jars (bottom) — per-person collections of saved
+  notes. Both appear only once they have contents.
 
 ### 🎞 The Rewind (v31)
 Reached from History: the trailing 12 months computed purely from existing

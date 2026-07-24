@@ -121,12 +121,27 @@ One `localStorage` key, `ortiz-us-os`, holding:
 - `acts` holds "Beyond the card" activity state (reached from the sweet
   bingo card): yes/no/maybe answers (`ynm:<who>:<n>`, `v`), would-you-rather
   picks (`wyr:<who>:<n>`, `v`), per-person reveal flags (`<game>:ready:<who>`,
-  `on`), the shared 36-questions position (`q36:progress`, `n`), and the 📌
-  fridge notes (`note:<who>`, `text`). Created lazily on first tap,
-  deterministic ids, never tombstoned. The static content (`YNM_ITEMS`,
-  `WYR_ITEMS`, `Q36`, `TQ_ITEMS`) is baked into `app.js`. Answers DO sync —
-  the "hidden until both ready" reveal is UI-level, a game mechanic, not a
-  privacy guarantee like secrets/private ideas.
+  `on`), and the shared 36-questions position (`q36:progress`, `n`). Created
+  lazily on first tap, deterministic ids, never tombstoned. The static
+  content (`YNM_ITEMS`, `WYR_ITEMS`, `Q36`, `TQ_ITEMS`) is baked into
+  `app.js`. Answers DO sync — the "hidden until both ready" reveal is
+  UI-level, a game mechanic, not a privacy guarantee like secrets/private
+  ideas.
+- **The 🧲 Fridge tab** also lives in `acts`: pinned notes (`note:<who>`,
+  `text`), synced seen-receipts (`note:seen:<who>`, `at` — powers the
+  writer's "seen 💗", same trick as coupon `seenAt`), today's answers
+  (`tq:ans:<who>`, `{d, v}` — ONE record per person, overwritten daily so
+  the gist never accumulates stale answers), kept Q&As (`tq:keep:<date>`,
+  `{q, ca, ka}` snapshot → roses in History's vase), and two uid-keyed
+  event-record kinds like coupons: `notemiss:<writer>:<uid>` (a note
+  replaced before the other phone saw it — surfaces as "💌 one you missed"
+  until `read`) and `notekeep:<owner>:<uid>` (⭐-saved snapshots of the
+  other's notes → the jars at the bottom of History, and the secret-shelf
+  reveal). Note-loss invariant: a note is only archived to `notemiss` when
+  REPLACED while unseen; 🗑 by its own author is an intentional retraction
+  and archives nothing. Souvenir magnets are derived entirely from logged
+  getaway/trip entries (shape from title/loc keywords, deterministic per
+  id) — no records of their own.
 - `entries.album` is one synced shared-album URL per event (📷 links in the
   details sheet and History); `entries.packDone` is the ticked subset of the
   parsed what-to-pack items (item strings, so a rename resets its tick).
