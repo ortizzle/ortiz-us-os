@@ -727,7 +727,66 @@ function render() {
   else if (current === 'ynm' || current === 'wyr') renderRevealGame(current);
   else if (current === 'q36') renderQ36();
   else if (current === 'settings') renderSettings();
+  else if (current === 'rewind') renderRewind();
   else renderHistory();
+}
+
+// ---------- 🎞 the rewind (last 12 months, computed from what's already here) ----------
+function renderRewind() {
+  const t = todayStr(), from = addDays(t, -365), fromISO = from + 'T00:00:00.000Z';
+  view.append(
+    el('h1', {}, '🎞 Your year, rewound'),
+    el('p', { class: 'sub' }, 'The last 12 months of us — built from everything you two logged.'),
+    el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'history'; setTab(); render(); } }, '← back'),
+  );
+  const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date >= from && e.date <= t);
+  if (!done.length) {
+    view.append(el('p', { class: 'muted' }, 'Nothing logged in the last year yet — go make some history, then come back. 💞'));
+    return;
+  }
+
+  view.append(el('div', { class: 'statgrid' }, CADENCES.map((c) => {
+    const n = done.filter((e) => e.type === c.type).length;
+    return el('div', { class: 'stat' }, [
+      el('span', { class: 's-emoji' }, c.emoji),
+      el('span', { class: 's-count' }, String(n)),
+      el('span', { class: 's-name' }, n === 1 ? c.title : c.title.replace(/(night|getaway|trip|occasion)$/, '$1s')),
+    ]);
+  })));
+
+  // Night of the year: highest rating, latest wins a tie.
+  const rated = done.filter((e) => e.rating).sort((a, b) => b.rating - a.rating || (a.date < b.date ? 1 : -1));
+  if (rated.length) {
+    const top = rated[0];
+    view.append(el('h2', {}, '🏆 Night of the year'));
+    view.append(el('div', { class: 'card', style: 'margin-bottom:8px' }, [
+      el('div', { class: 'card-top' }, [
+        el('div', { class: 'card-emoji' }, cadenceOf(top.type).emoji),
+        el('div', {}, [
+          el('div', { class: 'card-title' }, titleText(top)),
+          el('div', { class: 'card-cadence' }, `${fmt(top.date)} · ${'♥'.repeat(top.rating)}`),
+          memLine(top),
+        ]),
+      ]),
+    ]));
+    const avg = rated.reduce((s, e) => s + e.rating, 0) / rated.length;
+    view.append(el('p', { class: 'muted small', style: 'margin:0 0 4px' }, `Average night: ${'♥'.repeat(Math.round(avg))} (${avg.toFixed(1)}) across ${rated.length} rated.`));
+  }
+
+  view.append(el('h2', {}, '💌 Little things'));
+  const sentBy = (w) => DB.coupons.filter((c) => !c.deleted && c.from === w && (c.sentAt || '') >= from).length;
+  const squares = [...DB.bingo, ...DB.bingo2].filter((b) => b.done && b.n !== BINGO_FREE && (b.updatedAt || '') >= fromISO).length;
+  const q36n = Math.min(actRec('q36:progress')?.n || 0, Q36.length);
+  const bothYes = bothReady('ynm') ? YNM_ITEMS.filter((_, n) => actAnswer('ynm', 'chris', n) === 'yes' && actAnswer('ynm', 'kat', n) === 'yes').length : 0;
+  const bits = [
+    `💙 Chris sent ${sentBy('chris')} coupon${sentBy('chris') === 1 ? '' : 's'} · 💜 Kat sent ${sentBy('kat')}`,
+    squares ? `💗 ${squares} bingo square${squares === 1 ? '' : 's'} marked` : '',
+    q36n ? `🕯️ ${q36n} of ${Q36.length} questions deep` : '',
+    bothYes ? `💌 ${bothYes} both-yes${bothYes === 1 ? '' : 'es'} on the list` : '',
+  ].filter(Boolean);
+  for (const b of bits) view.append(el('p', { class: 'small', style: 'margin:4px 0' }, b));
+
+  view.append(el('p', { class: 'muted small center', style: 'margin-top:18px' }, 'Same time next year — keep going. 💞'));
 }
 
 // ---------- couple's goals ----------
@@ -1363,6 +1422,7 @@ function recModal(r) {
 
 function renderHistory() {
   view.append(el('h1', {}, 'History'), el('p', { class: 'sub' }, 'Everything you’ve shared, most recent first.'));
+  view.append(el('button', { class: 'btn btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'rewind'; render(); } }, '🎞 Rewind — your year together'));
   const t = todayStr();
   const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date <= t).sort((a,b) => a.date < b.date ? 1 : -1);
   const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
