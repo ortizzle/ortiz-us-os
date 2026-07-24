@@ -198,8 +198,12 @@ textarea.input { resize: vertical; min-height: 60px; }
   background: linear-gradient(155deg, var(--steel-a), var(--steel-b));
   border: 1px solid var(--steel-edge);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), var(--shadow); }
-.freezer { position: relative; padding: 24px 22px 26px 42px; border-bottom: 3px solid var(--steel-edge); min-height: 176px; }
-.fdoor { position: relative; padding: 26px 22px 22px 42px; min-height: 360px; }
+/* classic fridge proportions — freezer ~1/3 on top, fridge ~2/3 below. The
+   door is a flex column so its notes sit up top and magnets settle at the
+   bottom, filling the tall compartment. */
+.freezer { position: relative; padding: 24px 22px 26px 42px; border-bottom: 3px solid var(--steel-edge); min-height: 200px; }
+.fdoor { position: relative; padding: 24px 22px 22px 42px; min-height: 500px;
+  display: flex; flex-direction: column; justify-content: space-between; }
 .fhandle { position: absolute; left: 14px; width: 9px; border-radius: 999px;
   background: linear-gradient(90deg, var(--steel-a), var(--steel-b));
   border: 1px solid var(--steel-edge); box-shadow: 0 2px 5px rgba(40,20,28,0.18); cursor: pointer; }
@@ -212,8 +216,8 @@ textarea.input { resize: vertical; min-height: 60px; }
   width: 84px; height: 19px; background: var(--accent-soft); opacity: 0.9; border-radius: 2px;
   box-shadow: 0 1px 2px rgba(40,20,28,0.12); }
 .qcard .q-k { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
-.qcard .q-q { font-family: var(--hand); font-size: 19px; line-height: 1.4; margin: 5px 0 9px; }
-.q-ans { display: flex; align-items: baseline; gap: 7px; margin: 6px 0; }
+.qcard .q-q { font-family: var(--hand); font-size: 19px; line-height: 1.4; margin: 5px 0 7px; }
+.q-ans { display: flex; align-items: baseline; gap: 7px; margin: 4px 0; }
 .q-ans .who { font-weight: 800; font-size: 11.5px; }
 .q-ans .who.chris { color: var(--chris-ink); } .q-ans .who.kat { color: var(--kat-ink); }
 .q-ans .a { font-family: var(--hand); font-size: 16px; line-height: 1.35; }
@@ -224,10 +228,15 @@ textarea.input { resize: vertical; min-height: 60px; }
   border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent-ink); cursor: pointer; margin-top: 7px; }
 .keepbtn.kept { background: var(--accent); color: #fff; }
 
-.fnotes { display: flex; flex-direction: column; gap: 24px; }
-.postit { position: relative; border-radius: 2px 2px 16px 2px; padding: 16px 18px 32px;
-  font-family: var(--hand); font-size: 17.5px; line-height: 1.5;
+.fnotes { display: flex; flex-direction: column; gap: 22px; }
+/* real-Post-it shape: square-ish, not a thin bar. Text sits up top, signature
+   in the corner, blank note-space between. Chris's leans left, Kat's right,
+   slightly off-centre like notes actually slapped on a door. */
+.postit { position: relative; width: min(230px, 78%); min-height: 190px; border-radius: 2px 2px 16px 2px;
+  padding: 16px 16px 30px; font-family: var(--hand); font-size: 18px; line-height: 1.45;
   box-shadow: 0 7px 16px rgba(40,20,28,0.2), 0 1px 2px rgba(40,20,28,0.12); cursor: pointer; }
+.postit.p-chris { align-self: flex-start; }
+.postit.p-kat { align-self: flex-end; }
 .postit::before { content: ''; position: absolute; right: 0; bottom: 0; width: 18px; height: 18px;
   clip-path: polygon(0 100%, 100% 0, 0 0); filter: brightness(0.97); }
 .postit.p-chris { background: var(--paper-c); color: var(--paper-c-ink); }
@@ -306,9 +315,9 @@ textarea.input { resize: vertical; min-height: 60px; }
 .fridge.freezer-open .freezer .fhandle, .fridge.freezer-open .qcard { display: none; }
 .finterior, .fzinterior { display: none; position: relative; border-radius: 6px;
   border: 6px solid var(--steel-edge); border-left-width: 16px; padding: 8px 12px 12px; }
-.finterior { min-height: 316px;
+.finterior { flex: 1; min-height: 454px;
   background: linear-gradient(180deg, var(--steel-in), color-mix(in srgb, var(--steel-in) 88%, #000 12%)); }
-.fzinterior { min-height: 132px;
+.fzinterior { min-height: 150px;
   background: linear-gradient(180deg, rgba(224,240,248,0.96), rgba(188,216,230,0.92));
   box-shadow: inset 0 0 22px rgba(255,255,255,0.5); }
 .fridge.door-open .finterior { display: block; }
