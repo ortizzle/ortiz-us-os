@@ -216,4 +216,4 @@ npx serve .
 
 ---
 
-*Current build: v38 · fridge & rose polish.*
+*Current build: v39 · rose redesign.*

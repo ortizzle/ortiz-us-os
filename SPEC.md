@@ -182,8 +182,9 @@ Everything is discovery — the tab carries no instruction text.
   open, one more tap on that SAME handle spot closes it back up — the
   handle stays exactly where it was (invisible, `opacity:0`, still hit-
   testable) rather than disappearing to a different control.
-- **In History:** the 🌹 vase (top) — a real 5-petal bloom per kept question
-  (`roseBloom`, not a flat dot), tap to read the Q&As; and 🫙 jars (bottom) —
+- **In History:** the 🌹 vase (top) — a closed bud per kept question, 3
+  overlapping petals staggered in depth (`roseBloom`, not a flat dot), reads
+  as a rose even solo; tap to read the Q&As; and 🫙 jars (bottom) —
   per-person collections of saved notes. Both appear only once they have
   contents.
 
