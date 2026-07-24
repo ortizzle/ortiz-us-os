@@ -99,6 +99,21 @@ after an update.
   saved memories), newest first. Everything's editable after the fact (✎).
   A booked plan **auto-retires** here once it's past and you've rated it —
   until then it lingers in Rhythm's Booked list as a nudge to log how it went.
+- **Little delights on Rhythm** — 📌 **The fridge door**: one pinned note
+  from each of you (replaceable anytime; a fresh one flashes *new ✨* once).
+  💬 **Tonight's question**: a daily conversation card, same question on
+  both phones. 💫 **This week in your story**: past entries from earlier
+  years resurface on their anniversaries, with your saved memories.
+- **🎰 Surprise us** (Ideas tab) — can't decide? Pick a mood, pull the
+  lever: a slot-machine draw from your open ideas + curated picks, with
+  "Plan it" one tap away.
+- **🎞 Rewind** (History tab) — your last 12 months, computed from what you
+  logged: counts per cadence, the night of the year with its memories,
+  coupons sent, and more.
+- **📷 Photo albums** — paste a shared-album link (iCloud/Google Photos) on
+  any event; it shows as a 📷 link in the details view and History.
+- **🧳 Packing checklists** — on a booked getaway/trip, the what-to-pack
+  list becomes tickable, synced between phones.
 - *…and if you tap the heart in the top corner six times, something's there
   for just you two — and it's grown lately.* 💗
 
@@ -140,6 +155,7 @@ locked it, the other phone already saw it.
 | Shared ideas & curated-pick reactions | 🔒 Private ideas |
 | Goal tickets, bingo squares | 🔒 Locked (surprise) field values |
 | Couple-activity answers & progress 💗 | |
+| 📌 Fridge notes, 🧳 packing ticks, 📷 album links | |
 | **Sent** love coupons | Unsent love coupons (they're not data at all) |
 | | 🎁 Surprise idea stashes |
 | | ✨ Cached Claude results (~30 days) |
@@ -158,6 +174,11 @@ back into view; **⇅ Sync now** in Settings forces one.
 3. **Coupon email didn't arrive?** The coupon itself still arrives in-app —
    the email is best-effort. Troubleshooting in [COUPON_EMAIL.md](COUPON_EMAIL.md).
 4. **✨ buttons missing?** No API key on that phone (Settings).
+5. **Do a 💾 backup once in a while** (Settings → Backup & restore) — 🔒
+   surprises, 🎁 stashes, and private ideas live only on each phone, so a
+   cleared browser loses them without one. Restore merges safely (newest
+   wins; never wipes newer local data). The file contains your keys — keep
+   it private.
 
 ## Run locally
 
@@ -180,4 +201,4 @@ npx serve .
 
 ---
 
-*Current build: v30 · beyond the card.*
+*Current build: v31 · memory lane.*

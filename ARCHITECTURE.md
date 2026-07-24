@@ -121,11 +121,22 @@ One `localStorage` key, `ortiz-us-os`, holding:
 - `acts` holds "Beyond the card" activity state (reached from the sweet
   bingo card): yes/no/maybe answers (`ynm:<who>:<n>`, `v`), would-you-rather
   picks (`wyr:<who>:<n>`, `v`), per-person reveal flags (`<game>:ready:<who>`,
-  `on`), and the shared 36-questions position (`q36:progress`, `n`). Created
-  lazily on first tap, deterministic ids, never tombstoned. The static
-  content (`YNM_ITEMS`, `WYR_ITEMS`, `Q36`) is baked into `app.js`. Answers
-  DO sync — the "hidden until both ready" reveal is UI-level, a game
-  mechanic, not a privacy guarantee like secrets/private ideas.
+  `on`), the shared 36-questions position (`q36:progress`, `n`), and the 📌
+  fridge notes (`note:<who>`, `text`). Created lazily on first tap,
+  deterministic ids, never tombstoned. The static content (`YNM_ITEMS`,
+  `WYR_ITEMS`, `Q36`, `TQ_ITEMS`) is baked into `app.js`. Answers DO sync —
+  the "hidden until both ready" reveal is UI-level, a game mechanic, not a
+  privacy guarantee like secrets/private ideas.
+- `entries.album` is one synced shared-album URL per event (📷 links in the
+  details sheet and History); `entries.packDone` is the ticked subset of the
+  parsed what-to-pack items (item strings, so a rename resets its tick).
+  `settings.noteSeenAt` is the device-local "fridge notes last looked at"
+  stamp behind the one-time "new ✨" flash.
+- **Backup & restore** (Settings): download serializes the whole `DB`
+  (device-local parts and settings included — the file is as sensitive as
+  the phone). Restore merges: `mergeCol` per record collection, local-wins
+  spread for `secrets`/`stash`/`deepcache`, gap-fill for `settings` — never
+  a wholesale replace, so stale files can't clobber newer data.
 - `RECS` (curated picks) and `SPECIAL` (anniversary/birthdays) are static
   data baked into `app.js` — not stored, not synced, edit in code.
 - `settings` is device-local only — it is never included in sync.
