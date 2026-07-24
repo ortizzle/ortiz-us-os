@@ -1176,6 +1176,52 @@ function renderRhythm() {
   for (const e of planningList) view.append(upcomingCard(e));
 }
 
+// 🎰 "Surprise us": picks tonight's plan from the idea backlog + live
+// curated picks, with a decelerating slot-machine reveal. Solves the real
+// failure mode of idea backlogs — forty options and still no decision.
+function rouletteModal() {
+  let type = 'date', spinning = false;
+  const pool = () => [
+    ...DB.ideas.filter((i) => !i.deleted && !i.done && i.type === type && !i.private).map((i) => ({ text: i.text, ideaId: i.id })),
+    ...RECS.filter((r) => r.type === type && !recState(r)).map((r) => ({ text: r.name })),
+  ];
+  const moods = [['date', '💞 Tonight-ish'], ['occasion', '🎉 Big night'], ['getaway', '🧳 Whisk us away'], ['trip', '✈️ Dream big']];
+  const chips = el('div', { class: 'seg' }, moods.map(([v, label]) =>
+    el('button', { class: v === type ? 'active' : '', onclick: (ev) => {
+      type = v; [...chips.children].forEach((c) => c.classList.toggle('active', c === ev.target)); result = null; slot.textContent = '…'; planBtn.style.display = 'none';
+    } }, label)));
+  const slot = el('div', { class: 'a-q center', style: 'font-size:17px; min-height:48px; display:flex; align-items:center; justify-content:center; text-align:center' }, '…');
+  let result = null;
+  const planBtn = el('button', { class: 'btn btn-primary', style: 'display:none', onclick: () => {
+    m.close(); logModal(type, { planned: true, prefill: result.text, ideaId: result.ideaId || null });
+  } }, 'Plan it 💞');
+  const spin = () => {
+    const p = pool();
+    if (!p.length) { toast('That pool is empty — add some ideas first'); return; }
+    if (spinning) return;
+    spinning = true; planBtn.style.display = 'none';
+    let hops = 12 + Math.floor(p.length % 5), delay = 60;
+    const hop = () => {
+      slot.textContent = p[Math.floor(Math.random() * p.length)].text;
+      if (--hops > 0) { delay *= 1.28; setTimeout(hop, delay); }
+      else {
+        result = p[Math.floor(Math.random() * p.length)];
+        slot.textContent = `✨ ${result.text} ✨`;
+        planBtn.style.display = ''; spinning = false;
+      }
+    };
+    hop();
+  };
+  const m = modal('🎰 Surprise us', [
+    el('p', { class: 'muted small', style: 'margin:0 0 10px' }, 'Can’t decide? Don’t. Pick a mood, pull the lever — it draws from your ideas and the curated picks.'),
+    chips, slot,
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+    el('button', { class: 'btn', onclick: spin }, '🎰 Spin'),
+    planBtn,
+  ]);
+}
+
 let ideaFilter = 'all';
 let privateMode = false; // add-box lock: new ideas stay on this device, never sync
 function renderIdeas() {
@@ -1185,6 +1231,7 @@ function renderIdeas() {
     ['all', 'All'], ...CADENCES.map((c) => [c.type, `${c.emoji} ${c.title.split(' ')[0]}`]), ['private', '🔒 Private'],
   ].map(([v, label]) => el('button', { class: ideaFilter === v ? 'active' : '', onclick: () => { ideaFilter = v; render(); } }, label)));
   view.append(seg);
+  view.append(el('div', { style: 'margin:-6px 0 12px' }, el('button', { class: 'btn btn-sm', onclick: rouletteModal }, '🎰 Surprise us')));
   if (ideaFilter === 'private') view.append(el('p', { class: 'muted small', style: 'margin: -6px 0 12px' }, 'Your eyes only — these live on this device and never sync.'));
 
   const addType = (ideaFilter === 'all' || ideaFilter === 'private') ? 'date' : ideaFilter;
