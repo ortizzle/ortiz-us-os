@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v34 · classic fridge';
+const APP_VERSION = 'v35 · spicy saves';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -477,7 +477,8 @@ function missedSheet(rec, them) {
     bignoteEl(them, rec.text, rec.at),
   ], [
     el('button', { class: 'btn', onclick: () => { setAct(rec.id, { read: true }); m.close(); render(); } }, 'Got it 🤍'),
-    el('button', { class: 'btn btn-primary', onclick: () => { saveToJar(them, rec.text, rec.at); setAct(rec.id, { read: true }); m.close(); render(); } }, '⭐ Save to my jar'),
+    el('button', { class: 'btn', onclick: () => { saveToJar(them, rec.text, rec.at, false); setAct(rec.id, { read: true }); m.close(); render(); } }, '⭐ Jar'),
+    el('button', { class: 'btn btn-primary', onclick: () => { saveToJar(them, rec.text, rec.at, true); setAct(rec.id, { read: true }); m.close(); render(); } }, '🔥 On ice'),
   ]);
 }
 // Today's answers live in ONE record per person (`tq:ans:<who>`, overwritten
@@ -576,9 +577,15 @@ function renderFridge() {
         } }, '🗑'),
         el('span', { class: 'pstatus' }, seenByOther(w) ? 'seen 💗' : 'not seen yet'),
       ]));
-    } else if (r?.text) kids.push(el('span', { class: 'ptools' }, el('button', { title: 'Save to my jar', onclick: (ev) => {
-      ev.stopPropagation(); saveToJar(w, r.text, (r.updatedAt || '').slice(0, 10)); render();
-    } }, '⭐')));
+    } else if (r?.text) {
+      const at = (r.updatedAt || '').slice(0, 10);
+      // ⭐ → your jar (sweet). 🔥 → the freezer (spicy). No labels — the reader
+      // just decides, and it lands where it belongs.
+      kids.push(el('span', { class: 'ptools' }, [
+        el('button', { title: 'Save to my jar', onclick: (ev) => { ev.stopPropagation(); saveToJar(w, r.text, at, false); render(); } }, '⭐'),
+        el('button', { title: 'Save on ice', onclick: (ev) => { ev.stopPropagation(); saveToJar(w, r.text, at, true); render(); } }, '🔥'),
+      ]));
+    }
     kids.push(el('span', { class: 'sig' }, `❤️ ${COUPLE[w].name}`));
     const p = el('div', { class: `postit p-${w} ${w === 'chris' ? 'tilt-l' : 'tilt-r'}`, onclick: () => {
       if (mine) { fridgeEdit(w); return; }

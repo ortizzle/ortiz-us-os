@@ -209,4 +209,4 @@ npx serve .
 
 ---
 
-*Current build: v34 · classic fridge.*
+*Current build: v35 · spicy saves.*
