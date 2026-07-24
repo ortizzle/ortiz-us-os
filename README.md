@@ -107,7 +107,7 @@ after an update.
   **💌 one you missed**, so nothing sweet is ever lost unread; your own
   note shows *seen 💗* once they've looked. Below: **souvenir magnets**,
   one per logged getaway/trip, shaped like the memory itself — and a few
-  things on that door are worth idly tapping. 🤫
+  things on that door (and that freezer 🧊) are worth idly tapping. 🤫
 - **💫 This week in your story** (Rhythm) — past entries from earlier years
   resurface on their anniversaries, with your saved memories.
 - **🎰 Surprise us** (Ideas tab) — can't decide? Pick a mood, pull the
@@ -209,4 +209,4 @@ npx serve .
 
 ---
 
-*Current build: v32 · the fridge.*
+*Current build: v33 · fridge polish.*

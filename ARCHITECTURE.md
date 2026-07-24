@@ -136,12 +136,18 @@ One `localStorage` key, `ortiz-us-os`, holding:
   event-record kinds like coupons: `notemiss:<writer>:<uid>` (a note
   replaced before the other phone saw it — surfaces as "💌 one you missed"
   until `read`) and `notekeep:<owner>:<uid>` (⭐-saved snapshots of the
-  other's notes → the jars at the bottom of History, and the secret-shelf
-  reveal). Note-loss invariant: a note is only archived to `notemiss` when
-  REPLACED while unseen; 🗑 by its own author is an intentional retraction
-  and archives nothing. Souvenir magnets are derived entirely from logged
-  getaway/trip entries (shape from title/loc keywords, deterministic per
-  id) — no records of their own.
+  other's notes, `{from, text, at, spicy}`). Note-loss invariant: a note is
+  only archived to `notemiss` when REPLACED while unseen; 🗑 by its own
+  author is an intentional retraction and archives nothing. Souvenir magnets
+  are derived entirely from logged getaway/trip entries (shape from
+  title/loc keywords, deterministic per id) — no records of their own.
+  `notekeep.spicy` splits the two reveals: **sweet** notes (`spicy:false`)
+  fill the History jars and the door's comfort-food shelf (4 taps on the
+  door handle); **spicy 🔥** notes (`spicy:true`, composed in the freezer)
+  are kept OUT of the jars and comfort shelf and appear only via the freezer
+  ice cream (6 taps on the freezer face) — the same hidden-spicy-layer
+  pattern as the After Dark bingo card. Both still sync (shared, not
+  device-local).
 - `entries.album` is one synced shared-album URL per event (📷 links in the
   details sheet and History); `entries.packDone` is the ticked subset of the
   parsed what-to-pack items (item strings, so a rename resets its tick).
