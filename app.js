@@ -386,6 +386,25 @@ const answeredCount = (game, who, total) => {
   return c;
 };
 
+// ---------- little rhythm delights ----------
+// "This week in your story": past entries whose month-day lands within ±3
+// days of today's, from any earlier year — logging pays off as anniversaries.
+// (A straight month-day window, so a Dec 30 memory won't surface on Jan 2 —
+// rare enough to not be worth the wrap-around math.)
+function onThisWeek() {
+  const t = parse(todayStr());
+  const out = [];
+  for (const e of DB.entries) {
+    if (e.deleted || e.planned || !e.date || e.date > todayStr()) continue;
+    const d = parse(e.date);
+    if (d.getFullYear() >= t.getFullYear()) continue;
+    const anniv = new Date(t.getFullYear(), d.getMonth(), d.getDate());
+    const diff = Math.round((anniv - t) / 86400000);
+    if (Math.abs(diff) <= 3) out.push({ e, years: t.getFullYear() - d.getFullYear(), diff });
+  }
+  return out.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff)).slice(0, 3);
+}
+
 const BINGO_FREE = 12; // center square
 function seedBingo() {
   for (const [col, key] of [[DB.bingo, 'bingo'], [DB.bingo2, 'bingo2']]) {
@@ -1026,6 +1045,21 @@ function renderRhythm() {
       el('span', { class: 's-meta' }, meta),
     ]);
   })));
+
+  const otw = onThisWeek();
+  if (otw.length) {
+    view.append(el('h2', {}, '💫 This week in your story'));
+    for (const { e, years } of otw) {
+      const q = e.mem ? Object.values(e.mem).find(Boolean) : '';
+      view.append(el('div', { class: 'row rec', onclick: () => logModal(e.type, { entry: e }) }, [
+        el('span', { class: 'r-emoji' }, cadenceOf(e.type).emoji),
+        el('div', { class: 'r-main' }, [
+          el('div', { class: 'r-title' }, titleText(e)),
+          el('div', { class: 'r-meta' }, `${years === 1 ? 'a year' : years + ' years'} ago · ${fmt(e.date)}${e.rating ? ' · ' + '♥'.repeat(e.rating) : ''}${q ? ' · “' + q + '”' : ''}`),
+        ]),
+      ]));
+    }
+  }
 
   view.append(el('h2', { id: 'sec-booked' }, '✅ Booked'));
   if (nearSpecial.length) for (const { s, nx } of nearSpecial) {
