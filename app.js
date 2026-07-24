@@ -405,6 +405,43 @@ function onThisWeek() {
   return out.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff)).slice(0, 3);
 }
 
+// "The fridge door": one pinned note from each of you, replaceable anytime.
+// Notes live in DB.acts (`note:<who>`) so they sync; the "new ✨" flash is
+// per-device (settings.noteSeenAt) — it marks when THIS phone last looked.
+function fridgeEdit(w) {
+  const cur = actRec(`note:${w}`)?.text || '';
+  const inp = el('textarea', { class: 'input', placeholder: 'Something small and true. Replace it whenever.' }, cur);
+  const m = modal('📌 Your note on the fridge', [
+    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `${COUPLE[other(w)].name} sees this on their Rhythm tab. One note at a time — new one replaces the old.`),
+    inp,
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      setAct(`note:${w}`, { text: inp.value.trim() });
+      m.close(); toast(inp.value.trim() ? 'Pinned 📌' : 'Note taken down'); render();
+    } }, 'Pin it'),
+  ]);
+  inp.focus();
+}
+function fridgeCard() {
+  const y = me();
+  const slots = ['chris', 'kat'].map((w) => {
+    const r = actRec(`note:${w}`);
+    const mine = w === y;
+    const fresh = Boolean(r?.text) && !mine && (r.updatedAt || '') > (DB.settings.noteSeenAt || '');
+    return el('div', { class: 'fridge-note' + (mine ? ' mine' : ''), onclick: mine ? () => fridgeEdit(w) : null }, [
+      el('div', { class: 'r-meta' }, [
+        `${COUPLE[w].emoji} ${COUPLE[w].name}${mine ? ' — tap to write' : ''} `,
+        fresh ? el('span', { class: 'chip love' }, 'new ✨') : null,
+      ]),
+      el('div', { class: 'f-text' + (r?.text ? '' : ' empty') }, r?.text || (mine ? 'Leave a note on the fridge…' : 'Nothing pinned yet')),
+    ]);
+  });
+  // Rendering counts as reading — next open, the ✨ is gone.
+  DB.settings.noteSeenAt = now(); save(DB);
+  return el('div', { class: 'card fridge' }, slots);
+}
+
 const BINGO_FREE = 12; // center square
 function seedBingo() {
   for (const [col, key] of [[DB.bingo, 'bingo'], [DB.bingo2, 'bingo2']]) {
@@ -1045,6 +1082,11 @@ function renderRhythm() {
       el('span', { class: 's-meta' }, meta),
     ]);
   })));
+
+  if (me()) {
+    view.append(el('h2', {}, '📌 The fridge door'));
+    view.append(fridgeCard());
+  }
 
   const otw = onThisWeek();
   if (otw.length) {
