@@ -1889,10 +1889,56 @@ function renderSettings() {
         commit(); applyTheme(); toast('Saved'); render();
       } }, 'Save')),
     ]),
+    el('div', { class: 'card', style: 'margin-top:12px' }, [
+      el('label', { class: 'field-label', style: 'margin-top:0' }, '💾 Backup & restore'),
+      el('p', { class: 'muted small', style: 'margin:0 0 10px' }, 'Downloads EVERYTHING on this phone — including 🔒 surprises, 🎁 stashes, private ideas, and your keys. Keep the file somewhere private. Restore merges (newest wins) and never wipes newer local data.'),
+      el('div', { class: 'card-actions' }, [
+        el('button', { class: 'btn btn-sm', onclick: backupDownload }, '⬇ Download backup'),
+        el('button', { class: 'btn btn-sm', onclick: restorePick }, '⬆ Restore from file'),
+      ]),
+    ]),
     el('p', { class: 'muted small center', style: 'margin:16px 0 0' }, `Us OS · ${APP_VERSION}`),
   );
 }
 const hasKey = () => Boolean(DB.settings.apiKey);
+
+// ---------- backup & restore ----------
+// The one hole in the local-first model: 🔒 secrets, 🎁 stashes, and private
+// ideas live ONLY on this phone — clear the browser and they're gone. Backup
+// captures the WHOLE store (settings and keys included — the file is as
+// sensitive as the phone). Restore MERGES, never replaces: mergeCol for
+// record collections (newest updatedAt wins, same as sync), local-wins for
+// the device-local objects — so restoring an old file can't clobber newer
+// data, and restoring onto a fresh phone brings everything back.
+function backupDownload() {
+  const blob = new Blob([JSON.stringify({ app: 'ortiz-us-os', at: now(), data: DB }, null, 1)], { type: 'application/json' });
+  const a = el('a', { href: URL.createObjectURL(blob), download: `us-os-backup-${todayStr()}.json` });
+  document.body.append(a); a.click(); a.remove();
+  toast('Backup downloaded — keep it somewhere private');
+}
+function restoreData(bk) {
+  if (bk?.app !== 'ortiz-us-os' || !bk.data) { toast('That doesn’t look like an Us OS backup'); return false; }
+  const d = bk.data;
+  for (const k of ['entries', 'ideas', 'tickets', 'coupons', 'bingo', 'bingo2', 'recstate', 'acts']) DB[k] = mergeCol(DB[k] || [], d[k]);
+  for (const k of ['secrets', 'stash', 'deepcache']) DB[k] = { ...(d[k] || {}), ...(DB[k] || {}) };
+  DB.settings = { ...(d.settings || {}), ...DB.settings };
+  save(DB); scheduleSync();
+  return true;
+}
+function restorePick() {
+  const inp = el('input', { type: 'file', accept: 'application/json,.json', style: 'display:none' });
+  inp.addEventListener('change', () => {
+    const f = inp.files?.[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        if (restoreData(JSON.parse(rd.result))) { toast('Backup restored ✓'); render(); }
+      } catch { toast('Couldn’t read that file'); }
+    };
+    rd.readAsText(f);
+  });
+  document.body.append(inp); inp.click(); inp.remove();
+}
 
 // ---------- gist sync (shared with Kat; same model as Home OS) ----------
 // One private Gist, one JSON file; both phones merge per-record by id,
@@ -1970,7 +2016,7 @@ async function syncNow(manual) {
   } finally { syncing = false; }
 }
 // Debug/verification hook (harmless in production, handy on device too).
-window.__us = { sharedPayload, mergeCol };
+window.__us = { sharedPayload, mergeCol, restoreData };
 
 // ---------- Claude idea generation (browser-side, like Home OS) ----------
 async function generateIdeas(type, btn) {
