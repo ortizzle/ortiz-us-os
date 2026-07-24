@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v30 · beyond the card';
+const APP_VERSION = 'v31 · memory lane';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';

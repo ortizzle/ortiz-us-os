@@ -1,7 +1,7 @@
 // sw.js — network-first shell with cache fallback. Online loads always get
 // current code; offline falls back to the last cached shell. Mirrors the
 // strategy used across the Ortiz suite.
-const CACHE = 'us-os-shell-v30';
+const CACHE = 'us-os-shell-v31';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {
