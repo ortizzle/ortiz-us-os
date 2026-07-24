@@ -251,10 +251,15 @@ textarea.input { resize: vertical; min-height: 60px; }
 .postit.p-chris::before { background: var(--paper-c-fold); }
 .postit.p-kat { background: var(--paper-k); color: var(--paper-k-ink); }
 .postit.p-kat::before { background: var(--paper-k-fold); }
-.postit .sig { position: absolute; right: 24px; bottom: 8px; font-weight: 700; font-size: 15.5px; }
+.postit .sig { position: absolute; right: 24px; bottom: 8px; font-weight: 700; font-size: 14px; }
 .postit.p-chris .sig { color: #24519b; }
 .postit.p-kat .sig { color: #63299c; }
 .postit .p-empty { font-style: italic; opacity: 0.65; }
+/* invisible click-catcher over the folded corner (see app.js postit()) — no
+   background, no icon, just closes the dead zone the parent's own rounded
+   corner clips out of its hit area. */
+.pcorner { position: absolute; right: 0; bottom: 0; width: 20px; height: 20px;
+  background: none; border: 0; padding: 0; cursor: pointer; }
 .ptools { position: absolute; left: 10px; bottom: 4px; display: flex; gap: 8px; align-items: center; }
 .ptools button { font-size: 12.5px; background: none; border: 0; cursor: pointer; opacity: 0.65; padding: 2px; }
 .pstatus { font-size: 10px; font-weight: 800; opacity: 0.65; white-space: nowrap; }
@@ -319,8 +324,14 @@ textarea.input { resize: vertical; min-height: 60px; }
 /* open compartments — the fridge and freezer each open on their own; the
    opened door's handle + contents hide, its lit interior shows. Interiors
    carry min-heights close to their shut selves so the fridge keeps its size. */
-.fridge.door-open .fdoor .fhandle, .fridge.door-open .fnotes, .fridge.door-open .mags { display: none; }
-.fridge.freezer-open .freezer .fhandle, .fridge.freezer-open .qcard { display: none; }
+/* opacity, not display:none — the handle stays exactly where it was and
+   still catches a tap to close (same spot you tapped to open), it just
+   isn't drawn. It sits in the door/freezer's left padding gutter, which the
+   interior panel never extends into, so nothing else is under the tap. */
+.fridge.door-open .fdoor .fhandle { opacity: 0; }
+.fridge.door-open .fnotes, .fridge.door-open .mags { display: none; }
+.fridge.freezer-open .freezer .fhandle { opacity: 0; }
+.fridge.freezer-open .qcard { display: none; }
 .finterior, .fzinterior { display: none; position: relative; border-radius: 6px;
   border: 6px solid var(--steel-edge); border-left-width: 16px; padding: 8px 12px 12px; }
 .finterior { flex: 1; min-height: 454px;
@@ -347,7 +358,7 @@ textarea.input { resize: vertical; min-height: 60px; }
   font-family: var(--hand); font-size: 17px; line-height: 1.5; box-shadow: 0 10px 30px rgba(40,20,28,0.3); }
 .bignote.p-chris { background: var(--paper-c); color: var(--paper-c-ink); }
 .bignote.p-kat { background: var(--paper-k); color: var(--paper-k-ink); }
-.bignote .sig { position: absolute; right: 24px; bottom: 9px; font-weight: 700; }
+.bignote .sig { position: absolute; right: 24px; bottom: 9px; font-weight: 700; font-size: 15px; }
 .bignote.p-chris .sig { color: #24519b; } .bignote.p-kat .sig { color: #63299c; }
 .bignote .bd { position: absolute; left: 14px; bottom: 9px; font-size: 11px; font-weight: 700; opacity: 0.6; font-family: -apple-system, sans-serif; }
 
@@ -357,9 +368,16 @@ textarea.input { resize: vertical; min-height: 60px; }
 .vasezone { position: relative; width: 104px; height: 124px; flex: none; }
 .rstem { position: absolute; bottom: 36px; left: 50%; width: 2.5px; border-radius: 2px;
   background: linear-gradient(180deg, #4b8f63, #2c5d3f); transform-origin: bottom center; }
-.rose { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); border-radius: 50%;
-  background: radial-gradient(circle at 42% 36%, #f2789a 0 28%, #d1476b 55%, #a3204a 100%);
-  box-shadow: inset 0 -2px 3px rgba(90,10,35,0.5), 0 1px 2px rgba(40,20,28,0.25); }
+/* a real bloom: 5 overlapping rounded petals fanned around a darker center,
+   instead of a flat dot. Sized per-rose via inline width/height (roseBloom in
+   app.js); the center is placed via inline left/top at build time too. */
+.rosebloom { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); }
+.rosebloom .petal { position: absolute; inset: 0; border-radius: 62% 38% 65% 35% / 42% 58% 42% 58%;
+  background: radial-gradient(circle at 32% 28%, #ffb8cd, #d1476b 55%, #85172f 100%);
+  box-shadow: inset 0 -2px 3px rgba(80,10,30,0.4); }
+.rosebloom .rcenter { position: absolute; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd9e3, #c22d55 65%, #6e1730 100%);
+  box-shadow: inset 0 -1px 2px rgba(50,5,15,0.55); }
 .rvase { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 58px;
   background: linear-gradient(160deg, rgba(150,190,220,0.35), rgba(150,190,220,0.14));
   border: 1.5px solid rgba(150,190,220,0.55); border-top: 0;

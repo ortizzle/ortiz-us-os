@@ -109,7 +109,7 @@ after an update.
 - **🧲 The Fridge (its own tab)** — a real fridge for the two of you.
   Freezer: **tonight's question** (same one on both phones), answer it each
   from your own phone, 🌹 **keep** the good ones. Door: a **post-it from
-  each of you** (blue for Chris, blush for Kat) — ⭐ tucks the other's note
+  each of you** (blue for Chris, blush for Kat) — ❤️ tucks the other's note
   into your jar, and a note replaced before it was read arrives as
   **💌 one you missed**, so nothing sweet is ever lost unread; your own
   note shows *seen 💗* once they've looked. Below: **souvenir magnets**,
@@ -124,7 +124,7 @@ after an update.
   logged: counts per cadence, the night of the year with its memories,
   coupons sent, and more. History also grows a **🌹 vase** (a rose per kept
   question, with both answers inside) and, at the bottom, **🫙 jars** of the
-  fridge notes you've each ⭐-saved.
+  fridge notes you've each ❤️-saved.
 - **📷 Photo albums** — paste a shared-album link (iCloud/Google Photos) on
   any event; it shows as a 📷 link in the details view and History.
 - **🧳 Packing checklists** — on a booked getaway/trip, the what-to-pack
@@ -216,4 +216,4 @@ npx serve .
 
 ---
 
-*Current build: v37 · settings redesign.*
+*Current build: v38 · fridge & rose polish.*

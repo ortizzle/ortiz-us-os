@@ -149,15 +149,20 @@ Everything is discovery — the tab carries no instruction text.
   a complete Q&A, and today's snapshot self-heals from the live answers if
   it was kept before the partner's answer synced in.
 - **Door — the post-its.** One note each (`note:<who>`), blue paper for
-  Chris, blush for Kat, auto-signed ❤️ in your ink colors. Sound note
-  logic: reading is free (⭐ saving is opt-in); a synced seen-receipt
-  (`note:seen:<who>`) shows the writer "seen 💗" (coupon-style); replacing
-  a note the other hasn't read warns first and archives the old text as
-  **💌 one you missed** (`notemiss:`) on their fridge until opened; 🗑 on
-  your own note is an intentional retraction — no archive. The reader saves
-  the other's note with ⭐ (→ their jar, sweet) or 🔥 (→ the freezer, spicy)
-  — no labels, it just lands where they choose (`notekeep:`); the note stays
-  pinned either way.
+  Chris, blush for Kat, auto-signed "— Love, Chris"/"— Love, Kat" in your ink
+  colors. On your own note, tapping anywhere — including the folded corner —
+  opens the write-a-new-one flow anytime, not just when it's empty; the fold
+  stays a plain paper triangle, no added graphic, but an invisible click-
+  catcher over it closes the dead zone the note's own rounded corner clips
+  out of its hit area, so the corner reads as sensitive as it looks.
+  Sound note logic: reading is
+  free (❤️ saving is opt-in); a synced seen-receipt (`note:seen:<who>`) shows
+  the writer "seen 💗" (coupon-style); replacing a note the other hasn't read
+  warns first and archives the old text as **💌 one you missed** (`notemiss:`)
+  on their fridge until opened; 🗑 on your own note is an intentional
+  retraction — no archive. The reader saves the other's note with ❤️ (→
+  their jar, sweet) or 🔥 (→ the freezer, spicy) — no labels, it just lands
+  where they choose (`notekeep:`); the note stays pinned either way.
 - **Door — souvenir magnets.** One per logged getaway/trip, shape derived
   from title/loc keywords (mine cart, mesa, pine, eighth-note, sun-over-
   wave; hashed-color oval + cadence emoji as fallback) — deterministic, so
@@ -169,14 +174,18 @@ Everything is discovery — the tab carries no instruction text.
 - **Three easter eggs.** C ♥ K letter magnets: six quick taps opens Just us
   💗 (the wordmark-heart door stays too). The **door** handle: four taps
   swings the fridge door open (handles disappear) onto comfort food that
-  serves your ⭐-saved **sweet** notes. The **freezer**: six taps on the
+  serves your ❤️-saved **sweet** notes. The **freezer**: six taps on the
   freezer face opens it onto a frosty shelf of ice cream that serves — and
   where ➕ composes — **spicy 🔥** notes (`notekeep.spicy`), kept out of the
   jars and comfort shelf so the freezer is their own private stash. The two
-  compartments open independently and each keeps the fridge's size.
-- **In History:** the 🌹 vase (top) — one rose per kept question, tap to
-  read the Q&As; and 🫙 jars (bottom) — per-person collections of saved
-  notes. Both appear only once they have contents.
+  compartments open independently and each keeps the fridge's size. Once
+  open, one more tap on that SAME handle spot closes it back up — the
+  handle stays exactly where it was (invisible, `opacity:0`, still hit-
+  testable) rather than disappearing to a different control.
+- **In History:** the 🌹 vase (top) — a real 5-petal bloom per kept question
+  (`roseBloom`, not a flat dot), tap to read the Q&As; and 🫙 jars (bottom) —
+  per-person collections of saved notes. Both appear only once they have
+  contents.
 
 ### 🎞 The Rewind (v31)
 Reached from History: the trailing 12 months computed purely from existing

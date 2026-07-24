@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v37 · settings redesign';
+const APP_VERSION = 'v38 · fridge & rose polish';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -412,14 +412,14 @@ function onThisWeek() {
 // ---------- 🧲 the fridge tab ----------
 // One pinned note from each of you (`note:<who>` in acts, synced). Note logic
 // is designed so nothing is ever lost unread:
-//  - Reading is free — a note on the fridge is just there; ⭐ saving is opt-in.
+//  - Reading is free — a note on the fridge is just there; ❤️ saving is opt-in.
 //  - `note:seen:<who>` (synced) records what THIS phone's owner has seen, so
 //    the writer's note shows "seen 💗" (same trick as coupon opened-receipts).
 //  - Replacing a note the other of you HASN'T seen archives the old text to
 //    `notemiss:<writer>:<uid>` — it shows on their fridge as "💌 one you
 //    missed" until opened. Trashing your own note is an intentional
 //    retraction and does NOT archive.
-//  - ⭐ snapshots the other's note into YOUR jar (`notekeep:<owner>:<uid>`);
+//  - ❤️ snapshots the other's note into YOUR jar (`notekeep:<owner>:<uid>`);
 //    the note itself stays on the fridge.
 const noteRec = (w) => actRec(`note:${w}`);
 const seenByOther = (w) => {
@@ -445,10 +445,11 @@ function fridgeEdit(w) {
   ]);
   inp.focus();
 }
-// Saved notes are `notekeep:<owner>:<uid>`. spicy:true ones live only in the
-// freezer 🔥 (kept out of the History jars and the warm comfort-food shelf) —
-// the same hidden-spicy-layer pattern as the After Dark bingo card. They still
-// sync (shared between the two of you), just gated behind the freezer.
+// Saved notes are `notekeep:<owner>:<uid>` — ❤️ on a note saves it sweet, 🔥
+// saves it spicy. spicy:true ones live only in the freezer (kept out of the
+// History jars and the warm comfort-food shelf) — the same hidden-spicy-layer
+// pattern as the After Dark bingo card. They still sync (shared between the
+// two of you), just gated behind the freezer.
 function saveToJar(fromWho, text, at, spicy) {
   DB.acts.push({ id: `notekeep:${me()}:${uid()}`, from: fromWho, text, at: at || todayStr(), spicy: Boolean(spicy), updatedAt: now() });
   commit(); toast(spicy ? 'On ice 🔥' : 'Tucked into your jar 🫙');
@@ -469,7 +470,7 @@ function spicyCompose() {
 }
 const bignoteEl = (who, text, at, spicy) => el('div', { class: 'bignote p-' + who }, [
   spicy ? el('span', { class: 'spicypill', style: 'position:absolute; top:10px; right:14px' }, '🔥') : null,
-  text, el('span', { class: 'bd' }, at ? fmt(at) : ''), el('span', { class: 'sig' }, `❤️ ${COUPLE[who].name}`),
+  text, el('span', { class: 'bd' }, at ? fmt(at) : ''), el('span', { class: 'sig' }, `— Love, ${COUPLE[who].name}`),
 ]);
 function missedSheet(rec, them) {
   const m = modal('💌 One you missed', [
@@ -477,7 +478,7 @@ function missedSheet(rec, them) {
     bignoteEl(them, rec.text, rec.at),
   ], [
     el('button', { class: 'btn', onclick: () => { setAct(rec.id, { read: true }); m.close(); render(); } }, 'Got it 🤍'),
-    el('button', { class: 'btn', onclick: () => { saveToJar(them, rec.text, rec.at, false); setAct(rec.id, { read: true }); m.close(); render(); } }, '⭐ Jar'),
+    el('button', { class: 'btn', onclick: () => { saveToJar(them, rec.text, rec.at, false); setAct(rec.id, { read: true }); m.close(); render(); } }, '❤️ Jar'),
     el('button', { class: 'btn btn-primary', onclick: () => { saveToJar(them, rec.text, rec.at, true); setAct(rec.id, { read: true }); m.close(); render(); } }, '🔥 On ice'),
   ]);
 }
@@ -584,16 +585,22 @@ function renderFridge() {
         } }, '🗑'),
         el('span', { class: 'pstatus' }, seenByOther(w) ? 'seen 💗' : 'not seen yet'),
       ]));
+      // The postit's own rounded corner clips its hit area right where the
+      // folded triangle sits, so the last ~9px of that visible fold reads as
+      // tappable but isn't. This invisible catcher (same footprint as the
+      // fold, no border-radius of its own) closes that gap — no new graphic,
+      // just making the corner that's already there fully sensitive.
+      kids.push(el('button', { class: 'pcorner', title: 'Write a new one', onclick: (ev) => { ev.stopPropagation(); fridgeEdit(w); } }));
     } else if (r?.text) {
       const at = (r.updatedAt || '').slice(0, 10);
-      // ⭐ → your jar (sweet). 🔥 → the freezer (spicy). No labels — the reader
+      // ❤️ → your jar (sweet). 🔥 → the freezer (spicy). No labels — the reader
       // just decides, and it lands where it belongs.
       kids.push(el('span', { class: 'ptools' }, [
-        el('button', { title: 'Save to my jar', onclick: (ev) => { ev.stopPropagation(); saveToJar(w, r.text, at, false); render(); } }, '⭐'),
+        el('button', { title: 'Save to my jar', onclick: (ev) => { ev.stopPropagation(); saveToJar(w, r.text, at, false); render(); } }, '❤️'),
         el('button', { title: 'Save on ice', onclick: (ev) => { ev.stopPropagation(); saveToJar(w, r.text, at, true); render(); } }, '🔥'),
       ]));
     }
-    kids.push(el('span', { class: 'sig' }, `❤️ ${COUPLE[w].name}`));
+    kids.push(el('span', { class: 'sig' }, `— Love, ${COUPLE[w].name}`));
     const p = el('div', { class: `postit p-${w} ${w === 'chris' ? 'tilt-l' : 'tilt-r'}`, onclick: () => {
       if (mine) { fridgeEdit(w); return; }
       p.classList.remove('wob'); void p.offsetWidth; p.classList.add('wob');
@@ -632,8 +639,8 @@ function renderFridge() {
       [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, '💗')]);
   };
   const interior = el('div', { class: 'finterior' }, [
-    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(0, 3).map((f) => el('button', { class: 'food', onclick: () => serve(sweet, '🤍 From the good shelf', 'Nothing saved yet — ⭐ a note first 💗') }, f))),
-    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(3).map((f) => el('button', { class: 'food', onclick: () => serve(sweet, '🤍 From the good shelf', 'Nothing saved yet — ⭐ a note first 💗') }, f))),
+    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(0, 3).map((f) => el('button', { class: 'food', onclick: () => serve(sweet, '🤍 From the good shelf', 'Nothing saved yet — ❤️ a note first') }, f))),
+    el('div', { class: 'fshelf' }, FRIDGE_FOOD.slice(3).map((f) => el('button', { class: 'food', onclick: () => serve(sweet, '🤍 From the good shelf', 'Nothing saved yet — ❤️ a note first') }, f))),
     el('button', { class: 'fclose', onclick: () => { doorOpen = false; render(); } }, 'close the door'),
   ]);
   const fzInterior = el('div', { class: 'fzinterior' }, [
@@ -645,16 +652,24 @@ function renderFridge() {
     ]),
     el('button', { class: 'fclose', onclick: () => { freezerOpen = false; render(); } }, 'close the freezer'),
   ]);
+  // Same handle, both directions: closed it counts taps toward opening; once
+  // open, one tap on that same spot closes it right back up — no hunting for
+  // a different target to reverse the gesture.
   const doorHandle = el('div', { class: 'fhandle hd', onclick: () => {
+    if (doorOpen) { doorOpen = false; render(); return; }
     doorTaps++; clearTimeout(doorTimer); doorTimer = setTimeout(() => { doorTaps = 0; }, 1600);
     if (doorTaps >= 4) { doorTaps = 0; doorOpen = true; render(); }
+  } });
+  const freezerHandle = el('div', { class: 'fhandle hf', onclick: (ev) => {
+    if (freezerOpen) { ev.stopPropagation(); freezerOpen = false; render(); }
+    // else: let it bubble to the freezer face below, which counts the taps to open.
   } });
   // Six taps anywhere on the freezer face (its buttons stopPropagation) opens it.
   const freezer = el('div', { class: 'freezer', onclick: () => {
     if (freezerOpen) return;
     fzTaps++; clearTimeout(fzTimer); fzTimer = setTimeout(() => { fzTaps = 0; }, 1600);
     if (fzTaps >= 6) { fzTaps = 0; freezerOpen = true; render(); }
-  } }, [el('div', { class: 'fhandle hf' }), qcard, fzInterior]);
+  } }, [freezerHandle, qcard, fzInterior]);
 
   view.append(el('div', { class: 'fridge' + (doorOpen ? ' door-open' : '') + (freezerOpen ? ' freezer-open' : '') }, [
     freezer,
@@ -1653,6 +1668,17 @@ const ROSE_POS = [
   { l: 39, h: 44, r: -15, s: 12 }, { l: 62, h: 48, r: 14, s: 13 }, { l: 47, h: 66, r: -4, s: 13 },
   { l: 54, h: 42, r: 4, s: 12 }, { l: 35, h: 54, r: -20, s: 12 }, { l: 66, h: 56, r: 19, s: 12 },
 ];
+// A real bloom instead of a flat dot: 5 overlapping rounded petals fanned
+// around a darker center. Sizing is entirely inline so ROSE_POS's per-stem
+// `s` still drives it — the CSS just paints whatever box it's handed.
+function roseBloom(size) {
+  const petals = Array.from({ length: 5 }, (_, i) => el('span', { class: 'petal', style: `transform:rotate(${i * 72}deg)` }));
+  const c = Math.round(size * 0.42), off = Math.round(size * 0.29);
+  return el('span', { class: 'rosebloom', style: `width:${size}px; height:${size}px` }, [
+    ...petals,
+    el('span', { class: 'rcenter', style: `width:${c}px; height:${c}px; left:${off}px; top:${off}px` }),
+  ]);
+}
 function keepsakesSheet(keeps) {
   const rows = keeps.map((r) => el('div', { class: 'keep-row' }, [
     el('div', { class: 'kd' }, fmt(r.id.split(':')[2])),
@@ -1681,7 +1707,7 @@ function renderHistory() {
     const stems = keeps.slice(0, ROSE_POS.length).map((_, i) => {
       const p = ROSE_POS[i];
       return el('span', { class: 'rstem', style: `left:${p.l}%; height:${p.h}px; transform:rotate(${p.r}deg)` },
-        el('span', { class: 'rose', style: `width:${p.s}px; height:${p.s}px` }));
+        roseBloom(p.s));
     });
     view.append(el('div', { class: 'vasecard', onclick: () => keepsakesSheet(keeps) }, [
       el('div', { class: 'vasezone' }, [...stems, el('span', { class: 'rvase' })]),

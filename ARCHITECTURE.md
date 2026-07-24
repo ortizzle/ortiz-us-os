@@ -138,7 +138,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
   before the partner's answer synced in), and two uid-keyed
   event-record kinds like coupons: `notemiss:<writer>:<uid>` (a note
   replaced before the other phone saw it — surfaces as "💌 one you missed"
-  until `read`) and `notekeep:<owner>:<uid>` (⭐-saved snapshots of the
+  until `read`) and `notekeep:<owner>:<uid>` (❤️-saved snapshots of the
   other's notes, `{from, text, at, spicy}`). Note-loss invariant: a note is
   only archived to `notemiss` when REPLACED while unseen; 🗑 by its own
   author is an intentional retraction and archives nothing. Souvenir magnets
@@ -149,7 +149,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
   door handle); **spicy 🔥** notes (`spicy:true`) are kept OUT of the jars
   and comfort shelf and appear only via the freezer ice cream (6 taps on the
   freezer face) — the same hidden-spicy-layer pattern as the After Dark
-  bingo card. `spicy` is set at save time — the reader taps ⭐ (→ jar) or 🔥
+  bingo card. `spicy` is set at save time — the reader taps ❤️ (→ jar) or 🔥
   (→ freezer) on the partner's post-it, or ➕ composes one inside the
   freezer. Both still sync (shared, not device-local). The souvenir-magnet
   band grows the door's height as more getaways/trips are logged, so the
