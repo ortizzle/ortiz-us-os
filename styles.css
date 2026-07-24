@@ -172,6 +172,17 @@ textarea.input { resize: vertical; min-height: 60px; }
 .bcell.done { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); text-decoration: line-through; }
 .bcell.win { background: var(--accent); border-color: var(--accent); color: #fff; text-decoration: none; }
 
+/* 🧳 packing checklist */
+.packlist { display: flex; flex-direction: column; gap: 6px; }
+.packitem { font: inherit; font-size: 13.5px; font-weight: 600; text-align: left; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.packitem.done { background: var(--good-soft); border-color: var(--good); color: var(--good); text-decoration: line-through; }
+
+/* 📌 fridge door */
+.card.fridge { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.fridge-note.mine { cursor: pointer; }
+.fridge-note .f-text { margin-top: 3px; font-weight: 600; font-size: 14.5px; line-height: 1.4; white-space: pre-wrap; }
+.fridge-note .f-text.empty { color: var(--text-2); font-weight: 500; font-style: italic; }
+
 /* beyond the card — yes/no/maybe, would-you-rather, 36 questions */
 .act { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; box-shadow: var(--shadow); }
 .act .a-q { font-weight: 600; font-size: 14px; line-height: 1.4; margin-bottom: 8px; }

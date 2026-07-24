@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v30 · beyond the card';
+const APP_VERSION = 'v31 · memory lane';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -386,6 +386,109 @@ const answeredCount = (game, who, total) => {
   return c;
 };
 
+// ---------- little rhythm delights ----------
+// "This week in your story": past entries whose month-day lands within ±3
+// days of today's, from any earlier year — logging pays off as anniversaries.
+// (A straight month-day window, so a Dec 30 memory won't surface on Jan 2 —
+// rare enough to not be worth the wrap-around math.)
+function onThisWeek() {
+  const t = parse(todayStr());
+  const out = [];
+  for (const e of DB.entries) {
+    if (e.deleted || e.planned || !e.date || e.date > todayStr()) continue;
+    const d = parse(e.date);
+    if (d.getFullYear() >= t.getFullYear()) continue;
+    const anniv = new Date(t.getFullYear(), d.getMonth(), d.getDate());
+    const diff = Math.round((anniv - t) / 86400000);
+    if (Math.abs(diff) <= 3) out.push({ e, years: t.getFullYear() - d.getFullYear(), diff });
+  }
+  return out.sort((a, b) => Math.abs(a.diff) - Math.abs(b.diff)).slice(0, 3);
+}
+
+// "The fridge door": one pinned note from each of you, replaceable anytime.
+// Notes live in DB.acts (`note:<who>`) so they sync; the "new ✨" flash is
+// per-device (settings.noteSeenAt) — it marks when THIS phone last looked.
+function fridgeEdit(w) {
+  const cur = actRec(`note:${w}`)?.text || '';
+  const inp = el('textarea', { class: 'input', placeholder: 'Something small and true. Replace it whenever.' }, cur);
+  const m = modal('📌 Your note on the fridge', [
+    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `${COUPLE[other(w)].name} sees this on their Rhythm tab. One note at a time — new one replaces the old.`),
+    inp,
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      setAct(`note:${w}`, { text: inp.value.trim() });
+      m.close(); toast(inp.value.trim() ? 'Pinned 📌' : 'Note taken down'); render();
+    } }, 'Pin it'),
+  ]);
+  inp.focus();
+}
+function fridgeCard() {
+  const y = me();
+  const slots = ['chris', 'kat'].map((w) => {
+    const r = actRec(`note:${w}`);
+    const mine = w === y;
+    const fresh = Boolean(r?.text) && !mine && (r.updatedAt || '') > (DB.settings.noteSeenAt || '');
+    return el('div', { class: 'fridge-note' + (mine ? ' mine' : ''), onclick: mine ? () => fridgeEdit(w) : null }, [
+      el('div', { class: 'r-meta' }, [
+        `${COUPLE[w].emoji} ${COUPLE[w].name}${mine ? ' — tap to write' : ''} `,
+        fresh ? el('span', { class: 'chip love' }, 'new ✨') : null,
+      ]),
+      el('div', { class: 'f-text' + (r?.text ? '' : ' empty') }, r?.text || (mine ? 'Leave a note on the fridge…' : 'Nothing pinned yet')),
+    ]);
+  });
+  // Rendering counts as reading — next open, the ✨ is gone.
+  DB.settings.noteSeenAt = now(); save(DB);
+  return el('div', { class: 'card fridge' }, slots);
+}
+
+// "Tonight's question": dinner-table weight (the 36 Questions are the deep
+// end). Picked deterministically from the date, so both phones show the SAME
+// question every day with zero sync.
+const TQ_ITEMS = [
+  'What’s a tiny moment from this month you want to remember?',
+  'If we had a free weekend and zero obligations, what would tomorrow look like?',
+  'What’s something I did lately that made you feel loved?',
+  'Which of our inside jokes would confuse people the most?',
+  'What’s a meal from our story you’d eat again right now?',
+  'Where should we be for our 25th anniversary?',
+  'What’s one thing you’re proud of us for this year?',
+  'If we opened a tiny shop together, what would it sell?',
+  'What song is “us” lately?',
+  'What did you think the first time you saw me?',
+  'What’s a trip we haven’t taken that you still think about?',
+  'What’s my most lovable bad habit?',
+  'When did you last feel butterflies with me?',
+  'What’s something new you want us to try this season?',
+  'What should we cook together next?',
+  'What’s the best gift I’ve ever given you — and why did it land?',
+  'If money were no object this weekend, what would we do?',
+  'What’s a hard season we got through that you’re glad we shared?',
+  'What do you hope stays exactly the same about us in 10 years?',
+  'What’s one thing you’d love more help with lately?',
+  'Who were you at 16 — and what would that kid think of us?',
+  'What’s your favorite photo of us, and what was happening?',
+  'What’s a smell or sound that instantly means “home” to you?',
+  'If we got a do-over of any date, which one and what changes?',
+  'What’s something you’ve been meaning to tell me but keep forgetting?',
+  'What tradition should we start this year?',
+  'Which story of ours will we still be telling in 30 years?',
+  'What’s the most spontaneous thing we’ve ever done?',
+  'When do you feel most like yourself with me?',
+  'What’s on your mind this week that I can carry with you?',
+  'If our love had a flavor, what would it be? Defend it.',
+  'What’s the last thing that made you laugh until it hurt?',
+  'What are you secretly excellent at that I underrate?',
+  'What would a perfect lazy Sunday look like, hour by hour?',
+  'What’s one small luxury we should stop feeling guilty about?',
+  'Which of our dreams deserves a real plan this year?',
+  'What did this week teach you?',
+  'What’s the kindest thing a stranger ever did for you?',
+  'If we could teleport anywhere for just dinner tonight, where?',
+  'What part of our everyday will we be nostalgic for someday?',
+];
+const tonightsQuestion = () => TQ_ITEMS[Math.floor(parse(todayStr()).getTime() / 86400000) % TQ_ITEMS.length];
+
 const BINGO_FREE = 12; // center square
 function seedBingo() {
   for (const [col, key] of [[DB.bingo, 'bingo'], [DB.bingo2, 'bingo2']]) {
@@ -624,7 +727,66 @@ function render() {
   else if (current === 'ynm' || current === 'wyr') renderRevealGame(current);
   else if (current === 'q36') renderQ36();
   else if (current === 'settings') renderSettings();
+  else if (current === 'rewind') renderRewind();
   else renderHistory();
+}
+
+// ---------- 🎞 the rewind (last 12 months, computed from what's already here) ----------
+function renderRewind() {
+  const t = todayStr(), from = addDays(t, -365), fromISO = from + 'T00:00:00.000Z';
+  view.append(
+    el('h1', {}, '🎞 Your year, rewound'),
+    el('p', { class: 'sub' }, 'The last 12 months of us — built from everything you two logged.'),
+    el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'history'; setTab(); render(); } }, '← back'),
+  );
+  const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date >= from && e.date <= t);
+  if (!done.length) {
+    view.append(el('p', { class: 'muted' }, 'Nothing logged in the last year yet — go make some history, then come back. 💞'));
+    return;
+  }
+
+  view.append(el('div', { class: 'statgrid' }, CADENCES.map((c) => {
+    const n = done.filter((e) => e.type === c.type).length;
+    return el('div', { class: 'stat' }, [
+      el('span', { class: 's-emoji' }, c.emoji),
+      el('span', { class: 's-count' }, String(n)),
+      el('span', { class: 's-name' }, n === 1 ? c.title : c.title.replace(/(night|getaway|trip|occasion)$/, '$1s')),
+    ]);
+  })));
+
+  // Night of the year: highest rating, latest wins a tie.
+  const rated = done.filter((e) => e.rating).sort((a, b) => b.rating - a.rating || (a.date < b.date ? 1 : -1));
+  if (rated.length) {
+    const top = rated[0];
+    view.append(el('h2', {}, '🏆 Night of the year'));
+    view.append(el('div', { class: 'card', style: 'margin-bottom:8px' }, [
+      el('div', { class: 'card-top' }, [
+        el('div', { class: 'card-emoji' }, cadenceOf(top.type).emoji),
+        el('div', {}, [
+          el('div', { class: 'card-title' }, titleText(top)),
+          el('div', { class: 'card-cadence' }, `${fmt(top.date)} · ${'♥'.repeat(top.rating)}`),
+          memLine(top),
+        ]),
+      ]),
+    ]));
+    const avg = rated.reduce((s, e) => s + e.rating, 0) / rated.length;
+    view.append(el('p', { class: 'muted small', style: 'margin:0 0 4px' }, `Average night: ${'♥'.repeat(Math.round(avg))} (${avg.toFixed(1)}) across ${rated.length} rated.`));
+  }
+
+  view.append(el('h2', {}, '💌 Little things'));
+  const sentBy = (w) => DB.coupons.filter((c) => !c.deleted && c.from === w && (c.sentAt || '') >= from).length;
+  const squares = [...DB.bingo, ...DB.bingo2].filter((b) => b.done && b.n !== BINGO_FREE && (b.updatedAt || '') >= fromISO).length;
+  const q36n = Math.min(actRec('q36:progress')?.n || 0, Q36.length);
+  const bothYes = bothReady('ynm') ? YNM_ITEMS.filter((_, n) => actAnswer('ynm', 'chris', n) === 'yes' && actAnswer('ynm', 'kat', n) === 'yes').length : 0;
+  const bits = [
+    `💙 Chris sent ${sentBy('chris')} coupon${sentBy('chris') === 1 ? '' : 's'} · 💜 Kat sent ${sentBy('kat')}`,
+    squares ? `💗 ${squares} bingo square${squares === 1 ? '' : 's'} marked` : '',
+    q36n ? `🕯️ ${q36n} of ${Q36.length} questions deep` : '',
+    bothYes ? `💌 ${bothYes} both-yes${bothYes === 1 ? '' : 'es'} on the list` : '',
+  ].filter(Boolean);
+  for (const b of bits) view.append(el('p', { class: 'small', style: 'margin:4px 0' }, b));
+
+  view.append(el('p', { class: 'muted small center', style: 'margin-top:18px' }, 'Same time next year — keep going. 💞'));
 }
 
 // ---------- couple's goals ----------
@@ -927,6 +1089,7 @@ function eventSheet(entry) {
     if (k === 'dateEnd') continue;
     if (isSecret(k)) { pushRow(label, valBox('🔒 Kept as a surprise 💝', true)); continue; }
     const v = shownVal(entry, k);
+    if (k === 'pack' && v) { pushRow(label, packList(entry, v)); continue; }
     if (v) pushRow(label, valBox(k === 'time' ? fmtTime(v) : v));
   }
 
@@ -948,6 +1111,7 @@ function eventSheet(entry) {
 
   if (isSecret('notes')) pushRow('Notes', valBox('🔒 Kept as a surprise 💝', true));
   else { const nv = shownVal(entry, 'notes'); if (nv) pushRow('Notes', valBox(nv)); }
+  if (entry.album) body.push(linkRow([['📷 Photo album', entry.album]]));
 
   // Memories + rating make sense once it's happened.
   if (entry.date <= t) {
@@ -1027,6 +1191,31 @@ function renderRhythm() {
     ]);
   })));
 
+  if (me()) {
+    view.append(el('h2', {}, '📌 The fridge door'));
+    view.append(fridgeCard());
+  }
+
+  view.append(el('div', { class: 'card', style: 'margin-bottom:8px' }, [
+    el('div', { class: 'card-meta' }, '💬 Tonight’s question · same one on both phones'),
+    el('div', { class: 'a-q', style: 'margin:5px 0 0; font-size:15px' }, tonightsQuestion()),
+  ]));
+
+  const otw = onThisWeek();
+  if (otw.length) {
+    view.append(el('h2', {}, '💫 This week in your story'));
+    for (const { e, years } of otw) {
+      const q = e.mem ? Object.values(e.mem).find(Boolean) : '';
+      view.append(el('div', { class: 'row rec', onclick: () => logModal(e.type, { entry: e }) }, [
+        el('span', { class: 'r-emoji' }, cadenceOf(e.type).emoji),
+        el('div', { class: 'r-main' }, [
+          el('div', { class: 'r-title' }, titleText(e)),
+          el('div', { class: 'r-meta' }, `${years === 1 ? 'a year' : years + ' years'} ago · ${fmt(e.date)}${e.rating ? ' · ' + '♥'.repeat(e.rating) : ''}${q ? ' · “' + q + '”' : ''}`),
+        ]),
+      ]));
+    }
+  }
+
   view.append(el('h2', { id: 'sec-booked' }, '✅ Booked'));
   if (nearSpecial.length) for (const { s, nx } of nearSpecial) {
     view.append(el('div', { class: 'row rec', onclick: () => stashSheet(s), title: 'Your private scratchpad for this one' }, [
@@ -1046,6 +1235,52 @@ function renderRhythm() {
   for (const e of planningList) view.append(upcomingCard(e));
 }
 
+// 🎰 "Surprise us": picks tonight's plan from the idea backlog + live
+// curated picks, with a decelerating slot-machine reveal. Solves the real
+// failure mode of idea backlogs — forty options and still no decision.
+function rouletteModal() {
+  let type = 'date', spinning = false;
+  const pool = () => [
+    ...DB.ideas.filter((i) => !i.deleted && !i.done && i.type === type && !i.private).map((i) => ({ text: i.text, ideaId: i.id })),
+    ...RECS.filter((r) => r.type === type && !recState(r)).map((r) => ({ text: r.name })),
+  ];
+  const moods = [['date', '💞 Tonight-ish'], ['occasion', '🎉 Big night'], ['getaway', '🧳 Whisk us away'], ['trip', '✈️ Dream big']];
+  const chips = el('div', { class: 'seg' }, moods.map(([v, label]) =>
+    el('button', { class: v === type ? 'active' : '', onclick: (ev) => {
+      type = v; [...chips.children].forEach((c) => c.classList.toggle('active', c === ev.target)); result = null; slot.textContent = '…'; planBtn.style.display = 'none';
+    } }, label)));
+  const slot = el('div', { class: 'a-q center', style: 'font-size:17px; min-height:48px; display:flex; align-items:center; justify-content:center; text-align:center' }, '…');
+  let result = null;
+  const planBtn = el('button', { class: 'btn btn-primary', style: 'display:none', onclick: () => {
+    m.close(); logModal(type, { planned: true, prefill: result.text, ideaId: result.ideaId || null });
+  } }, 'Plan it 💞');
+  const spin = () => {
+    const p = pool();
+    if (!p.length) { toast('That pool is empty — add some ideas first'); return; }
+    if (spinning) return;
+    spinning = true; planBtn.style.display = 'none';
+    let hops = 12 + Math.floor(p.length % 5), delay = 60;
+    const hop = () => {
+      slot.textContent = p[Math.floor(Math.random() * p.length)].text;
+      if (--hops > 0) { delay *= 1.28; setTimeout(hop, delay); }
+      else {
+        result = p[Math.floor(Math.random() * p.length)];
+        slot.textContent = `✨ ${result.text} ✨`;
+        planBtn.style.display = ''; spinning = false;
+      }
+    };
+    hop();
+  };
+  const m = modal('🎰 Surprise us', [
+    el('p', { class: 'muted small', style: 'margin:0 0 10px' }, 'Can’t decide? Don’t. Pick a mood, pull the lever — it draws from your ideas and the curated picks.'),
+    chips, slot,
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+    el('button', { class: 'btn', onclick: spin }, '🎰 Spin'),
+    planBtn,
+  ]);
+}
+
 let ideaFilter = 'all';
 let privateMode = false; // add-box lock: new ideas stay on this device, never sync
 function renderIdeas() {
@@ -1055,6 +1290,7 @@ function renderIdeas() {
     ['all', 'All'], ...CADENCES.map((c) => [c.type, `${c.emoji} ${c.title.split(' ')[0]}`]), ['private', '🔒 Private'],
   ].map(([v, label]) => el('button', { class: ideaFilter === v ? 'active' : '', onclick: () => { ideaFilter = v; render(); } }, label)));
   view.append(seg);
+  view.append(el('div', { style: 'margin:-6px 0 12px' }, el('button', { class: 'btn btn-sm', onclick: rouletteModal }, '🎰 Surprise us')));
   if (ideaFilter === 'private') view.append(el('p', { class: 'muted small', style: 'margin: -6px 0 12px' }, 'Your eyes only — these live on this device and never sync.'));
 
   const addType = (ideaFilter === 'all' || ideaFilter === 'private') ? 'date' : ideaFilter;
@@ -1186,6 +1422,7 @@ function recModal(r) {
 
 function renderHistory() {
   view.append(el('h1', {}, 'History'), el('p', { class: 'sub' }, 'Everything you’ve shared, most recent first.'));
+  view.append(el('button', { class: 'btn btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'rewind'; render(); } }, '🎞 Rewind — your year together'));
   const t = todayStr();
   const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date <= t).sort((a,b) => a.date < b.date ? 1 : -1);
   const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
@@ -1220,6 +1457,7 @@ function historyRow(e, upcoming) {
       el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
       memLine(e),
     ]),
+    e.album ? el('a', { class: 'btn btn-ghost btn-sm', href: e.album, target: '_blank', rel: 'noopener', title: 'Photo album' }, '📷') : null,
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => { e.deleted = true; e.updatedAt = now(); commit(); render(); } }, '✕'),
     chip ? el('div', { class: 'r-bottom' }, chip) : null,
@@ -1348,6 +1586,11 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   }
   field('notes', 'Notes');
 
+  // Shared-album link (iCloud / Google Photos) — the deliberate photo
+  // strategy: one synced URL, zero image storage (see SPEC non-goals).
+  const album = el('input', { class: 'input', placeholder: 'Shared album URL (iCloud, Google Photos…)', value: entry?.album || '' });
+  if (planned || entry) body.push(el('label', { class: 'field-label' }, '📷 Photo album link'), album);
+
   // Memories + rating make sense once it's happened (or when editing a past entry).
   const showExtras = !planned || (entry && entry.date <= todayStr());
   const memInputs = {};
@@ -1380,6 +1623,8 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     }
     if (Object.keys(sec).length) DB.secrets[e.id] = sec; else delete DB.secrets[e.id];
     e.hidden = hidden;
+    const av = album.value.trim();
+    e.album = av ? (/^https?:\/\//i.test(av) ? av : 'https://' + av) : '';
     if (canHide) e.cover = cover.value.trim();  // owner-only, same gate as the locks
     if (iOwnEvent) e.private = wholePrivate;
     if (entry && planned) e.status = statusVal; // toggle from the sheet
@@ -1602,6 +1847,27 @@ function renderRevealGame(game) {
   view.append(el('p', { class: 'muted small center', style: 'margin-top:14px' }, 'A no is a no — celebrate the overlaps, don’t litigate the rest. 💗'));
 }
 
+// What-to-pack as a tickable checklist (booked details view). The text field
+// stays the source of truth — items are parsed from commas/newlines, and
+// checked state is the item strings themselves (entry.packDone, synced), so
+// renaming an item in the text simply resets its tick. One item = plain text.
+function packList(entry, text) {
+  const items = [...new Set(text.split(/[,\n]/).map((s) => s.trim()).filter(Boolean))];
+  if (items.length < 2) return el('div', { class: 'input' }, text);
+  const wrap = el('div', { class: 'packlist' });
+  for (const it of items) {
+    const has = () => (entry.packDone || []).includes(it);
+    const btn = el('button', { class: 'packitem' + (has() ? ' done' : ''), onclick: () => {
+      entry.packDone = has() ? entry.packDone.filter((x) => x !== it) : [...(entry.packDone || []), it];
+      entry.updatedAt = now(); commit();
+      btn.classList.toggle('done', has());
+      btn.firstChild.textContent = has() ? '☑' : '☐';
+    } }, [el('span', {}, has() ? '☑' : '☐'), ` ${it}`]);
+    wrap.append(btn);
+  }
+  return wrap;
+}
+
 // ---------- the 36 questions ----------
 let eyeTimer = null;
 function renderQ36() {
@@ -1683,10 +1949,56 @@ function renderSettings() {
         commit(); applyTheme(); toast('Saved'); render();
       } }, 'Save')),
     ]),
+    el('div', { class: 'card', style: 'margin-top:12px' }, [
+      el('label', { class: 'field-label', style: 'margin-top:0' }, '💾 Backup & restore'),
+      el('p', { class: 'muted small', style: 'margin:0 0 10px' }, 'Downloads EVERYTHING on this phone — including 🔒 surprises, 🎁 stashes, private ideas, and your keys. Keep the file somewhere private. Restore merges (newest wins) and never wipes newer local data.'),
+      el('div', { class: 'card-actions' }, [
+        el('button', { class: 'btn btn-sm', onclick: backupDownload }, '⬇ Download backup'),
+        el('button', { class: 'btn btn-sm', onclick: restorePick }, '⬆ Restore from file'),
+      ]),
+    ]),
     el('p', { class: 'muted small center', style: 'margin:16px 0 0' }, `Us OS · ${APP_VERSION}`),
   );
 }
 const hasKey = () => Boolean(DB.settings.apiKey);
+
+// ---------- backup & restore ----------
+// The one hole in the local-first model: 🔒 secrets, 🎁 stashes, and private
+// ideas live ONLY on this phone — clear the browser and they're gone. Backup
+// captures the WHOLE store (settings and keys included — the file is as
+// sensitive as the phone). Restore MERGES, never replaces: mergeCol for
+// record collections (newest updatedAt wins, same as sync), local-wins for
+// the device-local objects — so restoring an old file can't clobber newer
+// data, and restoring onto a fresh phone brings everything back.
+function backupDownload() {
+  const blob = new Blob([JSON.stringify({ app: 'ortiz-us-os', at: now(), data: DB }, null, 1)], { type: 'application/json' });
+  const a = el('a', { href: URL.createObjectURL(blob), download: `us-os-backup-${todayStr()}.json` });
+  document.body.append(a); a.click(); a.remove();
+  toast('Backup downloaded — keep it somewhere private');
+}
+function restoreData(bk) {
+  if (bk?.app !== 'ortiz-us-os' || !bk.data) { toast('That doesn’t look like an Us OS backup'); return false; }
+  const d = bk.data;
+  for (const k of ['entries', 'ideas', 'tickets', 'coupons', 'bingo', 'bingo2', 'recstate', 'acts']) DB[k] = mergeCol(DB[k] || [], d[k]);
+  for (const k of ['secrets', 'stash', 'deepcache']) DB[k] = { ...(d[k] || {}), ...(DB[k] || {}) };
+  DB.settings = { ...(d.settings || {}), ...DB.settings };
+  save(DB); scheduleSync();
+  return true;
+}
+function restorePick() {
+  const inp = el('input', { type: 'file', accept: 'application/json,.json', style: 'display:none' });
+  inp.addEventListener('change', () => {
+    const f = inp.files?.[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        if (restoreData(JSON.parse(rd.result))) { toast('Backup restored ✓'); render(); }
+      } catch { toast('Couldn’t read that file'); }
+    };
+    rd.readAsText(f);
+  });
+  document.body.append(inp); inp.click(); inp.remove();
+}
 
 // ---------- gist sync (shared with Kat; same model as Home OS) ----------
 // One private Gist, one JSON file; both phones merge per-record by id,
@@ -1764,7 +2076,7 @@ async function syncNow(manual) {
   } finally { syncing = false; }
 }
 // Debug/verification hook (harmless in production, handy on device too).
-window.__us = { sharedPayload, mergeCol };
+window.__us = { sharedPayload, mergeCol, restoreData };
 
 // ---------- Claude idea generation (browser-side, like Home OS) ----------
 async function generateIdeas(type, btn) {

@@ -31,7 +31,7 @@ full shape. Key invariants:
 - **Goal tickets, bingo squares (both cards), curated-pick reactions, love
   coupons, and couple-activity state use deterministic ids** (`goal:kind:n`,
   `bingo:n`, `bingo2:n`, `rec:<name>`, `coupon:<kind>:<n>`, `ynm:<who>:<n>`,
-  `wyr:<who>:<n>`, `<game>:ready:<who>`, `q36:progress`) — this is what keeps
+  `wyr:<who>:<n>`, `<game>:ready:<who>`, `q36:progress`, `note:<who>`) — this is what keeps
   both phones from doubling the seeded sets and lets any real tap win the
   merge. New goals go in `GOALS`; never seed shared fixed-size collections
   with random ids.
@@ -41,7 +41,7 @@ full shape. Key invariants:
   records for unsent coupons.
 - **Curated picks (`RECS`), special dates (`SPECIAL`), memory questions
   (`MEMQ`), bingo items, and activity content (`YNM_ITEMS`, `WYR_ITEMS`,
-  `Q36`) are static data in `app.js`** — edit in code, don't move them into
+  `Q36`, `TQ_ITEMS`) are static data in `app.js`** — edit in code, don't move them into
   the store. The "hidden until both ready" reveal in the answer games is a
   UI-level game mechanic — those answers DO sync (unlike secrets/private
   ideas); don't promote it to a privacy guarantee or vice versa.

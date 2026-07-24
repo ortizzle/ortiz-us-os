@@ -128,6 +128,54 @@ Three sections with jump-chips (a mini table of contents) at the top:
   past booked plan stays in Rhythm's Booked list as a nudge to log how it
   went; a still-*planning* past plan stays put (it never got confirmed).
 
+### Rhythm delights (v31)
+- **📌 The fridge door** — one pinned note per person (`acts` record
+  `note:<who>`, synced; replace anytime, save-empty takes it down). A fresh
+  note from the other of you flashes "new ✨" once per device
+  (`settings.noteSeenAt`, local-only — rendering counts as reading).
+  Requires `settings.who`.
+- **💬 Tonight's question** — 40 dinner-table-weight questions (`TQ_ITEMS`,
+  static; the 36 Questions stay the deep end), picked deterministically from
+  the date so both phones show the same one each day with zero sync.
+- **💫 This week in your story** — past entries whose month-day falls within
+  ±3 days of today, from any earlier year, shown as tappable memory rows
+  (years-ago, hearts, a saved memory quote). Straight month-day window — no
+  Dec/Jan wrap-around, deliberately.
+
+### 🎞 The Rewind (v31)
+Reached from History: the trailing 12 months computed purely from existing
+records — counts per cadence (stat tiles), the highest-rated "night of the
+year" with saved memories (latest wins ties), average rating, coupons sent
+per person, bingo squares marked in the window (seeds and FREE squares
+excluded), 36 Questions progress, and the yes/no/maybe both-yes count (only
+once revealed). Nothing new is stored.
+
+### Planning quality-of-life (v31)
+- **🎰 Surprise us** (Ideas tab) — mood chips (tonight-ish / big night /
+  whisk us away / dream big → the four cadences), then a decelerating
+  slot-machine draw over open ideas + live curated picks. "Plan it" opens
+  the plan sheet prefilled (marking a source idea done on save). Private
+  ideas are excluded from the draw so a surprise can't leak into a shared
+  plan title.
+- **🧳 Packing checklist** — in the booked details view, the what-to-pack
+  text renders as a tickable checklist (items parsed from commas/newlines;
+  ticked state is the item strings in `entry.packDone`, synced with the
+  entry — renaming an item resets its tick). Single-item and secret pack
+  fields render as before.
+- **📷 Photo album links** — `entry.album`, one synced URL per event
+  (scheme auto-prefixed), editable on plans and existing entries; a 📷 link
+  in the booked details sheet and on History rows. This is the deliberate
+  photo strategy: link a shared album, store no images.
+
+### 💾 Backup & restore (v31)
+Settings card. Download captures the ENTIRE store — including device-local
+secrets, stashes, private ideas, and settings/keys (the file is as sensitive
+as the phone; the UI says so). Restore **merges, never replaces**: `mergeCol`
+per record collection (newest `updatedAt` wins, same as sync), local-wins
+for `secrets`/`stash`/`deepcache` objects, and `settings` fills gaps only —
+so an old file can't clobber newer data, and a fresh phone recovers
+everything. `restoreData` is exposed on `window.__us` for debugging.
+
 ### 💗 Easter eggs (two layers)
 - Tapping the topbar heart 6 times opens "Just us": a couples' bingo card,
   25 squares (center free) of sweet, intimate prompts — flowers with
@@ -237,8 +285,9 @@ unlike 🔒 secrets).
   infrastructure, intentionally.
 - Rich media (photos, attachments) on entries — text notes only, for now.
   (Photos were considered and deliberately deferred: base64 images would
-  blow past localStorage and Gist size limits quickly. Revisit as a link to
-  a shared album, or a separate storage backend.)
+  blow past localStorage and Gist size limits quickly. The v31 answer is
+  `entry.album` — one link to a shared iCloud/Google Photos album per
+  event; actual image storage remains out of scope.)
 - Notifications/reminders — the app shows the countdown when opened; it
   doesn't push anything. (One deliberate exception: the 💌 coupon teaser
   email, which rides on a user-deployed Apps Script rather than a backend.)
