@@ -301,7 +301,20 @@ unlike 🔒 secrets).
   (out of 5) and notes.
 - Delete any entry.
 
-### Settings
+### Settings (v37: appearance up front, everything else collapsed)
+- **Appearance** — light / dark / auto, a single segmented pill at the top
+  of the page. Tapping applies immediately (`applyTheme()`) — no Save step,
+  since it's the control used every visit.
+- **Account, sync & advanced** — This phone belongs to, home city +
+  interests, Claude API key, coupon email nudge, and shared sync (token +
+  Gist ID) all live inside one collapsible row, since they're set once and
+  rarely touched again. Collapsed by default (`settingsExpanded`, resets to
+  `false` on every app boot) — except it force-opens before "This phone
+  belongs to" is set (first-run setup), and a Save keeps it open through
+  that session so the confirmation is visible. The collapsed row's subtitle
+  summarizes current state (who, sync on/off, ✨ key set) so the essentials
+  are still glanceable without expanding. 💾 Backup & restore sits inside
+  the same collapsed area.
 - This phone belongs to — 💙 Chris / 💜 Kat, powers the coupon send/receive
   split. Device-local, never synced.
 - Coupon email nudge — optional Apps Script web-app URL for the 💌 teaser
@@ -312,7 +325,6 @@ unlike 🔒 secrets).
 - Shared sync — GitHub token (gist scope) + Gist ID, same Gist Home OS uses,
   writing its own file inside it. Manual "Sync now" plus automatic
   background sync.
-- Appearance — light / dark / auto.
 
 ## Non-goals
 
