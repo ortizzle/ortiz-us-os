@@ -152,12 +152,16 @@ Everything is discovery — the tab carries no instruction text.
   (`note:seen:<who>`) shows the writer "seen 💗" (coupon-style); replacing
   a note the other hasn't read warns first and archives the old text as
   **💌 one you missed** (`notemiss:`) on their fridge until opened; 🗑 on
-  your own note is an intentional retraction — no archive. ⭐ snapshots the
-  other's note into your jar (`notekeep:`); the note stays pinned.
+  your own note is an intentional retraction — no archive. The reader saves
+  the other's note with ⭐ (→ their jar, sweet) or 🔥 (→ the freezer, spicy)
+  — no labels, it just lands where they choose (`notekeep:`); the note stays
+  pinned either way.
 - **Door — souvenir magnets.** One per logged getaway/trip, shape derived
   from title/loc keywords (mine cart, mesa, pine, eighth-note, sun-over-
   wave; hashed-color oval + cadence emoji as fallback) — deterministic, so
-  both phones render the identical fridge. Tap = wobble; double-tap opens
+  both phones render the identical fridge. The magnet band grows the door's
+  height as more trips are logged, so the fridge elongates to keep them all
+  on its face. Tap = wobble; double-tap opens
   the memory (`eventSheet`). Up to two ghost-outlined "someday" magnets
   from planned getaways/trips tap through to Ideas.
 - **Three easter eggs.** C ♥ K letter magnets: six quick taps opens Just us

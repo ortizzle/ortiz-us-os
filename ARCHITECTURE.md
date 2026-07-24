@@ -143,11 +143,14 @@ One `localStorage` key, `ortiz-us-os`, holding:
   title/loc keywords, deterministic per id) — no records of their own.
   `notekeep.spicy` splits the two reveals: **sweet** notes (`spicy:false`)
   fill the History jars and the door's comfort-food shelf (4 taps on the
-  door handle); **spicy 🔥** notes (`spicy:true`, composed in the freezer)
-  are kept OUT of the jars and comfort shelf and appear only via the freezer
-  ice cream (6 taps on the freezer face) — the same hidden-spicy-layer
-  pattern as the After Dark bingo card. Both still sync (shared, not
-  device-local).
+  door handle); **spicy 🔥** notes (`spicy:true`) are kept OUT of the jars
+  and comfort shelf and appear only via the freezer ice cream (6 taps on the
+  freezer face) — the same hidden-spicy-layer pattern as the After Dark
+  bingo card. `spicy` is set at save time — the reader taps ⭐ (→ jar) or 🔥
+  (→ freezer) on the partner's post-it, or ➕ composes one inside the
+  freezer. Both still sync (shared, not device-local). The souvenir-magnet
+  band grows the door's height as more getaways/trips are logged, so the
+  fridge elongates to keep every magnet on its face.
 - `entries.album` is one synced shared-album URL per event (📷 links in the
   details sheet and History); `entries.packDone` is the ticked subset of the
   parsed what-to-pack items (item strings, so a rename resets its tick).

@@ -202,7 +202,10 @@ textarea.input { resize: vertical; min-height: 60px; }
    door is a flex column so its notes sit up top and magnets settle at the
    bottom, filling the tall compartment. */
 .freezer { position: relative; padding: 24px 22px 26px 42px; border-bottom: 3px solid var(--steel-edge); min-height: 200px; }
-.fdoor { position: relative; padding: 24px 22px 22px 42px; min-height: 500px;
+/* min-height gives the sparse door its ~2/3 look; as souvenir magnets pile up
+   they wrap into more rows and the door grows past it — the fridge elongates to
+   keep every magnet on its face. */
+.fdoor { position: relative; padding: 24px 22px 28px 42px; min-height: 500px;
   display: flex; flex-direction: column; justify-content: space-between; }
 .fhandle { position: absolute; left: 14px; width: 9px; border-radius: 999px;
   background: linear-gradient(90deg, var(--steel-a), var(--steel-b));
