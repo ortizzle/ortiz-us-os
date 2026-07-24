@@ -209,4 +209,4 @@ npx serve .
 
 ---
 
-*Current build: v33 · fridge polish.*
+*Current build: v34 · classic fridge.*
