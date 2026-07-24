@@ -1051,6 +1051,7 @@ function eventSheet(entry) {
 
   if (isSecret('notes')) pushRow('Notes', valBox('🔒 Kept as a surprise 💝', true));
   else { const nv = shownVal(entry, 'notes'); if (nv) pushRow('Notes', valBox(nv)); }
+  if (entry.album) body.push(linkRow([['📷 Photo album', entry.album]]));
 
   // Memories + rating make sense once it's happened.
   if (entry.date <= t) {
@@ -1348,6 +1349,7 @@ function historyRow(e, upcoming) {
       el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
       memLine(e),
     ]),
+    e.album ? el('a', { class: 'btn btn-ghost btn-sm', href: e.album, target: '_blank', rel: 'noopener', title: 'Photo album' }, '📷') : null,
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
     el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => { e.deleted = true; e.updatedAt = now(); commit(); render(); } }, '✕'),
     chip ? el('div', { class: 'r-bottom' }, chip) : null,
@@ -1476,6 +1478,11 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   }
   field('notes', 'Notes');
 
+  // Shared-album link (iCloud / Google Photos) — the deliberate photo
+  // strategy: one synced URL, zero image storage (see SPEC non-goals).
+  const album = el('input', { class: 'input', placeholder: 'Shared album URL (iCloud, Google Photos…)', value: entry?.album || '' });
+  if (planned || entry) body.push(el('label', { class: 'field-label' }, '📷 Photo album link'), album);
+
   // Memories + rating make sense once it's happened (or when editing a past entry).
   const showExtras = !planned || (entry && entry.date <= todayStr());
   const memInputs = {};
@@ -1508,6 +1515,8 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
     }
     if (Object.keys(sec).length) DB.secrets[e.id] = sec; else delete DB.secrets[e.id];
     e.hidden = hidden;
+    const av = album.value.trim();
+    e.album = av ? (/^https?:\/\//i.test(av) ? av : 'https://' + av) : '';
     if (canHide) e.cover = cover.value.trim();  // owner-only, same gate as the locks
     if (iOwnEvent) e.private = wholePrivate;
     if (entry && planned) e.status = statusVal; // toggle from the sheet
