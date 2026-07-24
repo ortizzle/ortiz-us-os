@@ -131,10 +131,14 @@ const linkRow = (pairs) => el('div', { class: 'card-actions', style: 'margin-top
   pairs.map(([label, href]) => el('a', { class: 'btn btn-sm', href, target: '_blank', rel: 'noopener' }, label)));
 const gSearch = (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`;
 const gMap = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-function lookupLinks(query, type) {
-  const money = type === 'getaway' || type === 'trip'
-    ? ['🏨 Stays & prices', gSearch(query + ' hotels prices')]
-    : ['📋 Menu & prices', gSearch(query + ' menu prices')];
+function lookupLinks(query, type, mode) {
+  // mode 'event': the location is a venue (dinner is elsewhere) — tickets
+  // beat a menu that doesn't exist.
+  const money = mode === 'event'
+    ? ['🎟 Tickets & info', gSearch(query + ' tickets')]
+    : type === 'getaway' || type === 'trip'
+      ? ['🏨 Stays & prices', gSearch(query + ' hotels prices')]
+      : ['📋 Menu & prices', gSearch(query + ' menu prices')];
   return linkRow([money, ['📍 Map & hours', gMap(query)], ['⭐ Reviews', `https://www.yelp.com/search?find_desc=${encodeURIComponent(query)}`]]);
 }
 // For a SECRET location: only the city ever reaches a search URL, never the
@@ -512,7 +516,7 @@ function fmtTime(t) { if (!t) return ''; const [h, m] = t.split(':').map(Number)
 // keys) so the other phone knows to show a 🔒 teaser. shownVal returns the
 // real value if THIS phone owns the secret, null if it's the partner's
 // surprise, or the plain synced value otherwise.
-const HIDEABLE = ['title', 'loc', 'time', 'dress', 'dateEnd', 'pack', 'notes'];
+const HIDEABLE = ['title', 'loc', 'eat', 'time', 'dress', 'dateEnd', 'pack', 'notes'];
 const iOwnSecret = (e, k) => Boolean(DB.secrets[e.id] && k in DB.secrets[e.id]);
 function shownVal(e, k) {
   if (iOwnSecret(e, k)) return DB.secrets[e.id][k];
@@ -1099,15 +1103,20 @@ function eventSheet(entry) {
   // "area" links so the exact spot never lands in a search URL.
   const titleQ = shownVal(entry, 'title');
   const realLoc = shownVal(entry, 'loc');
+  const realEat = shownVal(entry, 'eat');
+  const eatVisible = Boolean(realEat) && !(entry.hidden || []).includes('eat');
   if (titleQ) body.push(linkRow([['🔗 Look it up', gSearch([titleQ, realLoc || ''].filter(Boolean).join(' '))]]));
   if (realLoc) {
-    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, entry.type));
+    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, entry.type, eatVisible ? 'event' : undefined));
     else {
       const area = cityOf(realLoc) || DB.settings.city;
       if (area) body.push(areaLinks(area),
         el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
     }
   }
+  if (eatVisible) body.push(
+    el('div', { class: 'card-meta', style: 'margin-top:10px' }, '🍽 The dinner spot'),
+    lookupLinks(realEat, 'date'));
 
   if (isSecret('notes')) pushRow('Notes', valBox('🔒 Kept as a surprise 💝', true));
   else { const nv = shownVal(entry, 'notes'); if (nv) pushRow('Notes', valBox(nv)); }
@@ -1474,13 +1483,15 @@ const MEMQ = {
 };
 const PLAN_LEAD = { date: 14, getaway: 45, trip: 180, occasion: 30 }; // getaways & trips get planned early
 // Planning details per cadence — the stuff worth knowing before you go.
+// `eat` covers the concert-plus-dinner shape: the event's location is the
+// venue, dinner is somewhere else — each gets its own lookup links.
 const PLANQ = {
-  date:     [['loc', 'Location'], ['time', 'Time'], ['dress', 'Dress code']],
-  occasion: [['loc', 'Location'], ['time', 'Time'], ['dress', 'Dress code']],
+  date:     [['loc', 'Location'], ['eat', 'Dinner spot (if different)'], ['time', 'Time'], ['dress', 'Dress code']],
+  occasion: [['loc', 'Location'], ['eat', 'Dinner spot (if different)'], ['time', 'Time'], ['dress', 'Dress code']],
   getaway:  [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
   trip:     [['loc', 'Location'], ['dateEnd', 'Through (last day)'], ['pack', 'What to pack']],
 };
-const PLAN_HINT = { title: 'Name it — “Odyssey at Harkins”', loc: 'Where is it?', dress: 'casual / dressy / fancy', pack: 'Swimsuits, sunscreen, hiking shoes…', notes: 'Anything worth remembering' };
+const PLAN_HINT = { title: 'Name it — “Odyssey at Harkins”', loc: 'Where is it?', eat: 'Eating somewhere else? Name it', dress: 'casual / dressy / fancy', pack: 'Swimsuits, sunscreen, hiking shoes…', notes: 'Anything worth remembering' };
 const FIELD_TYPE = { time: 'time', dateEnd: 'date' };
 function logModal(type, { planned = false, prefill = '', ideaId = null, entry = null } = {}) {
   const c = cadenceOf(type);
@@ -1576,14 +1587,19 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // exact address never reaches a search URL (or your browser history),
   // only the home city does. Non-owners see no location, so no links.
   const realLoc = entry && shownVal(entry, 'loc');
+  const realEat = entry && shownVal(entry, 'eat');
+  const eatShown = Boolean(realEat) && !(entry.hidden || []).includes('eat');
   if (realLoc) {
-    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, type));
+    if (!(entry.hidden || []).includes('loc')) body.push(lookupLinks(realLoc, type, eatShown ? 'event' : undefined));
     else {
       const area = cityOf(realLoc) || DB.settings.city;
       if (area) body.push(areaLinks(area),
         el('p', { class: 'muted small', style: 'margin:6px 0 0' }, `🔒 Area only — “${area}” is searchable; the exact spot isn’t.`));
     }
   }
+  if (eatShown) body.push(
+    el('div', { class: 'card-meta', style: 'margin-top:8px' }, '🍽 The dinner spot'),
+    lookupLinks(realEat, 'date'));
   field('notes', 'Notes');
 
   // Shared-album link (iCloud / Google Photos) — the deliberate photo
