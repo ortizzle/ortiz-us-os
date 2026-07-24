@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v38 · fridge & rose polish';
+const APP_VERSION = 'v39 · rose redesign';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -1668,15 +1668,14 @@ const ROSE_POS = [
   { l: 39, h: 44, r: -15, s: 12 }, { l: 62, h: 48, r: 14, s: 13 }, { l: 47, h: 66, r: -4, s: 13 },
   { l: 54, h: 42, r: 4, s: 12 }, { l: 35, h: 54, r: -20, s: 12 }, { l: 66, h: 56, r: 19, s: 12 },
 ];
-// A real bloom instead of a flat dot: 5 overlapping rounded petals fanned
-// around a darker center. Sizing is entirely inline so ROSE_POS's per-stem
-// `s` still drives it — the CSS just paints whatever box it's handed.
+// A closed bud instead of a flat dot: 3 big overlapping comma-shaped petals,
+// staggered in depth so it still reads as a rose solo, not just in a bunch.
 function roseBloom(size) {
-  const petals = Array.from({ length: 5 }, (_, i) => el('span', { class: 'petal', style: `transform:rotate(${i * 72}deg)` }));
-  const c = Math.round(size * 0.42), off = Math.round(size * 0.29);
-  return el('span', { class: 'rosebloom', style: `width:${size}px; height:${size}px` }, [
-    ...petals,
-    el('span', { class: 'rcenter', style: `width:${c}px; height:${c}px; left:${off}px; top:${off}px` }),
+  const p1 = Math.round(size * 0.88), p2 = Math.round(size * 0.82), p3 = Math.round(size * 0.76);
+  return el('span', { class: 'rosewrap', style: `width:${size}px; height:${size}px` }, [
+    el('span', { class: 'wp wp3', style: `width:${p3}px; height:${p3}px; left:${size - p3}px; top:${Math.round(size * 0.04)}px; transform:rotate(105deg)` }),
+    el('span', { class: 'wp wp2', style: `width:${p2}px; height:${p2}px; left:${Math.round(size * 0.01)}px; top:${Math.round(size * 0.14)}px; transform:rotate(-32deg)` }),
+    el('span', { class: 'wp wp1', style: `width:${p1}px; height:${p1}px; left:${Math.round(size * 0.09)}px; top:0; transform:rotate(14deg)` }),
   ]);
 }
 function keepsakesSheet(keeps) {
