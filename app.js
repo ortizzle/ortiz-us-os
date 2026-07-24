@@ -1030,6 +1030,7 @@ function eventSheet(entry) {
     if (k === 'dateEnd') continue;
     if (isSecret(k)) { pushRow(label, valBox('🔒 Kept as a surprise 💝', true)); continue; }
     const v = shownVal(entry, k);
+    if (k === 'pack' && v) { pushRow(label, packList(entry, v)); continue; }
     if (v) pushRow(label, valBox(k === 'time' ? fmtTime(v) : v));
   }
 
@@ -1737,6 +1738,27 @@ function renderRevealGame(game) {
     view.append(el('div', { class: 'act' }, kids));
   });
   view.append(el('p', { class: 'muted small center', style: 'margin-top:14px' }, 'A no is a no — celebrate the overlaps, don’t litigate the rest. 💗'));
+}
+
+// What-to-pack as a tickable checklist (booked details view). The text field
+// stays the source of truth — items are parsed from commas/newlines, and
+// checked state is the item strings themselves (entry.packDone, synced), so
+// renaming an item in the text simply resets its tick. One item = plain text.
+function packList(entry, text) {
+  const items = [...new Set(text.split(/[,\n]/).map((s) => s.trim()).filter(Boolean))];
+  if (items.length < 2) return el('div', { class: 'input' }, text);
+  const wrap = el('div', { class: 'packlist' });
+  for (const it of items) {
+    const has = () => (entry.packDone || []).includes(it);
+    const btn = el('button', { class: 'packitem' + (has() ? ' done' : ''), onclick: () => {
+      entry.packDone = has() ? entry.packDone.filter((x) => x !== it) : [...(entry.packDone || []), it];
+      entry.updatedAt = now(); commit();
+      btn.classList.toggle('done', has());
+      btn.firstChild.textContent = has() ? '☑' : '☐';
+    } }, [el('span', {}, has() ? '☑' : '☐'), ` ${it}`]);
+    wrap.append(btn);
+  }
+  return wrap;
 }
 
 // ---------- the 36 questions ----------
