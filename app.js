@@ -442,6 +442,53 @@ function fridgeCard() {
   return el('div', { class: 'card fridge' }, slots);
 }
 
+// "Tonight's question": dinner-table weight (the 36 Questions are the deep
+// end). Picked deterministically from the date, so both phones show the SAME
+// question every day with zero sync.
+const TQ_ITEMS = [
+  'What’s a tiny moment from this month you want to remember?',
+  'If we had a free weekend and zero obligations, what would tomorrow look like?',
+  'What’s something I did lately that made you feel loved?',
+  'Which of our inside jokes would confuse people the most?',
+  'What’s a meal from our story you’d eat again right now?',
+  'Where should we be for our 25th anniversary?',
+  'What’s one thing you’re proud of us for this year?',
+  'If we opened a tiny shop together, what would it sell?',
+  'What song is “us” lately?',
+  'What did you think the first time you saw me?',
+  'What’s a trip we haven’t taken that you still think about?',
+  'What’s my most lovable bad habit?',
+  'When did you last feel butterflies with me?',
+  'What’s something new you want us to try this season?',
+  'What should we cook together next?',
+  'What’s the best gift I’ve ever given you — and why did it land?',
+  'If money were no object this weekend, what would we do?',
+  'What’s a hard season we got through that you’re glad we shared?',
+  'What do you hope stays exactly the same about us in 10 years?',
+  'What’s one thing you’d love more help with lately?',
+  'Who were you at 16 — and what would that kid think of us?',
+  'What’s your favorite photo of us, and what was happening?',
+  'What’s a smell or sound that instantly means “home” to you?',
+  'If we got a do-over of any date, which one and what changes?',
+  'What’s something you’ve been meaning to tell me but keep forgetting?',
+  'What tradition should we start this year?',
+  'Which story of ours will we still be telling in 30 years?',
+  'What’s the most spontaneous thing we’ve ever done?',
+  'When do you feel most like yourself with me?',
+  'What’s on your mind this week that I can carry with you?',
+  'If our love had a flavor, what would it be? Defend it.',
+  'What’s the last thing that made you laugh until it hurt?',
+  'What are you secretly excellent at that I underrate?',
+  'What would a perfect lazy Sunday look like, hour by hour?',
+  'What’s one small luxury we should stop feeling guilty about?',
+  'Which of our dreams deserves a real plan this year?',
+  'What did this week teach you?',
+  'What’s the kindest thing a stranger ever did for you?',
+  'If we could teleport anywhere for just dinner tonight, where?',
+  'What part of our everyday will we be nostalgic for someday?',
+];
+const tonightsQuestion = () => TQ_ITEMS[Math.floor(parse(todayStr()).getTime() / 86400000) % TQ_ITEMS.length];
+
 const BINGO_FREE = 12; // center square
 function seedBingo() {
   for (const [col, key] of [[DB.bingo, 'bingo'], [DB.bingo2, 'bingo2']]) {
@@ -1087,6 +1134,11 @@ function renderRhythm() {
     view.append(el('h2', {}, '📌 The fridge door'));
     view.append(fridgeCard());
   }
+
+  view.append(el('div', { class: 'card', style: 'margin-bottom:8px' }, [
+    el('div', { class: 'card-meta' }, '💬 Tonight’s question · same one on both phones'),
+    el('div', { class: 'a-q', style: 'margin:5px 0 0; font-size:15px' }, tonightsQuestion()),
+  ]));
 
   const otw = onThisWeek();
   if (otw.length) {
