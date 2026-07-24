@@ -132,7 +132,10 @@ One `localStorage` key, `ortiz-us-os`, holding:
   writer's "seen 💗", same trick as coupon `seenAt`), today's answers
   (`tq:ans:<who>`, `{d, v}` — ONE record per person, overwritten daily so
   the gist never accumulates stale answers), kept Q&As (`tq:keep:<date>`,
-  `{q, ca, ka}` snapshot → roses in History's vase), and two uid-keyed
+  `{q, ca, ka}` snapshot → roses in History's vase; keeping is **gated on
+  both people having answered** so a rose always carries the full Q&A, and
+  today's snapshot **self-heals** from the live answers if it was taken
+  before the partner's answer synced in), and two uid-keyed
   event-record kinds like coupons: `notemiss:<writer>:<uid>` (a note
   replaced before the other phone saw it — surfaces as "💌 one you missed"
   until `read`) and `notekeep:<owner>:<uid>` (⭐-saved snapshots of the
@@ -228,6 +231,11 @@ too — without it, GitHub Pages' `max-age=600` could hand the SW a stale
 Cross-origin requests (the sync API, the Claude API) are passed through
 untouched — the SW never caches or intercepts them. `manifest.json` makes
 the app installable to a home screen with `display: standalone`.
+
+The fridge's handwriting face (Patrick Hand, SIL OFL) is embedded in
+`styles.css` as a base64 `@font-face` data URI — no external request, works
+offline, and renders the same on every phone (Android's generic `cursive`
+otherwise falls back to a script font, which isn't the handwritten look).
 
 ## Why this architecture
 

@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v35 · spicy saves';
+const APP_VERSION = 'v36 · handwriting + full roses';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -538,8 +538,15 @@ function renderFridge() {
   }
   const them = other(y);
 
-  // freezer: tonight's question
+  // freezer: tonight's question. A rose must carry BOTH answers, so keeping is
+  // gated on both being in — and if a snapshot was taken before the partner's
+  // answer synced in (the classic race), today's rose self-heals from the live
+  // answers so nobody's reply is lost.
   const kept = actRec(`tq:keep:${todayStr()}`);
+  const bothAnswered = Boolean(tqAns('chris')) && Boolean(tqAns('kat'));
+  if (kept && bothAnswered && (kept.ca !== tqAns('chris') || kept.ka !== tqAns('kat'))) {
+    setAct(`tq:keep:${todayStr()}`, { q: kept.q || tonightsQuestion(), ca: tqAns('chris'), ka: tqAns('kat') });
+  }
   const ansRow = (w) => {
     const v = tqAns(w);
     const kids = [el('span', { class: 'who ' + w }, COUPLE[w].name.toUpperCase())];
@@ -548,12 +555,12 @@ function renderFridge() {
     else kids.push(el('span', { class: 'a pending' }, 'hasn’t answered yet'));
     return el('div', { class: 'q-ans' }, kids);
   };
-  const keepBtn = el('button', { class: 'keepbtn' + (kept ? ' kept' : ''), onclick: (ev) => {
+  const keepBtn = el('button', { class: 'keepbtn' + (kept ? ' kept' : ''), disabled: (!kept && !bothAnswered) ? 'disabled' : null, onclick: (ev) => {
     ev.stopPropagation();
-    if (actRec(`tq:keep:${todayStr()}`)) return;
+    if (actRec(`tq:keep:${todayStr()}`) || !bothAnswered) return;
     setAct(`tq:keep:${todayStr()}`, { q: tonightsQuestion(), ca: tqAns('chris'), ka: tqAns('kat') });
     toast('A rose for the vase 🌹'); render();
-  } }, kept ? '🌹 Kept' : '🌹 Keep this one');
+  } }, kept ? '🌹 Kept' : bothAnswered ? '🌹 Keep this one' : '🌹 Keep — once you’ve both answered');
   const qcard = el('div', { class: 'qcard' }, [
     el('span', { class: 'tape' }),
     el('div', { class: 'q-k' }, `💬 Tonight's question · ${fmt(todayStr())}`),

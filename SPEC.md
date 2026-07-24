@@ -145,7 +145,9 @@ Everything is discovery — the tab carries no instruction text.
   zero sync. Each of you answers on your own phone (`tq:ans:<who>` — one
   record per person, overwritten daily). **🌹 Keep this one** snapshots the
   question + both answers (`tq:keep:<date>`) — it becomes a rose in
-  History's vase.
+  History's vase. Keeping is gated until BOTH have answered so every rose is
+  a complete Q&A, and today's snapshot self-heals from the live answers if
+  it was kept before the partner's answer synced in.
 - **Door — the post-its.** One note each (`note:<who>`), blue paper for
   Chris, blush for Kat, auto-signed ❤️ in your ink colors. Sound note
   logic: reading is free (⭐ saving is opt-in); a synced seen-receipt

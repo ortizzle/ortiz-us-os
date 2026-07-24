@@ -209,4 +209,4 @@ npx serve .
 
 ---
 
-*Current build: v35 · spicy saves.*
+*Current build: v36 · handwriting + full roses.*
