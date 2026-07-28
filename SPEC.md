@@ -207,7 +207,10 @@ Everything is discovery — the tab carries no instruction text.
   nothing else.
 - **In History:** the 🌹 vase (top) — a closed bud per kept question, 3
   overlapping petals staggered in depth (`roseBloom`, not a flat dot), reads
-  as a rose even solo; tap to read the Q&As; and 🫙 jars (bottom) —
+  as a rose even solo; tap to read the Q&As — each person's answer gets its
+  own block (v43), names in one column and answers in another with a hanging
+  indent, so a long reply no longer runs into the other's name mid-line; and
+  🫙 jars (bottom) —
   per-person collections of saved notes. Both appear only once they have
   contents.
 

@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v42 · easier doors';
+const APP_VERSION = 'v43 · vase readability';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1759,9 +1759,11 @@ function keepsakesSheet(keeps) {
   const rows = keeps.map((r) => el('div', { class: 'keep-row' }, [
     el('div', { class: 'kd' }, fmt(r.id.split(':')[2])),
     el('div', { class: 'kq' }, r.q),
+    // One block per person: inline spans ran the two answers together into a
+    // paragraph, so a long reply pushed the other's name into mid-line.
     el('div', { class: 'ka' }, [
-      r.ca ? el('span', {}, [el('b', { class: 'c' }, 'Chris: '), `${r.ca}  `]) : null,
-      r.ka ? el('span', {}, [el('b', { class: 'k' }, 'Kat: '), r.ka]) : null,
+      r.ca ? el('div', { class: 'kans' }, [el('b', { class: 'c' }, 'Chris: '), r.ca]) : null,
+      r.ka ? el('div', { class: 'kans' }, [el('b', { class: 'k' }, 'Kat: '), r.ka]) : null,
       !r.ca && !r.ka ? 'answers left unsaid — the question was the souvenir' : null,
     ]),
   ]));
