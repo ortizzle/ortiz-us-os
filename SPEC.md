@@ -195,10 +195,16 @@ Everything is discovery — the tab carries no instruction text.
   freezer face opens it onto a frosty shelf of ice cream that serves — and
   where ➕ composes — **spicy 🔥** notes (`notekeep.spicy`), kept out of the
   jars and comfort shelf so the freezer is their own private stash. The two
-  compartments open independently and each keeps the fridge's size. Once
-  open, one more tap on that SAME handle spot closes it back up — the
-  handle stays exactly where it was (invisible, `opacity:0`, still hit-
-  testable) rather than disappearing to a different control.
+  compartments open independently and each keeps the fridge's size.
+  **Closing mirrors whatever opened it** (v42): the door opens by its handle,
+  so one more tap on that same handle shuts it; the freezer opens by its
+  face, so a tap anywhere on the open face shuts it (its handle works too).
+  Taps on the contents — a treat, ➕, "close the freezer" — belong to that
+  content and never close by accident. The handles stay exactly where they
+  were when open (invisible, `opacity:0`, still hit-testable), and each
+  carries an invisible 44px collar (`.fhandle::before`) so the 9px of drawn
+  chrome is actually thumb-sized — it sits in the left padding gutter, over
+  nothing else.
 - **In History:** the 🌹 vase (top) — a closed bud per kept question, 3
   overlapping petals staggered in depth (`roseBloom`, not a flat dot), reads
   as a rose even solo; tap to read the Q&As; and 🫙 jars (bottom) —

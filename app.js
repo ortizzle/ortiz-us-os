@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v41 · heart to keep';
+const APP_VERSION = 'v42 · easier doors';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -717,7 +717,10 @@ function renderFridge() {
       ...FREEZER_TREATS.slice(3).map((f) => el('button', { class: 'food', onclick: () => serve(spicy, '🔥 Straight from the freezer', 'The freezer’s empty — leave one on ice 🔥') }, f)),
       el('button', { class: 'food', title: 'Leave one on ice', onclick: spicyCompose }, '➕'),
     ]),
-    el('button', { class: 'fclose', onclick: () => { freezerOpen = false; render(); } }, 'close the freezer'),
+    // stopPropagation: without it this click bubbles to the freezer face and
+    // lands in the tap-to-open counter, leaving the freezer primed to reopen
+    // on fewer taps than it should take.
+    el('button', { class: 'fclose', onclick: (ev) => { ev.stopPropagation(); freezerOpen = false; render(); } }, 'close the freezer'),
   ]);
   // Same handle, both directions: closed it counts taps toward opening; once
   // open, one tap on that same spot closes it right back up — no hunting for
@@ -732,8 +735,15 @@ function renderFridge() {
     // else: let it bubble to the freezer face below, which counts the taps to open.
   } });
   // Six taps anywhere on the freezer face (its buttons stopPropagation) opens it.
-  const freezer = el('div', { class: 'freezer', onclick: () => {
-    if (freezerOpen) return;
+  // Reversing it mirrors that: since the FACE is what you tapped to open, a tap
+  // on the open face shuts it — the door's handle-opens/handle-closes symmetry,
+  // applied to the gesture the freezer actually uses. Taps on its contents (a
+  // treat, ➕, the close button) are that content's business, not a close.
+  const freezer = el('div', { class: 'freezer', onclick: (ev) => {
+    if (freezerOpen) {
+      if (!ev.target.closest('button')) { freezerOpen = false; render(); }
+      return;
+    }
     fzTaps++; clearTimeout(fzTimer); fzTimer = setTimeout(() => { fzTaps = 0; }, 1600);
     if (fzTaps >= 6) { fzTaps = 0; freezerOpen = true; render(); }
   } }, [freezerHandle, qcard, fzInterior]);

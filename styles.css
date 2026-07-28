@@ -214,6 +214,11 @@ textarea.input { resize: vertical; min-height: 60px; }
 .fhandle { position: absolute; left: 14px; width: 9px; border-radius: 999px;
   background: linear-gradient(90deg, var(--steel-a), var(--steel-b));
   border: 1px solid var(--steel-edge); box-shadow: 0 2px 5px rgba(40,20,28,0.18); cursor: pointer; }
+/* A drawn handle is 9px of chrome — nowhere near a thumb. This invisible
+   collar widens the hit area to 44px without touching the look, which
+   matters most when the handle is open (opacity 0) and you're aiming at a
+   strip you can't see. It sits in the left padding gutter, over nothing. */
+.fhandle::before { content: ''; position: absolute; top: -10px; bottom: -10px; left: -17px; right: -18px; }
 .fhandle.hf { top: 18px; height: 60px; }
 .fhandle.hd { top: 18px; height: 150px; }
 
