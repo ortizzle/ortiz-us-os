@@ -147,7 +147,12 @@ Everything is discovery — the tab carries no instruction text.
   question + both answers (`tq:keep:<date>`) — it becomes a rose in
   History's vase. Keeping is gated until BOTH have answered so every rose is
   a complete Q&A, and today's snapshot self-heals from the live answers if
-  it was kept before the partner's answer synced in.
+  it was kept before the partner's answer synced in. A tiny paper plane on
+  the card (v40) opens the share sheet with the question, a nudge line that
+  adapts to who's answered so far ("Mine's already on the fridge — your move
+  😏"), and a link to the app that deep-links straight to the Fridge tab
+  (`#fridge`). Answers never ride along in the share text, and the share is
+  stateless — nothing new syncs.
 - **Door — the post-its.** One note each (`note:<who>`), blue paper for
   Chris, blush for Kat, auto-signed "— Love, Chris"/"— Love, Kat" in your ink
   colors. On your own note, tapping anywhere — including the folded corner —

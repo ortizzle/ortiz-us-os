@@ -222,6 +222,11 @@ textarea.input { resize: vertical; min-height: 60px; }
 .qcard .tape { position: absolute; top: -9px; left: 50%; transform: translateX(-50%) rotate(2deg);
   width: 84px; height: 19px; background: var(--accent-soft); opacity: 0.9; border-radius: 2px;
   box-shadow: 0 1px 2px rgba(40,20,28,0.12); }
+.qcard .qshare { position: absolute; top: 0; right: 0; width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer; color: var(--text-2); opacity: 0.75; }
+.qcard .qshare svg { width: 15px; height: 15px; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .qcard .q-k { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
 .qcard .q-q { font-family: var(--hand); font-size: 19px; line-height: 1.4; margin: 5px 0 7px; }
 .q-ans { display: flex; align-items: baseline; gap: 7px; margin: 4px 0; }

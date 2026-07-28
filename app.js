@@ -19,7 +19,10 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v39 · rose redesign';
+const APP_VERSION = 'v40 · question nudge';
+// Canonical deployed URL, hardcoded so a share sent from a localhost preview
+// still hands the other phone a link that works.
+const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
 
 // ---------- store (localStorage) ----------
 const KEY = 'ortiz-us-os';
@@ -496,6 +499,24 @@ function answerModal() {
   ]);
   inp.focus();
 }
+// The little paper plane on the question card: texts tonight's question plus
+// a link that lands on the Fridge (#fridge). The nudge line reads the room —
+// who's answered so far — so one tap says the right thing. The question is
+// the bait; the answers themselves never ride along.
+function shareTonight() {
+  const y = me(), them = other(y);
+  const nudge = tqAns(y) && !tqAns(them) ? 'Mine’s already on the fridge — your move 😏'
+    : !tqAns(y) && !tqAns(them) ? 'Neither of us has answered yet. Race you to the fridge 🏁'
+    : !tqAns(y) ? 'Yours is up — mine’s on the way. Meet you there 💬'
+    : 'Both answers are in — come see if it’s a rose 🌹';
+  const text = `💬 Tonight’s question on our fridge:\n“${tonightsQuestion()}”\n${nudge}`;
+  const url = APP_URL + '#fridge';
+  if (navigator.share) navigator.share({ text, url }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(`${text}\n${url}`).then(
+    () => toast(`Copied — paste it to ${COUPLE[them].name} 💬`),
+    () => toast('Couldn’t copy — try again'));
+  else toast('Sharing isn’t available here');
+}
 // Deterministic souvenir-magnet shape from the memory itself; both phones
 // derive the same fridge from the same synced entries.
 function magnetShape(e) {
@@ -564,6 +585,11 @@ function renderFridge() {
   } }, kept ? '🌹 Kept' : bothAnswered ? '🌹 Keep this one' : '🌹 Keep — once you’ve both answered');
   const qcard = el('div', { class: 'qcard' }, [
     el('span', { class: 'tape' }),
+    // stopPropagation: a share tap must not count toward the freezer's
+    // six-taps-to-open — nudging Kat shouldn't crack open the ice cream.
+    el('button', { class: 'qshare', title: `Send tonight's question to ${COUPLE[them].name}`,
+      html: '<svg viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z"/></svg>',
+      onclick: (ev) => { ev.stopPropagation(); shareTonight(); } }),
     el('div', { class: 'q-k' }, `💬 Tonight's question · ${fmt(todayStr())}`),
     el('div', { class: 'q-q' }, tonightsQuestion()),
     ansRow('chris'), ansRow('kat'),
@@ -2481,6 +2507,10 @@ seedTickets();
 seedBingo();
 migrateCoupons();
 graduatePast(); // a plan booked & rated last time that's now past retires to History
+// A shared link can land on a specific tab (#fridge, from the question card's
+// paper plane) instead of dumping the reader on Rhythm.
+const deep = location.hash.slice(1);
+if (/^\w+$/.test(deep) && document.querySelector(`.tab[data-tab="${deep}"]`)) { current = deep; setTab(); }
 render();
 maybeReveal(); // a coupon synced in while the app was closed still gets its moment
 syncNow(false); // pull the other phone's changes on open
