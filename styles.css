@@ -236,10 +236,15 @@ textarea.input { resize: vertical; min-height: 60px; }
 .q-ans .a.pending { font-family: inherit; font-size: 12px; color: var(--text-2); font-style: italic; }
 .q-ans button { font: inherit; font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
   border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); cursor: pointer; }
-.keepbtn { font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 13px; border-radius: 999px;
-  border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent-ink); cursor: pointer; margin-top: 7px; }
-.keepbtn.kept { background: var(--accent); color: #fff; }
-.keepbtn:disabled { opacity: 0.5; cursor: default; }
+.qfoot { display: flex; justify-content: flex-end; margin: 0 -6px -10px 0; }
+.qheart { width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer; color: var(--text-2); }
+.qheart svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linejoin: round; opacity: 0.65; }
+.qheart.on { color: var(--accent); }
+.qheart.on svg { fill: var(--accent); opacity: 1; }
+.qheart.pop svg { animation: heartpop 0.34s ease; }
+@keyframes heartpop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
 
 .fnotes { display: flex; flex-direction: column; gap: 22px; }
 /* real-Post-it shape: square-ish, not a thin bar. Text sits up top, signature

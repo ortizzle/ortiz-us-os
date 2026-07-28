@@ -108,7 +108,8 @@ after an update.
   until then it lingers in Rhythm's Booked list as a nudge to log how it went.
 - **🧲 The Fridge (its own tab)** — a real fridge for the two of you.
   Freezer: **tonight's question** (same one on both phones), answer it each
-  from your own phone, 🌹 **keep** the good ones. Door: a **post-it from
+  from your own phone, then **heart** the good ones (the heart shows up once
+  you've both answered; tap again to undo). Door: a **post-it from
   each of you** (blue for Chris, blush for Kat) — ❤️ tucks the other's note
   into your jar, and a note replaced before it was read arrives as
   **💌 one you missed**, so nothing sweet is ever lost unread; your own

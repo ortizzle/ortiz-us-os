@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v40 · fridge nudges';
+const APP_VERSION = 'v41 · heart to keep';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -585,7 +585,10 @@ function renderFridge() {
   // gated on both being in — and if a snapshot was taken before the partner's
   // answer synced in (the classic race), today's rose self-heals from the live
   // answers so nobody's reply is lost.
-  const kept = actRec(`tq:keep:${todayStr()}`);
+  // Un-keeping tombstones the record rather than dropping it, so the undo
+  // survives a sync round-trip instead of the other phone re-adding the rose.
+  const keptRaw = actRec(`tq:keep:${todayStr()}`);
+  const kept = keptRaw && !keptRaw.deleted ? keptRaw : null;
   const bothAnswered = Boolean(tqAns('chris')) && Boolean(tqAns('kat'));
   if (kept && bothAnswered && (kept.ca !== tqAns('chris') || kept.ka !== tqAns('kat'))) {
     setAct(`tq:keep:${todayStr()}`, { q: kept.q || tonightsQuestion(), ca: tqAns('chris'), ka: tqAns('kat') });
@@ -598,12 +601,29 @@ function renderFridge() {
     else kids.push(el('span', { class: 'a pending' }, 'hasn’t answered yet'));
     return el('div', { class: 'q-ans' }, kids);
   };
-  const keepBtn = el('button', { class: 'keepbtn' + (kept ? ' kept' : ''), disabled: (!kept && !bothAnswered) ? 'disabled' : null, onclick: (ev) => {
-    ev.stopPropagation();
-    if (actRec(`tq:keep:${todayStr()}`) || !bothAnswered) return;
-    setAct(`tq:keep:${todayStr()}`, { q: tonightsQuestion(), ca: tqAns('chris'), ka: tqAns('kat') });
-    toast('A rose for the vase 🌹'); render();
-  } }, kept ? '🌹 Kept' : bothAnswered ? '🌹 Keep this one' : '🌹 Keep — once you’ve both answered');
+  // A like button, not a labelled action: the heart only appears once BOTH
+  // answers are in (nothing to keep before that — and no disabled control
+  // sitting there explaining itself). Toggling updates the heart in place
+  // rather than re-rendering, so the tap keeps its animation.
+  const heart = (kept || bothAnswered) ? el('button', {
+    class: 'qheart' + (kept ? ' on' : ''), title: kept ? 'Kept — tap to undo' : 'Keep this one',
+    html: '<svg viewBox="0 0 24 24"><path d="M12 20.5C7 17 3.5 13.8 3.5 9.8 3.5 7 5.6 5 8.2 5c1.7 0 3.1.9 3.8 2.2C12.7 5.9 14.1 5 15.8 5c2.6 0 4.7 2 4.7 4.8 0 4-3.5 7.2-8.5 10.7z"/></svg>',
+    onclick: (ev) => {
+      ev.stopPropagation();
+      const b = ev.currentTarget, id = `tq:keep:${todayStr()}`, cur = actRec(id);
+      if (cur && !cur.deleted) {
+        setAct(id, { deleted: true });
+        b.classList.remove('on'); b.title = 'Keep this one';
+        toast('Taken back out of the vase');
+        return;
+      }
+      if (!bothAnswered) return;
+      setAct(id, { q: tonightsQuestion(), ca: tqAns('chris'), ka: tqAns('kat'), deleted: false });
+      b.classList.add('on'); b.title = 'Kept — tap to undo';
+      b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+      toast('A rose for the vase 🌹');
+    },
+  }) : null;
   const qcard = el('div', { class: 'qcard' }, [
     el('span', { class: 'tape' }),
     // stopPropagation: a share tap must not count toward the freezer's
@@ -614,7 +634,7 @@ function renderFridge() {
     el('div', { class: 'q-k' }, `💬 Tonight's question · ${fmt(todayStr())}`),
     el('div', { class: 'q-q' }, tonightsQuestion()),
     ansRow('chris'), ansRow('kat'),
-    keepBtn,
+    heart ? el('div', { class: 'qfoot' }, [heart]) : null,
   ]);
 
   // door: notes
@@ -1748,7 +1768,7 @@ function renderHistory() {
   view.append(el('h1', {}, 'History'), el('p', { class: 'sub' }, 'Everything you’ve shared, most recent first.'));
   view.append(el('button', { class: 'btn btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'rewind'; render(); } }, '🎞 Rewind — your year together'));
 
-  const keeps = DB.acts.filter((r) => r.id.startsWith('tq:keep:')).sort((a, b) => a.id < b.id ? 1 : -1);
+  const keeps = DB.acts.filter((r) => r.id.startsWith('tq:keep:') && !r.deleted).sort((a, b) => a.id < b.id ? 1 : -1);
   if (keeps.length) {
     const stems = keeps.slice(0, ROSE_POS.length).map((_, i) => {
       const p = ROSE_POS[i];

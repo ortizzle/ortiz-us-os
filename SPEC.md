@@ -143,11 +143,16 @@ Everything is discovery — the tab carries no instruction text.
 - **Freezer — tonight's question.** 40 dinner-table questions (`TQ_ITEMS`,
   static), picked deterministically from the date so both phones match with
   zero sync. Each of you answers on your own phone (`tq:ans:<who>` — one
-  record per person, overwritten daily). **🌹 Keep this one** snapshots the
-  question + both answers (`tq:keep:<date>`) — it becomes a rose in
-  History's vase. Keeping is gated until BOTH have answered so every rose is
-  a complete Q&A, and today's snapshot self-heals from the live answers if
-  it was kept before the partner's answer synced in. A tiny paper plane on
+  record per person, overwritten daily). A **heart in the card's bottom-right
+  corner** (v41) is the keep — a like button, not a labelled action. It only
+  appears once BOTH of you have answered (before that there's nothing to
+  keep, and no disabled control sits there explaining itself); tapping it
+  snapshots the question + both answers (`tq:keep:<date>`) as a rose in
+  History's vase, and tapping the filled heart takes it back out. Undo
+  tombstones the record (`deleted: true`) rather than dropping it, so the
+  other phone doesn't re-add the rose on the next sync — the vase and the
+  card both skip tombstoned keeps. Today's snapshot self-heals from the live
+  answers if it was kept before the partner's answer synced in. A tiny paper plane on
   the card (v40) opens the share sheet with the question, a nudge line that
   adapts to who's answered so far ("Mine's already on the fridge — your move
   😏"), and a link to the app that deep-links straight to the Fridge tab
