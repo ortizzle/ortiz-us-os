@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v40 · question nudge';
+const APP_VERSION = 'v40 · fridge nudges';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -444,6 +444,10 @@ function fridgeEdit(w) {
       if (replacingUnseen) DB.acts.push({ id: `notemiss:${w}:${uid()}`, text: prev.text, at: (prev.updatedAt || '').slice(0, 10), read: false, updatedAt: now() });
       setAct(`note:${w}`, { text: v });
       m.close(); toast(v ? 'Pinned 📌' : 'Note taken down'); render();
+      // The nudge text never carries the note itself — the note is the reason
+      // to open the app, and personal words stay off lock-screen previews.
+      if (v) offerNudge(`Let ${COUPLE[other(w)].name} know something’s waiting? The note stays a surprise — the text just says to come look.`, () =>
+        sendNudge('📌 Just left you a little something on our fridge — come see 👀'));
     } }, 'Pin it'),
   ]);
   inp.focus();
@@ -493,11 +497,34 @@ function answerModal() {
   const m = modal('💬 ' + tonightsQuestion(), [inp], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
     el('button', { class: 'btn btn-primary', onclick: () => {
-      setAct(`tq:ans:${me()}`, { d: todayStr(), v: inp.value.trim() });
+      const v = inp.value.trim();
+      setAct(`tq:ans:${me()}`, { d: todayStr(), v });
       m.close(); render();
+      if (v && !tqAns(other(me()))) offerNudge(`${COUPLE[other(me())].name} hasn’t answered tonight’s question yet — send it over so your answer isn’t up there alone?`, shareTonight);
     } }, 'Save'),
   ]);
   inp.focus();
+}
+// Share-sheet plumbing for every nudge: teaser text + a link that lands on
+// the Fridge. Falls back to the clipboard where there's no share sheet.
+function sendNudge(text) {
+  const url = APP_URL + '#fridge';
+  if (navigator.share) navigator.share({ text, url }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(`${text}\n${url}`).then(
+    () => toast(`Copied — paste it to ${COUPLE[other(me())].name} 💬`),
+    () => toast('Couldn’t copy — try again'));
+  else toast('Sharing isn’t available here');
+}
+// One yes/no beat offered right after you've written something — the natural
+// moment to pull the other phone in. Never offered outside that moment, so
+// it can't turn into nagging.
+function offerNudge(line, send) {
+  const m = modal(`📨 Nudge ${COUPLE[other(me())].name}?`, [
+    el('p', { class: 'muted small', style: 'margin:0' }, line),
+  ], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Not now'),
+    el('button', { class: 'btn btn-primary', onclick: () => { m.close(); send(); } }, '📨 Send it'),
+  ]);
 }
 // The little paper plane on the question card: texts tonight's question plus
 // a link that lands on the Fridge (#fridge). The nudge line reads the room —
@@ -509,13 +536,7 @@ function shareTonight() {
     : !tqAns(y) && !tqAns(them) ? 'Neither of us has answered yet. Race you to the fridge 🏁'
     : !tqAns(y) ? 'Yours is up — mine’s on the way. Meet you there 💬'
     : 'Both answers are in — come see if it’s a rose 🌹';
-  const text = `💬 Tonight’s question on our fridge:\n“${tonightsQuestion()}”\n${nudge}`;
-  const url = APP_URL + '#fridge';
-  if (navigator.share) navigator.share({ text, url }).catch(() => {});
-  else if (navigator.clipboard) navigator.clipboard.writeText(`${text}\n${url}`).then(
-    () => toast(`Copied — paste it to ${COUPLE[them].name} 💬`),
-    () => toast('Couldn’t copy — try again'));
-  else toast('Sharing isn’t available here');
+  sendNudge(`💬 Tonight’s question on our fridge:\n“${tonightsQuestion()}”\n${nudge}`);
 }
 // Deterministic souvenir-magnet shape from the memory itself; both phones
 // derive the same fridge from the same synced entries.

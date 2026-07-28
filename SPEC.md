@@ -152,7 +152,9 @@ Everything is discovery — the tab carries no instruction text.
   adapts to who's answered so far ("Mine's already on the fridge — your move
   😏"), and a link to the app that deep-links straight to the Fridge tab
   (`#fridge`). Answers never ride along in the share text, and the share is
-  stateless — nothing new syncs.
+  stateless — nothing new syncs. Saving your answer while the other of you
+  hasn't answered also offers the nudge right then (one yes/no modal, never
+  outside that moment).
 - **Door — the post-its.** One note each (`note:<who>`), blue paper for
   Chris, blush for Kat, auto-signed "— Love, Chris"/"— Love, Kat" in your ink
   colors. On your own note, tapping anywhere — including the folded corner —
@@ -168,6 +170,11 @@ Everything is discovery — the tab carries no instruction text.
   retraction — no archive. The reader saves the other's note with ❤️ (→
   their jar, sweet) or 🔥 (→ the freezer, spicy) — no labels, it just lands
   where they choose (`notekeep:`); the note stays pinned either way.
+  Pinning a note offers a nudge (v40): a yes/no modal, then the share sheet
+  with a teaser ("📌 Just left you a little something on our fridge — come
+  see 👀") + the `#fridge` link. The note text itself never rides along —
+  the note is the reason to open the app, and personal words stay off
+  lock-screen previews. Taking a note down never offers it.
 - **Door — souvenir magnets.** One per logged getaway/trip, shape derived
   from title/loc keywords (mine cart, mesa, pine, eighth-note, sun-over-
   wave; hashed-color oval + cadence emoji as fallback) — deterministic, so
