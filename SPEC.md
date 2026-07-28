@@ -162,11 +162,18 @@ Everything is discovery — the tab carries no instruction text.
   outside that moment).
 - **Door — the post-its.** One note each (`note:<who>`), blue paper for
   Chris, blush for Kat, auto-signed "— Love, Chris"/"— Love, Kat" in your ink
-  colors. On your own note, tapping anywhere — including the folded corner —
-  opens the write-a-new-one flow anytime, not just when it's empty; the fold
-  stays a plain paper triangle, no added graphic, but an invisible click-
-  catcher over it closes the dead zone the note's own rounded corner clips
-  out of its hit area, so the corner reads as sensitive as it looks.
+  colors. On your own note, tapping the paper opens the write-a-new-one flow
+  anytime, not just when it's empty, and the existing text opens
+  **preselected** (v44) — type to replace it outright, or tap once to drop
+  the cursor in and edit; neither path needs a delete first. The **folded
+  corner** is a separate zone (v44): it opens a shuffleable **fun nudge**
+  to text the other of you (🎲 for another, "Send it" opens the share sheet
+  with the line + the `#fridge` link). The pool is playful one-liners, plus
+  pointed "still unread" ones when your note is pinned and unseen; the note's
+  own text never rides along. The fold stays a plain paper triangle with no
+  added graphic — the invisible catcher over it just gained a better job than
+  duplicating the paper's own tap — and the signature shifts left so the
+  corner can be thumb-sized without stealing taps meant for it.
   Sound note logic: reading is
   free (❤️ saving is opt-in); a synced seen-receipt (`note:seen:<who>`) shows
   the writer "seen 💗" (coupon-style); replacing a note the other hasn't read

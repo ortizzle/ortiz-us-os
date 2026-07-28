@@ -266,15 +266,20 @@ textarea.input { resize: vertical; min-height: 60px; }
 .postit.p-chris::before { background: var(--paper-c-fold); }
 .postit.p-kat { background: var(--paper-k); color: var(--paper-k-ink); }
 .postit.p-kat::before { background: var(--paper-k-fold); }
-.postit .sig { position: absolute; right: 24px; bottom: 8px; font-weight: 700; font-size: 14px; }
+/* right: clear of the fold's tap zone below, so the corner can be thumb-sized
+   without stealing taps aimed at the signature. */
+.postit .sig { position: absolute; right: 38px; bottom: 8px; font-weight: 700; font-size: 14px; }
 .postit.p-chris .sig { color: #24519b; }
 .postit.p-kat .sig { color: #63299c; }
 .postit .p-empty { font-style: italic; opacity: 0.65; }
-/* invisible click-catcher over the folded corner (see app.js postit()) — no
-   background, no icon, just closes the dead zone the parent's own rounded
-   corner clips out of its hit area. */
-.pcorner { position: absolute; right: 0; bottom: 0; width: 20px; height: 20px;
+/* invisible tap zone over the folded corner (see app.js postit()) — no
+   background, no icon. It sends a nudge, so it's sized for a thumb rather
+   than matching the 18px triangle it sits on; the signature moves left to
+   stay clear of it, and the note's bottom padding keeps it off the text. */
+.pcorner { position: absolute; right: 0; bottom: 0; width: 34px; height: 44px;
   background: none; border: 0; padding: 0; cursor: pointer; }
+.nudgeline { font-family: var(--hand); font-size: 18px; line-height: 1.4; padding: 14px 16px;
+  border-radius: 12px; background: var(--accent-soft); color: var(--accent-ink); }
 .ptools { position: absolute; left: 10px; bottom: 4px; display: flex; gap: 8px; align-items: center; }
 .ptools button { font-size: 12.5px; background: none; border: 0; cursor: pointer; opacity: 0.65; padding: 2px; }
 .pstatus { font-size: 10px; font-weight: 800; opacity: 0.65; white-space: nowrap; }

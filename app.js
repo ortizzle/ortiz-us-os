@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v43 · vase readability';
+const APP_VERSION = 'v44 · corner nudge';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -433,7 +433,9 @@ function fridgeEdit(w) {
   const prev = noteRec(w);
   const inp = el('textarea', { class: 'input', placeholder: 'Something small and true. Replace it whenever.' }, prev?.text || '');
   const m = modal('📌 Your note on the fridge', [
-    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `${COUPLE[other(w)].name} sees this on their fridge. One note at a time — a new one replaces the old.`),
+    el('p', { class: 'muted small', style: 'margin:0 0 8px' }, prev?.text
+      ? `${COUPLE[other(w)].name} sees this on their fridge. It’s selected — just type to write a new one, or tap it to edit.`
+      : `${COUPLE[other(w)].name} sees this on their fridge. One note at a time — a new one replaces the old.`),
     inp,
   ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
@@ -450,7 +452,11 @@ function fridgeEdit(w) {
         sendNudge('📌 Just left you a little something on our fridge — come see 👀'));
     } }, 'Pin it'),
   ]);
+  // Preselect rather than blank the field: typing replaces the old note in one
+  // go (the common case — a fresh note), but tapping once drops the cursor in
+  // to edit what's there, so neither path needs a delete first.
   inp.focus();
+  if (inp.value) inp.setSelectionRange(0, inp.value.length);
 }
 // Saved notes are `notekeep:<owner>:<uid>` — ❤️ on a note saves it sweet, 🔥
 // saves it spicy. spicy:true ones live only in the freezer (kept out of the
@@ -524,6 +530,43 @@ function offerNudge(line, send) {
   ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Not now'),
     el('button', { class: 'btn btn-primary', onclick: () => { m.close(); send(); } }, '📨 Send it'),
+  ]);
+}
+// The post-it's folded corner: a poke you can send any time, unrelated to
+// having just written something. Pure fun — no note text, no app state.
+const NUDGE_FUN = [
+  'Psst. Fridge. Now. 👀',
+  'Check the fridge. That’s it, that’s the whole text 🧲',
+  'Something’s waiting on the fridge and it isn’t leftovers 🍕',
+  'Consider this your scheduled reminder that I’m thinking about you 💭',
+  'Fridge check! ⏰',
+  'Two minutes at the fridge. You won’t regret it 💗',
+  'Reminder: you’re stuck with me 💞',
+  'I’d like to report a fridge emergency 🚨 (it is not an emergency)',
+  'The fridge misses you 🥺',
+  'Hi. That’s the message. Okay also — fridge 👀',
+];
+const NUDGE_UNSEEN = [
+  'My note’s still up there unread, you know 👀',
+  'That note isn’t going to read itself 📌',
+  'Still waiting on someone to open the fridge… 🧲',
+];
+const pickLine = (pool, avoid) => {
+  const opts = avoid && pool.length > 1 ? pool.filter((x) => x !== avoid) : pool;
+  return opts[Math.floor(Math.random() * opts.length)];
+};
+function cornerNudge(w) {
+  const pinned = Boolean(noteRec(w)?.text);
+  const pool = pinned && !seenByOther(w) ? NUDGE_UNSEEN.concat(NUDGE_FUN) : NUDGE_FUN;
+  let line = pickLine(pool);
+  const box = el('div', { class: 'nudgeline' }, line);
+  const m = modal(`📨 Send ${COUPLE[other(w)].name} a nudge`, [
+    box,
+    el('p', { class: 'muted small', style: 'margin:8px 0 0' }, 'Not the one? Shuffle for another.'),
+  ], [
+    el('button', { class: 'btn', onclick: () => { line = pickLine(pool, line); box.textContent = line; } }, '🎲'),
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Not now'),
+    el('button', { class: 'btn btn-primary', onclick: () => { m.close(); sendNudge(line); } }, '📨 Send it'),
   ]);
 }
 // The little paper plane on the question card: texts tonight's question plus
@@ -652,12 +695,10 @@ function renderFridge() {
         } }, '🗑'),
         el('span', { class: 'pstatus' }, seenByOther(w) ? 'seen 💗' : 'not seen yet'),
       ]));
-      // The postit's own rounded corner clips its hit area right where the
-      // folded triangle sits, so the last ~9px of that visible fold reads as
-      // tappable but isn't. This invisible catcher (same footprint as the
-      // fold, no border-radius of its own) closes that gap — no new graphic,
-      // just making the corner that's already there fully sensitive.
-      kids.push(el('button', { class: 'pcorner', title: 'Write a new one', onclick: (ev) => { ev.stopPropagation(); fridgeEdit(w); } }));
+      // Tapping the note anywhere already writes a new one, so the fold is
+      // free to do something else: it sends a playful poke. Still no graphic
+      // on the fold — the invisible catcher just gained a better job.
+      kids.push(el('button', { class: 'pcorner', title: `Send ${COUPLE[other(w)].name} a nudge`, onclick: (ev) => { ev.stopPropagation(); cornerNudge(w); } }));
     } else if (r?.text) {
       const at = (r.updatedAt || '').slice(0, 10);
       // ❤️ → your jar (sweet). 🔥 → the freezer (spicy). No labels — the reader
