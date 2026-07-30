@@ -156,6 +156,13 @@ Three sections with jump-chips (a mini table of contents) at the top:
   and nudges the ones still blank. Planning `notes` are deliberately excluded.
   Titles go through `titleText()` like everywhere else, so a 🔒 locked title
   shows its cover here too. Tapping an entry opens its event sheet.
+- **📄 Save as PDF (v49)** — `window.print()` plus a real `@media print` block,
+  no PDF library (Chrome's print sheet on Android writes the file; iPhone is
+  Share → Print). The printed page IS the document: app chrome, both `.seg`
+  rows and the on-screen hints are hidden, a `.print-only` byline
+  ("Chris & Kat · Ortiz Us OS · saved <date>") appears, the palette is forced
+  light regardless of the phone's theme, and `break-inside: avoid` keeps an
+  entry from splitting across pages (year headings won't strand either).
 
 ### Rhythm delights (v31)
 - **💫 This week in your story** — past entries whose month-day falls within

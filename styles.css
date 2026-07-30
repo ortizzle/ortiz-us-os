@@ -485,3 +485,31 @@ textarea.input { resize: vertical; min-height: 60px; }
 
 .spinner { width: 20px; height: 20px; border: 2.5px solid var(--surface-2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- 📄 print / Save-as-PDF (the 📖 recap book) ----------
+   No PDF library: Chrome's print sheet on Android (and iOS Share → Print)
+   writes the PDF, so the job here is to make the page BE the document —
+   chrome off, a light palette whatever the phone's theme is, and no card
+   split across a page break. Only the recap book is printed; every other
+   view keeps a plain fallback so an accidental print still looks sane. */
+@media print {
+  @page { margin: 15mm 13mm; }
+  /* a printed document is light, even from a phone in dark mode */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    --bg: #fff; --surface: #fff; --surface-2: #fff;
+    --text: #16110f; --text-2: #514a4c; --line: #d8d2d4;
+    --accent-soft: #f0dde2; --shadow: none;
+  }
+  html, body { background: #fff; }
+  .topbar, .tabbar, .toast, .scrim, .seg, #view > button, .print-hide { display: none !important; }
+  .app { max-width: none; min-height: 0; display: block; }
+  #view { padding: 0; }
+  .print-only { display: block !important; }
+  /* keep an entry whole, and never leave a year heading stranded at the foot */
+  .rbcard { break-inside: avoid; page-break-inside: avoid; border: 1px solid var(--line); box-shadow: none; margin-bottom: 8mm; }
+  #view h2 { break-after: avoid; page-break-after: avoid; margin-top: 8mm; }
+  #view h1 { margin-bottom: 2mm; }
+  .rb-recap { border-left: 3px solid #c9bdc1; }
+  a[href]::after { content: ''; }  /* no URL spew after links */
+}
+.print-only { display: none; }

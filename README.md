@@ -112,7 +112,9 @@ after an update.
   plus a free-form write-up, kept separate from your planning notes. Add or
   revise it any time by tapping the event (in History, tap the row). All of
   them collect into **📖 the recap book** (button at the top of History) — every
-  night you wrote up, grouped by year, in your own words.
+  night you wrote up, grouped by year, in your own words, with **📄 Save as PDF**
+  to keep a copy (choose "Save as PDF" in the print sheet; on iPhone, Share →
+  Print).
 - **🧲 The Fridge (its own tab)** — a real fridge for the two of you.
   Freezer: **tonight's question** (same one on both phones), answer it each
   from your own phone, then **heart** the good ones (the heart shows up once

@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v48 · recap book';
+const APP_VERSION = 'v49 · recap PDF';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1206,10 +1206,17 @@ function renderRecaps() {
   view.append(
     el('h1', {}, '📖 The recap book'),
     el('p', { class: 'sub' }, 'Everything you two wrote down, in your own words.'),
-    el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'history'; setTab(); render(); } }, '← back'),
   );
   const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date <= t);
   const written = done.filter(hasRecap).sort((a, b) => a.date < b.date ? 1 : -1);
+  view.append(el('div', { class: 'seg' }, [
+    el('button', { onclick: () => { current = 'history'; setTab(); render(); } }, '← back'),
+    written.length ? el('button', { onclick: () => window.print() }, '📄 Save as PDF') : null,
+  ].filter(Boolean)));
+  // Byline only on paper: on screen the app's own header already says where
+  // you are, but a saved PDF has to stand on its own years from now.
+  if (written.length) view.append(el('p', { class: 'print-only', style: 'margin:0 0 10px; font-size:12px; color:var(--text-2)' },
+    `${COUPLE.chris.name} & ${COUPLE.kat.name} · Ortiz Us OS · saved ${fmt(t)}`));
   if (!written.length) {
     view.append(el('p', { class: 'muted' }, done.length
       ? 'No recaps yet. Tap any night in History and add one — ♥ a night and the app offers it too. 💞'
@@ -1221,8 +1228,12 @@ function renderRecaps() {
   view.append(el('p', { class: 'small', style: 'margin:0 0 4px' },
     `${written.length} recap${written.length === 1 ? '' : 's'} across ${done.length} logged${avg ? ` · averaging ${'♥'.repeat(Math.round(avg))} (${avg.toFixed(1)})` : ''}`));
   const missing = done.length - written.length;
-  if (missing) view.append(el('p', { class: 'muted small', style: 'margin:0 0 6px' },
+  // print-hide: both of these are instructions to the reader of the app, not
+  // part of the keepsake — they'd read as noise on a saved page.
+  if (missing) view.append(el('p', { class: 'muted small print-hide', style: 'margin:0 0 6px' },
     `${missing} more logged without a recap — tap one in History to fill it in.`));
+  view.append(el('p', { class: 'muted small print-hide', style: 'margin:0 0 10px' },
+    'Saving as PDF: pick “Save as PDF” as the destination in the print sheet. On an iPhone it’s Share → Print.'));
 
   let year = '';
   for (const e of written) {
