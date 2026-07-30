@@ -102,10 +102,12 @@ after an update.
   surprise reveal (plus an email teaser if configured) and lives on their
   shelf tinted the sender's color, 💙 from Chris, 💜 from Kat. Unsent coupons
   never sync, so the surprise always holds.
-- **History** — Coming up (with 🔨/✅ status) and Been there (♥ ratings,
-  saved memories), newest first. Everything's editable after the fact (✎).
-  A booked plan **auto-retires** here once it's past and you've rated it —
-  until then it lingers in Rhythm's Booked list as a nudge to log how it went.
+- **History** — ♥ How was it?, Coming up (with 🔨/✅ status) and Been there
+  (♥ ratings, saved memories), newest first. Everything's editable after the
+  fact (✎). A booked plan **auto-retires** to Been there once it's past and
+  you've rated it — until then it waits in a **♥ How was it?** section (on
+  Rhythm and History both), chipped `✅ happened · rate it`. Tap it and give
+  it a ♥ right in the details sheet; it files itself away.
 - **🧲 The Fridge (its own tab)** — a real fridge for the two of you.
   Freezer: **tonight's question** (same one on both phones), answer it each
   from your own phone, then **heart** the good ones (the heart shows up once

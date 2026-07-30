@@ -89,6 +89,8 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 /* pills / chips */
 .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); }
 .chip.love { background: var(--accent-soft); color: var(--accent-ink); }
+/* asking for something, not reporting a state — reads as an open loop */
+.chip.ask { background: var(--accent); color: #fff; }
 
 /* segmented filter */
 .seg { display: inline-flex; background: var(--surface-2); border-radius: 12px; padding: 3px; gap: 3px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -165,8 +167,11 @@ textarea.input { resize: vertical; min-height: 60px; }
    Sheet buttons are where the real decisions get made, so they lead. */
 .sheet-actions .btn { flex: 1; min-height: 48px; }
 .sheet-actions .btn.btn-sm { flex: 0 0 auto; min-width: 48px; }
-.rating { display: inline-flex; gap: 4px; }
-.rating button { background: none; border: 0; font-size: 24px; cursor: pointer; color: var(--accent); filter: grayscale(1) opacity(.4); padding: 0; }
+.rating { display: inline-flex; gap: 2px; }
+/* 48px each: this is the tap the app actively asks for, so it can't be a
+   24px glyph with no padding around it. */
+.rating button { background: none; border: 0; font-size: 24px; cursor: pointer; color: var(--accent);
+  filter: grayscale(1) opacity(.4); padding: 0; min-width: 48px; height: 48px; }
 .rating button.on { filter: none; }
 
 /* curated picks */

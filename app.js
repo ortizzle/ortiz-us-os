@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v45 · thumb-sized';
+const APP_VERSION = 'v46 · how was it';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -65,6 +65,10 @@ const commit = () => { save(DB); scheduleSync(); };
 // open and after a sync; the same rule graduates on save. Only bumps
 // updatedAt when it actually flips something, so it's a no-op once retired.
 const shouldGraduate = (e) => e.planned && e.status === 'booked' && e.date < todayStr() && (e.rating || 0) > 0;
+// The other half of that rule: it happened, but nobody's said how it went yet.
+// These get their own "How was it?" section rather than sitting in a
+// forward-looking list pretending to be upcoming.
+const awaitingRating = (e) => e.planned && e.status === 'booked' && e.date < todayStr() && !((e.rating || 0) > 0);
 function graduatePast() {
   let changed = false;
   for (const e of DB.entries) if (!e.deleted && shouldGraduate(e)) { e.planned = false; e.updatedAt = now(); changed = true; }
@@ -1430,7 +1434,10 @@ function upcomingCard(e) {
   const t = todayStr();
   const c = cadenceOf(e.type);
   const left = daysBetween(t, e.date);
-  const when = left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left}d`;
+  const past = awaitingRating(e);
+  // A past date counted forward reads "in -2d", so it counts back instead.
+  const when = past ? (left === -1 ? 'yesterday' : `${-left}d ago`)
+    : left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left}d`;
   const booked = e.status === 'booked';
   const kids = [
     el('div', { class: 'card-top' }, [
@@ -1438,9 +1445,10 @@ function upcomingCard(e) {
       el('div', {}, [
         el('div', { class: 'card-title' }, titleText(e)),
         el('div', { class: 'card-cadence' }, `${whenWhere(e)}${notesSuffix(e)}`),
-        el('div', { style: 'margin-top:6px' }, el('span', { class: 'chip' + (booked ? ' love' : '') }, booked ? '✅ booked' : '🔨 planning')),
+        el('div', { style: 'margin-top:6px' }, el('span', { class: 'chip' + (past ? ' ask' : booked ? ' love' : '') },
+          past ? '✅ happened · rate it' : booked ? '✅ booked' : '🔨 planning')),
       ]),
-      el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (left <= 1 ? 'due' : 'ok') }, when)),
+      el('div', { class: 'card-right' }, el('div', { class: 'countdown ' + (past || left <= 1 ? 'due' : 'ok') }, when)),
     ]),
   ];
   // Getaways and trips planned ahead deserve their own guide app — Jerome set the bar.
@@ -1464,7 +1472,9 @@ function eventSheet(entry) {
   const pushRow = (label, node) => body.push(el('div', {}, [el('div', { class: 'field-label' }, label), node]));
 
   const booked = entry.status === 'booked';
-  const head = [el('span', { class: 'chip' + (booked ? ' love' : '') }, booked ? '✅ Booked' : '🔨 Still planning')];
+  const head = [awaitingRating(entry)
+    ? el('span', { class: 'chip ask' }, '✅ Happened · rate it')
+    : el('span', { class: 'chip' + (booked ? ' love' : '') }, booked ? '✅ Booked' : '🔨 Still planning')];
   if (entry.private) head.push(el('span', { class: 'chip' }, '🙈 Full surprise'));
   body.push(el('div', { class: 'card-actions', style: 'margin:0 0 4px' }, head));
   if (entry.owner) {
@@ -1518,8 +1528,16 @@ function eventSheet(entry) {
   // Memories + rating make sense once it's happened.
   if (entry.date <= t) {
     for (const [k, label] of MEMQ[entry.type]) if (entry.mem?.[k]) pushRow(label, valBox(entry.mem[k]));
-    if (entry.rating) pushRow('How it was',
-      el('div', { style: 'font-size:20px; color:var(--accent); letter-spacing:2px' }, '♥'.repeat(entry.rating) + '♡'.repeat(5 - entry.rating)));
+    // The sheet is otherwise read-only, but the rating is the ONE thing the app
+    // is asking for here — a past plan can't retire to History without it, so
+    // it's tappable right where the nudge lands instead of buried under ✎ Edit.
+    const rated = entry.rating || 0;
+    const hearts = [1, 2, 3, 4, 5].map((n) => el('button', { class: n <= rated ? 'on' : '', title: `${n} of 5`, onclick: () => {
+      entry.rating = n; entry.updatedAt = now();
+      if (shouldGraduate(entry)) entry.planned = false;
+      commit(); m.close(); toast(`${'♥'.repeat(n)} — filed under Been there`); render();
+    } }, '♥'));
+    pushRow(rated ? 'How it was' : 'How was it?', el('div', { class: 'rating' }, hearts));
   }
 
   const m = modal(`${c.emoji} ${titleText(entry)}`, body, [
@@ -1539,19 +1557,32 @@ const IDEA_SCOPE = {
 function renderRhythm() {
   view.append(el('h1', {}, 'Your rhythm'), el('p', { class: 'sub' }, 'The 2-2-2 you two live by — kept on pace.'));
 
+  const t = todayStr();
   const jump = (id) => () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const anyToRate = DB.entries.some((e) => !e.deleted && awaitingRating(e));
   view.append(el('div', { class: 'seg' }, [
+    anyToRate ? el('button', { onclick: jump('sec-rate') }, '♥ How was it?') : null,
     el('button', { onclick: jump('sec-log') }, '💞 Plan & log'),
     el('button', { onclick: jump('sec-booked') }, '✅ Booked'),
     el('button', { onclick: jump('sec-planning') }, '🔨 Planning'),
-  ]));
-
-  const t = todayStr();
+  ].filter(Boolean)));
   const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
-  const bookedList = upcoming.filter((e) => e.status === 'booked');
-  const planningList = upcoming.filter((e) => e.status !== 'booked');
+  // Already-happened plans come out of the forward-looking lists entirely —
+  // most recent first, since the freshest memory is the easiest to rate.
+  const rateList = upcoming.filter(awaitingRating).slice().reverse();
+  const bookedList = upcoming.filter((e) => e.status === 'booked' && !awaitingRating(e));
+  const planningList = upcoming.filter((e) => e.status !== 'booked' && !awaitingRating(e));
   // Special dates surface only when they're close — clean the rest of the year.
   const nearSpecial = SPECIAL.map((s) => ({ s, nx: nextSpecial(s) })).filter((x) => x.nx.left <= 45).sort((a,b) => a.nx.left - b.nx.left);
+
+  // Ahead of everything else: these are the only items waiting on you.
+  if (rateList.length) {
+    view.append(el('h2', { id: 'sec-rate' }, '♥ How was it?'));
+    view.append(el('p', { class: 'muted small', style: 'margin:0 0 10px' },
+      rateList.length === 1 ? 'This one already happened — give it a ♥ and it files itself into History.'
+        : 'These already happened — give each a ♥ and they file themselves into History.'));
+    for (const e of rateList) view.append(upcomingCard(e));
+  }
 
   view.append(el('h2', { id: 'sec-log' }, 'Plan & log'));
   // Compact status boxes, one per cadence. Tap = straight into picking a
@@ -1566,8 +1597,11 @@ function renderRhythm() {
     if (planned) {
       const until = daysBetween(t, planned.date);
       count = until === 0 ? 'today!' : until === 1 ? 'tmrw!' : until < 0 ? `${-until}d ago` : `${until}d`;
-      status = planned.status === 'booked' ? '✅ booked' : '🔨 planning';
-      cls = planned.status === 'booked' ? 'ok' : 'due';
+      // Already happened reads "rate it" here too — "✅ booked · 1d ago" was
+      // the same mixed message the lists used to send.
+      const rateMe = awaitingRating(planned);
+      status = rateMe ? '♥ rate it' : planned.status === 'booked' ? '✅ booked' : '🔨 planning';
+      cls = rateMe || planned.status !== 'booked' ? 'due' : 'ok';
     }
     else if (!c.days) { status = 'anytime'; cls = 'ok'; }
     else if (!last) { status = 'let’s start'; cls = 'due'; }
@@ -1872,8 +1906,15 @@ function renderHistory() {
 
   const t = todayStr();
   const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date <= t).sort((a,b) => a.date < b.date ? 1 : -1);
-  const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
+  const all = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
+  // Something that already happened isn't "coming up" — it's waiting on a ♥.
+  const toRate = all.filter(awaitingRating).slice().reverse();
+  const upcoming = all.filter((e) => !awaitingRating(e));
 
+  if (toRate.length) {
+    view.append(el('h2', {}, '♥ How was it?'));
+    for (const e of toRate) view.append(historyRow(e, true));
+  }
   if (upcoming.length) {
     view.append(el('h2', {}, 'Coming up'));
     for (const e of upcoming) view.append(historyRow(e, true));
@@ -1910,9 +1951,11 @@ function historyRow(e, upcoming) {
   // upcoming chip speaks the ladder (planning/booked), same as everywhere else.
   const chip = e.rating
     ? el('span', { class: 'chip love' }, '♥'.repeat(e.rating))
-    : upcoming
-      ? el('span', { class: 'chip' + (e.status === 'booked' ? ' love' : '') }, e.status === 'booked' ? '✅ booked' : '🔨 planning')
-      : null;
+    : awaitingRating(e)
+      ? el('span', { class: 'chip ask' }, '✅ happened · rate it')
+      : upcoming
+        ? el('span', { class: 'chip' + (e.status === 'booked' ? ' love' : '') }, e.status === 'booked' ? '✅ booked' : '🔨 planning')
+        : null;
   return el('div', { class: 'row hrow' }, [
     el('span', { class: 'r-emoji' }, c.emoji),
     el('div', { class: 'r-main' }, [

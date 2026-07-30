@@ -124,9 +124,19 @@ Three sections with jump-chips (a mini table of contents) at the top:
   where-you-went can be recorded (or a surprise unlocked) after the fact.
 - **Auto-retire to History** — a plan that is **booked, past, and rated**
   graduates out of Rhythm to History's "Been there" (`shouldGraduate` /
-  `graduatePast`, run on open, after sync, and on save). Until it's rated, a
-  past booked plan stays in Rhythm's Booked list as a nudge to log how it
-  went; a still-*planning* past plan stays put (it never got confirmed).
+  `graduatePast`, run on open, after sync, and on save). A still-*planning*
+  past plan stays put (it never got confirmed).
+- **♥ How was it? (v46)** — the other half of that rule (`awaitingRating`):
+  booked + past + unrated. These used to sit in Rhythm's ✅ Booked list and
+  History's "Coming up" chipped `✅ booked`, indistinguishable from a genuinely
+  future plan and counting down "in -1d" — the app was asking for a rating
+  without saying so, and the details sheet offered only Close/✎ Edit, so the
+  rating wasn't even reachable from where the nudge landed. Now they get their
+  own **♥ How was it?** section leading Rhythm (with a jump chip) and heading
+  History, are chipped `✅ happened · rate it`, count *back* ("yesterday",
+  "3d ago"), and the details sheet carries a live 5-♥ control: one tap rates
+  it, retires it, and files it under Been there. The stat boxes say `♥ rate it`
+  too. Every section and chip vanishes on its own once nothing is waiting.
 
 ### Rhythm delights (v31)
 - **💫 This week in your story** — past entries whose month-day falls within
