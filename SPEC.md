@@ -178,10 +178,14 @@ Everything is discovery — the tab carries no instruction text.
   free (❤️ saving is opt-in); a synced seen-receipt (`note:seen:<who>`) shows
   the writer "seen 💗" (coupon-style); replacing a note the other hasn't read
   warns first and archives the old text as **💌 one you missed** (`notemiss:`)
-  on their fridge until opened; 🗑 on your own note is an intentional
-  retraction — no archive. The reader saves the other's note with ❤️ (→
-  their jar, sweet) or 🔥 (→ the freezer, spicy) — no labels, it just lands
-  where they choose (`notekeep:`); the note stays pinned either way.
+  on their fridge until opened; 🗑 is an intentional retraction — no archive.
+  **Nothing tappable sits on the paper any more (v45)** — those were 17–20px
+  targets. Tapping *their* note opens a reading sheet with full-size **Close /
+  ❤️ Jar / 🔥 On ice** (same buttons as a 💌 missed note; sweet → their jar,
+  spicy → the freezer, `notekeep:`, and the note stays pinned either way).
+  🗑 moved into your own note's editor as a `btn-danger` action. The only
+  thing left on the paper is the non-interactive "seen 💗 / not seen yet"
+  status and the folded corner's nudge zone.
   Pinning a note offers a nudge (v40): a yes/no modal, then the share sheet
   with a teaser ("📌 Just left you a little something on our fridge — come
   see 👀") + the `#fridge` link. The note text itself never rides along —

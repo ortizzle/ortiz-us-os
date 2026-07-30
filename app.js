@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v44 · corner nudge';
+const APP_VERSION = 'v45 · thumb-sized';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -432,26 +432,45 @@ const seenByOther = (w) => {
 function fridgeEdit(w) {
   const prev = noteRec(w);
   const inp = el('textarea', { class: 'input', placeholder: 'Something small and true. Replace it whenever.' }, prev?.text || '');
-  const m = modal('📌 Your note on the fridge', [
+  let m;
+  const pin = (v, archivePrev) => {
+    if (archivePrev) DB.acts.push({ id: `notemiss:${w}:${uid()}`, text: prev.text, at: (prev.updatedAt || '').slice(0, 10), read: false, updatedAt: now() });
+    setAct(`note:${w}`, { text: v });
+    m.close(); toast(v ? 'Pinned 📌' : 'Note taken down'); render();
+    // The nudge text never carries the note itself — the note is the reason
+    // to open the app, and personal words stay off lock-screen previews.
+    if (v) offerNudge(`Let ${COUPLE[other(w)].name} know something’s waiting? The note stays a surprise — the text just says to come look.`, () =>
+      sendNudge('📌 Just left you a little something on our fridge — come see 👀'));
+  };
+  const actions = [];
+  // Taking the note down lives here rather than as an icon on the paper: there
+  // it was a 17px target for a destructive action, sitting inches from the tap
+  // that opens this editor.
+  if (prev?.text) actions.push(el('button', { class: 'btn btn-danger btn-sm', title: 'Take it down', onclick: () => {
+    confirmSheet('🗑 Take it down?', 'Your note comes off the fridge. This is a retraction, so it won’t reach them as a missed note.',
+      'Take it down', () => { setAct(`note:${w}`, { text: '' }); m.close(); toast('Note taken down'); render(); });
+  } }, '🗑'));
+  actions.push(
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      const v = inp.value.trim();
+      // Replacing a note they haven't read yet asks first (the old one still
+      // reaches them as a missed note) — declining leaves the editor open so
+      // the text you typed isn't thrown away.
+      if (prev?.text && v !== prev.text && !seenByOther(w)) {
+        confirmSheet('📌 Replace it?', `${COUPLE[other(w)].name} hasn’t seen your note yet. They’ll still get the old one as a 💌 missed note.`,
+          'Replace it', () => pin(v, true));
+        return;
+      }
+      pin(v, false);
+    } }, 'Pin it'),
+  );
+  m = modal('📌 Your note on the fridge', [
     el('p', { class: 'muted small', style: 'margin:0 0 8px' }, prev?.text
       ? `${COUPLE[other(w)].name} sees this on their fridge. It’s selected — just type to write a new one, or tap it to edit.`
       : `${COUPLE[other(w)].name} sees this on their fridge. One note at a time — a new one replaces the old.`),
     inp,
-  ], [
-    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
-    el('button', { class: 'btn btn-primary', onclick: () => {
-      const v = inp.value.trim();
-      const replacingUnseen = prev?.text && v !== prev.text && !seenByOther(w);
-      if (replacingUnseen && !confirm(`${COUPLE[other(w)].name} hasn’t seen this note yet — replace it? They’ll still get the old one as a missed note.`)) return;
-      if (replacingUnseen) DB.acts.push({ id: `notemiss:${w}:${uid()}`, text: prev.text, at: (prev.updatedAt || '').slice(0, 10), read: false, updatedAt: now() });
-      setAct(`note:${w}`, { text: v });
-      m.close(); toast(v ? 'Pinned 📌' : 'Note taken down'); render();
-      // The nudge text never carries the note itself — the note is the reason
-      // to open the app, and personal words stay off lock-screen previews.
-      if (v) offerNudge(`Let ${COUPLE[other(w)].name} know something’s waiting? The note stays a surprise — the text just says to come look.`, () =>
-        sendNudge('📌 Just left you a little something on our fridge — come see 👀'));
-    } }, 'Pin it'),
-  ]);
+  ], actions);
   // Preselect rather than blank the field: typing replaces the old note in one
   // go (the common case — a fresh note), but tapping once drops the cursor in
   // to edit what's there, so neither path needs a delete first.
@@ -485,6 +504,16 @@ const bignoteEl = (who, text, at, spicy) => el('div', { class: 'bignote p-' + wh
   spicy ? el('span', { class: 'spicypill', style: 'position:absolute; top:10px; right:14px' }, '🔥') : null,
   text, el('span', { class: 'bd' }, at ? fmt(at) : ''), el('span', { class: 'sig' }, `— Love, ${COUPLE[who].name}`),
 ]);
+// Reading their pinned note. ❤️ → your jar (sweet), 🔥 → the freezer (spicy);
+// the note itself stays on the fridge either way.
+function theirNoteSheet(w, r) {
+  const at = (r.updatedAt || '').slice(0, 10);
+  const m = modal(`📌 From ${COUPLE[w].name}`, [bignoteEl(w, r.text, at)], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+    el('button', { class: 'btn', onclick: () => { saveToJar(w, r.text, at, false); m.close(); render(); } }, '❤️ Jar'),
+    el('button', { class: 'btn btn-primary', onclick: () => { saveToJar(w, r.text, at, true); m.close(); render(); } }, '🔥 On ice'),
+  ]);
+}
 function missedSheet(rec, them) {
   const m = modal('💌 One you missed', [
     el('p', { class: 'muted small', style: 'margin:0 0 8px' }, `${COUPLE[them].name} replaced this before you saw it.`),
@@ -688,29 +717,24 @@ function renderFridge() {
     if (!mine && freshTheirs) kids.push(el('span', { class: 'newchip' }, 'new ✨'));
     kids.push(r?.text || el('span', { class: 'p-empty' }, mine ? 'Leave a note…' : 'Nothing pinned yet'));
     if (mine) {
+      // Status only — the 🗑 moved into the editor. Nothing here is tappable,
+      // so nothing here has to be thumb-sized.
       if (r?.text) kids.push(el('span', { class: 'ptools' }, [
-        el('button', { title: 'Take it down', onclick: (ev) => {
-          ev.stopPropagation();
-          if (confirm('Take your note down?')) { setAct(`note:${w}`, { text: '' }); render(); }
-        } }, '🗑'),
         el('span', { class: 'pstatus' }, seenByOther(w) ? 'seen 💗' : 'not seen yet'),
       ]));
       // Tapping the note anywhere already writes a new one, so the fold is
       // free to do something else: it sends a playful poke. Still no graphic
       // on the fold — the invisible catcher just gained a better job.
       kids.push(el('button', { class: 'pcorner', title: `Send ${COUPLE[other(w)].name} a nudge`, onclick: (ev) => { ev.stopPropagation(); cornerNudge(w); } }));
-    } else if (r?.text) {
-      const at = (r.updatedAt || '').slice(0, 10);
-      // ❤️ → your jar (sweet). 🔥 → the freezer (spicy). No labels — the reader
-      // just decides, and it lands where it belongs.
-      kids.push(el('span', { class: 'ptools' }, [
-        el('button', { title: 'Save to my jar', onclick: (ev) => { ev.stopPropagation(); saveToJar(w, r.text, at, false); render(); } }, '❤️'),
-        el('button', { title: 'Save on ice', onclick: (ev) => { ev.stopPropagation(); saveToJar(w, r.text, at, true); render(); } }, '🔥'),
-      ]));
     }
     kids.push(el('span', { class: 'sig' }, `— Love, ${COUPLE[w].name}`));
+    // Their note opens a sheet instead of carrying ❤️/🔥 on the paper: those
+    // were two 20px targets 8px apart sending a note to two DIFFERENT places
+    // (sweet jar vs the freezer), which is a coin flip with a thumb. Same
+    // buttons as a 💌 missed note, full size.
     const p = el('div', { class: `postit p-${w} ${w === 'chris' ? 'tilt-l' : 'tilt-r'}`, onclick: () => {
       if (mine) { fridgeEdit(w); return; }
+      if (r?.text) { theirNoteSheet(w, r); return; }
       p.classList.remove('wob'); void p.offsetWidth; p.classList.add('wob');
     } }, kids);
     return p;
@@ -1067,6 +1091,15 @@ function toast(msg) {
 }
 
 // ---------- modal ----------
+// Native confirm() is a system dialog on Android and can be suppressed
+// outright by mobile Safari — a destructive tap silently doing nothing. This
+// keeps the question in the app's own sheet, where the answer is always real.
+function confirmSheet(title, question, yesLabel, onYes) {
+  const m = modal(title, [el('p', { class: 'muted small', style: 'margin:0' }, question)], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Never mind'),
+    el('button', { class: 'btn btn-danger', onclick: () => { m.close(); onYes(); } }, yesLabel),
+  ]);
+}
 function modal(title, body, actions) {
   const scrim = el('div', { class: 'scrim', onclick: (e) => { if (e.target === scrim) close(); } });
   const sheet = el('div', { class: 'sheet' }, [el('h3', {}, title), ...body, el('div', { class: 'sheet-actions' }, actions)]);

@@ -161,7 +161,10 @@ textarea.input { resize: vertical; min-height: 60px; }
 .sheet { background: var(--surface); width: 100%; max-width: 640px; border-radius: 22px 22px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); box-shadow: var(--shadow); max-height: 88vh; overflow: auto; }
 .sheet h3 { margin: 0 0 12px; font-size: 19px; }
 .sheet-actions { display: flex; gap: 8px; margin-top: 18px; }
-.sheet-actions .btn { flex: 1; }
+/* 48px: Android/Material's minimum touch target, which also clears iOS's 44.
+   Sheet buttons are where the real decisions get made, so they lead. */
+.sheet-actions .btn { flex: 1; min-height: 48px; }
+.sheet-actions .btn.btn-sm { flex: 0 0 auto; min-width: 48px; }
 .rating { display: inline-flex; gap: 4px; }
 .rating button { background: none; border: 0; font-size: 24px; cursor: pointer; color: var(--accent); filter: grayscale(1) opacity(.4); padding: 0; }
 .rating button.on { filter: none; }
@@ -218,7 +221,7 @@ textarea.input { resize: vertical; min-height: 60px; }
    collar widens the hit area to 44px without touching the look, which
    matters most when the handle is open (opacity 0) and you're aiming at a
    strip you can't see. It sits in the left padding gutter, over nothing. */
-.fhandle::before { content: ''; position: absolute; top: -10px; bottom: -10px; left: -17px; right: -18px; }
+.fhandle::before { content: ''; position: absolute; top: -12px; bottom: -12px; left: -19px; right: -20px; }
 .fhandle.hf { top: 18px; height: 60px; }
 .fhandle.hd { top: 18px; height: 150px; }
 
@@ -227,7 +230,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 .qcard .tape { position: absolute; top: -9px; left: 50%; transform: translateX(-50%) rotate(2deg);
   width: 84px; height: 19px; background: var(--accent-soft); opacity: 0.9; border-radius: 2px;
   box-shadow: 0 1px 2px rgba(40,20,28,0.12); }
-.qcard .qshare { position: absolute; top: 0; right: 0; width: 44px; height: 44px;
+.qcard .qshare { position: absolute; top: 0; right: 0; width: 48px; height: 48px;
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; color: var(--text-2); opacity: 0.75; }
 .qcard .qshare svg { width: 15px; height: 15px; fill: none; stroke: currentColor;
@@ -242,7 +245,7 @@ textarea.input { resize: vertical; min-height: 60px; }
 .q-ans button { font: inherit; font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
   border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); cursor: pointer; }
 .qfoot { display: flex; justify-content: flex-end; margin: 0 -6px -10px 0; }
-.qheart { width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center;
+.qheart { width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; color: var(--text-2); }
 .qheart svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7;
   stroke-linejoin: round; opacity: 0.65; }
@@ -266,9 +269,9 @@ textarea.input { resize: vertical; min-height: 60px; }
 .postit.p-chris::before { background: var(--paper-c-fold); }
 .postit.p-kat { background: var(--paper-k); color: var(--paper-k-ink); }
 .postit.p-kat::before { background: var(--paper-k-fold); }
-/* right: clear of the fold's tap zone below, so the corner can be thumb-sized
-   without stealing taps aimed at the signature. */
-.postit .sig { position: absolute; right: 38px; bottom: 8px; font-weight: 700; font-size: 14px; }
+/* right: clear of the fold's 48px tap zone below, so the corner can be
+   thumb-sized without stealing taps aimed at the signature. */
+.postit .sig { position: absolute; right: 52px; bottom: 8px; font-weight: 700; font-size: 14px; }
 .postit.p-chris .sig { color: #24519b; }
 .postit.p-kat .sig { color: #63299c; }
 .postit .p-empty { font-style: italic; opacity: 0.65; }
@@ -276,12 +279,11 @@ textarea.input { resize: vertical; min-height: 60px; }
    background, no icon. It sends a nudge, so it's sized for a thumb rather
    than matching the 18px triangle it sits on; the signature moves left to
    stay clear of it, and the note's bottom padding keeps it off the text. */
-.pcorner { position: absolute; right: 0; bottom: 0; width: 34px; height: 44px;
+.pcorner { position: absolute; right: 0; bottom: 0; width: 48px; height: 48px;
   background: none; border: 0; padding: 0; cursor: pointer; }
 .nudgeline { font-family: var(--hand); font-size: 18px; line-height: 1.4; padding: 14px 16px;
   border-radius: 12px; background: var(--accent-soft); color: var(--accent-ink); }
-.ptools { position: absolute; left: 10px; bottom: 4px; display: flex; gap: 8px; align-items: center; }
-.ptools button { font-size: 12.5px; background: none; border: 0; cursor: pointer; opacity: 0.65; padding: 2px; }
+.ptools { position: absolute; left: 10px; bottom: 8px; display: flex; gap: 8px; align-items: center; }
 .pstatus { font-size: 10px; font-weight: 800; opacity: 0.65; white-space: nowrap; }
 .pmagnet { position: absolute; top: -10px; left: 50%; width: 20px; height: 20px; border-radius: 50%;
   transform: translateX(-50%);
@@ -331,7 +333,8 @@ textarea.input { resize: vertical; min-height: 60px; }
   font-size: 15px; padding: 0 10px; }
 .m-ghost { padding: 5px 9px; font-size: 10.5px; font-weight: 800; color: var(--text-2); border-radius: 7px;
   border: 2px dashed var(--text-2); opacity: 0.6; transform: rotate(2deg); }
-.mletters { display: inline-flex; gap: 4px; align-items: center; transform: rotate(-1.5deg); cursor: pointer; background: none; border: 0; padding: 0; }
+.mletters { display: inline-flex; gap: 4px; align-items: center; transform: rotate(-1.5deg); cursor: pointer; background: none; border: 0;
+  padding: 11px 0; }  /* padding, not size: keeps the letters' look, clears 48px for a thumb */
 .ltr { width: 21px; height: 25px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center;
   font-weight: 900; font-size: 13px; color: #fff; box-shadow: 0 2px 5px rgba(40,20,28,0.3), inset 0 1px 2px rgba(255,255,255,0.4); }
 .ltr.c { background: #3f74c9; transform: rotate(-5deg); }

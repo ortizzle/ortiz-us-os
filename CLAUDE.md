@@ -4,6 +4,26 @@ Guidance for working on **Ortiz Us OS** — Chris & Kat's 2-2-2 app (date nights
 getaways, destination trips). Fourth app in the Ortiz OS family (Home OS,
 Learning OS, Focus OS, Us OS) — same stack and conventions across all four.
 
+## Target devices
+
+**Chris is on an Android Pixel (Chrome).** The wider Ortiz-suite standards say
+"primarily iPhones / mobile Safari" — that is not true for this app's two
+phones, so treat Android Chrome as a first-class target here and don't reason
+only about mobile Safari.
+
+Practical consequences:
+
+- **Tap targets are 48px, not 44px** — Android/Material's minimum, which also
+  clears iOS's. Sub-48px controls are the recurring bug in this app: a 9px
+  fridge handle, a 20px post-it corner, a 17px 🗑, two 20px ❤️/🔥 buttons
+  8px apart. Measure rendered size, don't eyeball the CSS.
+- **Never `confirm()`/`alert()`/`prompt()`** — already banned by the standards
+  for mobile Safari (which can suppress them, silently dropping a destructive
+  tap). Use `confirmSheet()` in `app.js`. On Android they also render as an
+  out-of-place system dialog.
+- Both phones still have to work — Kat's may be an iPhone — so verify safe-area
+  insets and share-sheet behaviour on both rather than assuming one.
+
 ## Stack
 
 Vanilla HTML/CSS/JS, ES modules, no build step, no framework, no bundler.
