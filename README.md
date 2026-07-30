@@ -102,15 +102,18 @@ after an update.
   surprise reveal (plus an email teaser if configured) and lives on their
   shelf tinted the sender's color, 💙 from Chris, 💜 from Kat. Unsent coupons
   never sync, so the surprise always holds.
-- **History** — ♥ How was it?, Coming up (with 🔨/✅ status) and Been there
-  (♥ ratings, saved memories), newest first. Everything's editable after the
-  fact (✎). A booked plan **auto-retires** to Been there once it's past and
+- **History** — looks backwards only: ♥ How was it? and Been there, newest
+  first, grouped by year. Each night is a card in the recap book's style —
+  rating, memory answers and the first lines of the write-up — with ✎ edit,
+  📝 recap, 📷 album and a confirmed ✕. What's *ahead* lives on Rhythm alone
+  (History used to mirror it, which made the two tabs read as copies).
+  A booked plan **auto-retires** to Been there once it's past and
   you've rated it — until then it waits in a **♥ How was it?** section (on
   Rhythm and History both), chipped `✅ happened · rate it`. Tap it and give
   it a ♥ right in the details sheet; it files itself away. Rating something for
   the first time then offers **📝 the recap** — favorite moment / food / drink
   plus a free-form write-up, kept separate from your planning notes. Add or
-  revise it any time by tapping the event (in History, tap the row). All of
+  revise it any time by tapping the event (in History, tap the card or 📝). All of
   them collect into **📖 the recap book** (button at the top of History) — every
   night you wrote up, grouped by year, in your own words, with **📄 Save as PDF**
   to keep a copy (choose "Save as PDF" in the print sheet; on iPhone, Share →

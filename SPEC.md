@@ -163,6 +163,22 @@ Three sections with jump-chips (a mini table of contents) at the top:
   ("Chris & Kat · Ortiz Us OS · saved <date>") appears, the palette is forced
   light regardless of the phone's theme, and `break-inside: avoid` keeps an
   entry from splitting across pages (year headings won't strand either).
+- **Printed as a scrapbook (v50)** — on paper each entry becomes a card taped
+  onto a cream page: a deterministic alternating tilt (`sb-l`/`sb-r`, by index
+  so both phones and any reprint match), a washi strip (`.rb-tape`, side
+  borders only so it reads as tape not a label), and hand-lettered year
+  dividers. All print-only — the on-screen book stays flat and untilted. The
+  look leans on borders and transforms rather than fills, because Chrome's
+  "background graphics" setting can override `print-color-adjust`.
+- **History reworked (v50)** — the tab dropped **Coming up** entirely: Rhythm's
+  ✅ Booked / 🔨 Still planning already own what's ahead, and mirroring them
+  made the two tabs read as copies. History is retrospective now — ♥ How was
+  it? then Been there, grouped by year with `.hyear` dividers. Rows became
+  `historyCard()` in the recap book's clothes (rating chip, `mem` answers, the
+  recap clamped to 2 lines with the full read a tap away in 📖), keeping 📷 /
+  📝 / ✎ and a ✕ that finally **asks first** via `confirmSheet` — it was a
+  one-tap tombstone on a 35px target beside ✎, on rows that now carry the
+  recaps. The old `historyRow()` is gone.
 
 ### Rhythm delights (v31)
 - **💫 This week in your story** — past entries whose month-day falls within

@@ -433,6 +433,13 @@ textarea.input { resize: vertical; min-height: 60px; }
 .rb-mem b { color: var(--text); font-weight: 700; }
 .rb-recap { font-family: var(--hand); font-size: 17px; line-height: 1.45; margin-top: 10px;
   padding: 2px 0 2px 12px; border-left: 3px solid var(--accent-soft); white-space: pre-wrap; }
+/* History shows a taste; the full write-up lives in 📖 the recap book. */
+.rb-tape { display: none; }  /* paper only — see @media print */
+.rb-recap.clamp2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.hcard .rb-head { cursor: pointer; }
+.hcard-tools { display: flex; justify-content: flex-end; gap: 4px; margin-top: 8px; }
+.hyear { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; color: var(--text-2);
+  margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
 
 .keep-row .ka { font-size: 12.5px; color: var(--text-2); }
 /* Hanging indent + a fixed-width name, so the names stack in one column and
@@ -511,5 +518,28 @@ textarea.input { resize: vertical; min-height: 60px; }
   #view h1 { margin-bottom: 2mm; }
   .rb-recap { border-left: 3px solid #c9bdc1; }
   a[href]::after { content: ''; }  /* no URL spew after links */
+
+  /* --- scrapbook: each memory is a card taped onto the page --- */
+  /* print-color-adjust: Chrome can be told to keep backgrounds, but the user's
+     "background graphics" setting still wins — so the look is carried by the
+     tilt, the tape's OUTLINE and the borders, all of which print regardless. */
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fffdfb; }
+  .rbcard { position: relative; background: #fff; border: 1px solid #cfc6c9;
+    border-radius: 3px; padding: 15px 16px 13px; margin: 11mm 4mm 9mm; box-shadow: none; }
+  .rbcard.sb-l { transform: rotate(-1.2deg); }
+  .rbcard.sb-r { transform: rotate(1deg); }
+  /* the washi strip holding it down — outlined so it survives ink-saving mode */
+  .rb-tape { display: block; position: absolute; top: -7px; left: 50%;
+    width: 92px; height: 17px; margin-left: -46px; transform: rotate(-1.6deg);
+    background: #f3e3e8; border-radius: 1px;
+    /* side edges only — a full box reads as a label, two edges read as tape */
+    border-left: 1px solid #e0c8d0; border-right: 1px solid #e0c8d0; }
+  .rbcard .card-title { font-size: 17px; }
+  .rbcard .card-cadence { font-size: 12px; }
+  .rb-recap { font-size: 16px; }
+  /* year divider as a hand-lettered page marker */
+  #view h2 { font-family: var(--hand); font-size: 24px; font-weight: 400;
+    letter-spacing: 0.02em; border-bottom: 1.5px solid #e0d5d8; padding-bottom: 2mm; }
 }
 .print-only { display: none; }

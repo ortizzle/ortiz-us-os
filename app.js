@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v49 · recap PDF';
+const APP_VERSION = 'v50 · scrapbook';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1235,13 +1235,16 @@ function renderRecaps() {
   view.append(el('p', { class: 'muted small print-hide', style: 'margin:0 0 10px' },
     'Saving as PDF: pick “Save as PDF” as the destination in the print sheet. On an iPhone it’s Share → Print.'));
 
-  let year = '';
+  let year = '', n = 0;
   for (const e of written) {
     const y = e.date.slice(0, 4);
     if (y !== year) { year = y; view.append(el('h2', {}, y)); }
     const bits = MEMQ[e.type].map(([k, label]) => e.mem?.[k]
       ? el('div', { class: 'rb-mem' }, [el('b', {}, `${MEM_ICONS[k] || '•'} ${label}: `), e.mem[k]]) : null).filter(Boolean);
-    view.append(el('div', { class: 'card rbcard clickable', onclick: () => eventSheet(e) }, [
+    // Deterministic alternating tilt (not random) so the printed scrapbook
+    // looks identical on both phones and on a reprint.
+    view.append(el('div', { class: `card rbcard clickable sb-${n++ % 2 ? 'r' : 'l'}`, onclick: () => eventSheet(e) }, [
+      el('span', { class: 'rb-tape' }),
       el('div', { class: 'rb-head' }, [
         el('span', { class: 'card-emoji' }, cadenceOf(e.type).emoji),
         el('div', {}, [
@@ -1978,6 +1981,40 @@ function keepsakesSheet(keeps) {
   ]));
   const m = modal('🌹 The vase', rows, [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
 }
+// History's row, in the recap book's clothes: the memory leads (answers and a
+// clamped recap), the plumbing follows. Tapping the body opens the event.
+function historyCard(e) {
+  const c = cadenceOf(e.type);
+  const chip = e.rating ? el('span', { class: 'chip love' }, '♥'.repeat(e.rating))
+    : awaitingRating(e) ? el('span', { class: 'chip ask' }, '✅ happened · rate it')
+      : null;
+  const bits = MEMQ[e.type].map(([k, label]) => e.mem?.[k]
+    ? el('div', { class: 'rb-mem' }, [el('b', {}, `${MEM_ICONS[k] || '•'} ${label}: `), e.mem[k]]) : null).filter(Boolean);
+  return el('div', { class: 'card rbcard hcard' }, [
+    el('div', { class: 'rb-head clickable', onclick: () => eventSheet(e) }, [
+      el('span', { class: 'card-emoji' }, c.emoji),
+      el('div', { style: 'flex:1' }, [
+        el('div', { class: 'card-title' }, titleText(e)),
+        el('div', { class: 'card-cadence' }, `${whenWhere(e)}${notesSuffix(e)}`),
+      ]),
+      chip,
+    ]),
+    ...bits,
+    // Clamped, not full: the whole write-up is one tap away in 📖 the recap
+    // book, so this stays scannable when a year of them stacks up.
+    e.recap ? el('div', { class: 'rb-recap clamp2' }, e.recap) : null,
+    el('div', { class: 'hcard-tools' }, [
+      e.album ? el('a', { class: 'btn btn-ghost btn-sm', href: e.album, target: '_blank', rel: 'noopener', title: 'Photo album' }, '📷') : null,
+      e.date <= todayStr() ? el('button', { class: 'btn btn-ghost btn-sm', title: 'Recap', onclick: () => recapSheet(e) }, '📝') : null,
+      el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
+      // Was a one-tap tombstone on a 35px target sitting beside ✎ — and these
+      // rows now carry the recaps, which is exactly what you can't get back.
+      el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => confirmSheet('✕ Delete this memory?',
+        `“${titleText(e)}” and anything written about it come off History. This can’t be undone from the app.`,
+        'Delete it', () => { e.deleted = true; e.updatedAt = now(); commit(); toast('Deleted'); render(); }) }, '✕'),
+    ].filter(Boolean)),
+  ]);
+}
 // Jars show only the SWEET keepsakes — spicy ones stay frozen in the freezer.
 const jarNotes = (w) => DB.acts.filter((r) => r.id.startsWith(`notekeep:${w}:`) && !r.spicy);
 function jarSheet(w) {
@@ -2010,22 +2047,24 @@ function renderHistory() {
 
   const t = todayStr();
   const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date <= t).sort((a,b) => a.date < b.date ? 1 : -1);
-  const all = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
-  // Something that already happened isn't "coming up" — it's waiting on a ♥.
-  const toRate = all.filter(awaitingRating).slice().reverse();
-  const upcoming = all.filter((e) => !awaitingRating(e));
+  // No "Coming up" here: Rhythm's ✅ Booked and 🔨 Still planning already own
+  // what's ahead, and duplicating them made this tab read as a second copy of
+  // that one. History looks backwards now — the only forward-ish thing left is
+  // a night that HAPPENED and still owes a ♥, which is how a memory gets in.
+  const toRate = DB.entries.filter((e) => !e.deleted && awaitingRating(e)).sort((a,b) => a.date < b.date ? 1 : -1);
 
   if (toRate.length) {
     view.append(el('h2', {}, '♥ How was it?'));
-    for (const e of toRate) view.append(historyRow(e, true));
-  }
-  if (upcoming.length) {
-    view.append(el('h2', {}, 'Coming up'));
-    for (const e of upcoming) view.append(historyRow(e, true));
+    for (const e of toRate) view.append(historyCard(e));
   }
   view.append(el('h2', {}, 'Been there'));
   if (!done.length) view.append(el('div', { class: 'empty' }, 'Log your first one from the Rhythm tab.'));
-  for (const e of done) view.append(historyRow(e, false));
+  let hyear = '';
+  for (const e of done) {
+    const y = e.date.slice(0, 4);
+    if (y !== hyear) { hyear = y; view.append(el('div', { class: 'hyear' }, y)); }
+    view.append(historyCard(e));
+  }
 
   // jars of ⭐-saved (sweet) fridge notes, tucked at the bottom
   const jarN = (w) => jarNotes(w).length;
@@ -2048,33 +2087,6 @@ function memLine(e) {
   if (!e.mem) return null;
   const bits = Object.entries(e.mem).filter(([, v]) => v).map(([k, v]) => `${MEM_ICONS[k] || '•'} ${v}`);
   return bits.length ? el('div', { class: 'r-meta' }, bits.join('  ')) : null;
-}
-function historyRow(e, upcoming) {
-  const c = cadenceOf(e.type);
-  // Pills sit on their own bottom line so titles get the full width, and the
-  // upcoming chip speaks the ladder (planning/booked), same as everywhere else.
-  const chip = e.rating
-    ? el('span', { class: 'chip love' }, '♥'.repeat(e.rating))
-    : awaitingRating(e)
-      ? el('span', { class: 'chip ask' }, '✅ happened · rate it')
-      : upcoming
-        ? el('span', { class: 'chip' + (e.status === 'booked' ? ' love' : '') }, e.status === 'booked' ? '✅ booked' : '🔨 planning')
-        : null;
-  return el('div', { class: 'row hrow' }, [
-    el('span', { class: 'r-emoji' }, c.emoji),
-    // Tapping the row body opens the read-only sheet (same as a fridge magnet
-    // does), which is where 📝 Recap lives. The ✎/✕/📷 buttons are siblings,
-    // so they keep their own taps.
-    el('div', { class: 'r-main clickable', onclick: () => eventSheet(e) }, [
-      el('div', { class: 'r-title' }, titleText(e)),
-      el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
-      memLine(e),
-    ]),
-    e.album ? el('a', { class: 'btn btn-ghost btn-sm', href: e.album, target: '_blank', rel: 'noopener', title: 'Photo album' }, '📷') : null,
-    el('button', { class: 'btn btn-ghost btn-sm', title: 'Edit', onclick: () => logModal(e.type, { entry: e }) }, '✎'),
-    el('button', { class: 'btn btn-ghost btn-sm', title: 'Delete', onclick: () => { e.deleted = true; e.updatedAt = now(); commit(); render(); } }, '✕'),
-    chip ? el('div', { class: 'r-bottom' }, chip) : null,
-  ]);
 }
 
 // ---------- log / plan / edit modal ----------
