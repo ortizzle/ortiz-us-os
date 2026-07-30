@@ -107,7 +107,10 @@ after an update.
   fact (✎). A booked plan **auto-retires** to Been there once it's past and
   you've rated it — until then it waits in a **♥ How was it?** section (on
   Rhythm and History both), chipped `✅ happened · rate it`. Tap it and give
-  it a ♥ right in the details sheet; it files itself away.
+  it a ♥ right in the details sheet; it files itself away. Rating something for
+  the first time then offers **📝 the recap** — favorite moment / food / drink
+  plus a free-form write-up, kept separate from your planning notes. Add or
+  revise it any time by tapping the event (in History, tap the row).
 - **🧲 The Fridge (its own tab)** — a real fridge for the two of you.
   Freezer: **tonight's question** (same one on both phones), answer it each
   from your own phone, then **heart** the good ones (the heart shows up once

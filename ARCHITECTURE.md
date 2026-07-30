@@ -24,8 +24,12 @@ One `localStorage` key, `ortiz-us-os`, holding:
 ```js
 {
   entries: [{ id, type, date, dateEnd, title, cover, loc, time, dress, pack,
-              notes, rating, planned, status, owner, private, mem, hidden,
+              notes, recap, rating, planned, status, owner, private, mem, hidden,
               updatedAt, deleted }],
+  //         `notes` is the PLAN ("dinner at 5:45 first"); `recap` + `mem` are
+  //         written afterwards. Separate fields so a recap can never overwrite
+  //         the plan. `recap` is not HIDEABLE (no 🔒) — apply() only routes
+  //         HIDEABLE keys to secrets, so a lock there would do nothing.
   secrets: { entryId: { field: value } },   // device-local, never synced
   stash:   { person: [{ id, text, done, createdAt }] }, // device-local, never synced
   deepcache: { key: { text, at } },         // device-local ✨ result cache, ~30 days

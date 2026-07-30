@@ -137,6 +137,16 @@ Three sections with jump-chips (a mini table of contents) at the top:
   "3d ago"), and the details sheet carries a live 5-♥ control: one tap rates
   it, retires it, and files it under Been there. The stat boxes say `♥ rate it`
   too. Every section and chip vanishes on its own once nothing is waiting.
+- **📝 The recap (v47)** — the three `MEMQ` short prompts (per type: favorite
+  moment / food / drink, etc.) plus a free-form **`recap`** textarea, in one
+  sheet. It's offered automatically the FIRST time you rate something (the
+  moment you're already thinking about it — a re-rating never re-asks), and is
+  reachable any time from an event's sheet via **📝 Add recap / 📝 Recap**.
+  Tapping a History row's body now opens that sheet (same as a fridge magnet),
+  so the recap isn't stuck behind ✎ Edit. Skipping it still keeps the rating.
+  `recap` is separate from `notes` on purpose: `notes` is the plan you followed
+  ("dinner at 5:45 first"), `recap` is what happened, so writing one can never
+  overwrite the other. Both show, separately, on the event sheet.
 
 ### Rhythm delights (v31)
 - **💫 This week in your story** — past entries whose month-day falls within

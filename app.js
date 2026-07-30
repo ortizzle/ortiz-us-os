@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v46 · how was it';
+const APP_VERSION = 'v47 · the recap';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -32,7 +32,10 @@ function load() {
 }
 function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
 let DB = load();
-DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,cover,loc,time,dress,pack,notes,rating,planned,status,owner,private,mem,hidden,updatedAt,deleted}
+DB.entries ||= [];   // logged/planned dates: {id,type,date,dateEnd,title,cover,loc,time,dress,pack,notes,recap,rating,planned,status,owner,private,mem,hidden,updatedAt,deleted}
+// `notes` is for PLANNING ("dinner at 5:45 first"); `recap` is written after,
+// alongside `mem`'s short answers. Keeping them apart means writing a recap
+// can never overwrite the plan you followed to get there.
 DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: { field: value } } — never synced
 DB.stash ||= {};     // 🎁 per-person surprise scratchpads (gift/trip ideas), DEVICE-LOCAL: { kat: [{id,text,done,createdAt}] } — never synced
 DB.deepcache ||= {}; // paid-for ✨ results, DEVICE-LOCAL: { 'rec:<name>'|'plan:<entryId>': {text,at} } — kept ~30 days, never synced
@@ -1457,6 +1460,35 @@ function upcomingCard(e) {
   return el('div', { class: 'card next-card clickable', onclick: open }, kids);
 }
 
+// The recap: MEMQ's three short prompts plus a free-form write-up, offered
+// right after you rate (the moment you're already thinking about it) and
+// reachable any time from the event's own sheet. Never touches `notes`.
+const hasRecap = (e) => Boolean(e.recap) || MEMQ[e.type].some(([k]) => e.mem?.[k]);
+// closeNote: when the recap follows straight on from a rating tap, the rating's
+// own toast is held back so it can't sit on top of this sheet — it fires here
+// instead if the recap is skipped, so that path still confirms.
+function recapSheet(entry, closeNote) {
+  const c = cadenceOf(entry.type);
+  const memIn = {};
+  const body = [el('p', { class: 'muted small', style: 'margin:0 0 4px' }, 'For future you — it shows up with this memory in History. All optional.')];
+  for (const [k, label] of MEMQ[entry.type]) {
+    memIn[k] = el('input', { class: 'input', placeholder: 'optional', value: entry.mem?.[k] || '' });
+    body.push(el('label', { class: 'field-label' }, label), memIn[k]);
+  }
+  const recap = el('textarea', { class: 'input', rows: '4', placeholder: 'What happened, and what you’d want to remember in ten years…' }, entry.recap || '');
+  body.push(el('label', { class: 'field-label' }, 'The recap'), recap);
+  const m = modal(`📝 ${titleText(entry)}`, body, [
+    el('button', { class: 'btn', onclick: () => { m.close(); if (closeNote) toast(closeNote); } }, 'Not now'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      entry.mem = { ...(entry.mem || {}) };
+      for (const [k] of MEMQ[entry.type]) entry.mem[k] = memIn[k].value.trim();
+      entry.recap = recap.value.trim();
+      entry.updatedAt = now();
+      commit(); m.close(); toast('Saved 📝'); render();
+    } }, 'Save'),
+  ]);
+  recap.focus();
+}
 // Read-only DETAILS sheet for a booked event: the plan at a glance — when,
 // where, quick lookup links (event search, map, menu/stays, reviews), notes,
 // and once it's happened its memories + rating. Editing is one tap away via
@@ -1533,17 +1565,23 @@ function eventSheet(entry) {
     // it's tappable right where the nudge lands instead of buried under ✎ Edit.
     const rated = entry.rating || 0;
     const hearts = [1, 2, 3, 4, 5].map((n) => el('button', { class: n <= rated ? 'on' : '', title: `${n} of 5`, onclick: () => {
+      const first = !hasRecap(entry); // only chase the recap the first time
       entry.rating = n; entry.updatedAt = now();
       if (shouldGraduate(entry)) entry.planned = false;
-      commit(); m.close(); toast(`${'♥'.repeat(n)} — filed under Been there`); render();
+      const note = `${'♥'.repeat(n)} — filed under Been there`;
+      commit(); m.close(); render();
+      if (first) recapSheet(entry, note); else toast(note);
     } }, '♥'));
     pushRow(rated ? 'How it was' : 'How was it?', el('div', { class: 'rating' }, hearts));
+    if (entry.recap) pushRow('The recap', valBox(entry.recap));
   }
 
-  const m = modal(`${c.emoji} ${titleText(entry)}`, body, [
-    el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
-    el('button', { class: 'btn btn-primary', onclick: () => { m.close(); logModal(entry.type, { entry }); } }, '✎ Edit'),
-  ]);
+  const acts = [el('button', { class: 'btn', onclick: () => m.close() }, 'Close')];
+  // A past event can always get (or revise) its recap without going via ✎ Edit.
+  if (entry.date <= t) acts.push(el('button', { class: 'btn', onclick: () => { m.close(); recapSheet(entry); } },
+    hasRecap(entry) ? '📝 Recap' : '📝 Add recap'));
+  acts.push(el('button', { class: 'btn btn-primary', onclick: () => { m.close(); logModal(entry.type, { entry }); } }, '✎ Edit'));
+  const m = modal(`${c.emoji} ${titleText(entry)}`, body, acts);
 }
 
 // Geographic reach per cadence — date nights stay close, getaways range wide.
@@ -1958,7 +1996,10 @@ function historyRow(e, upcoming) {
         : null;
   return el('div', { class: 'row hrow' }, [
     el('span', { class: 'r-emoji' }, c.emoji),
-    el('div', { class: 'r-main' }, [
+    // Tapping the row body opens the read-only sheet (same as a fridge magnet
+    // does), which is where 📝 Recap lives. The ✎/✕/📷 buttons are siblings,
+    // so they keep their own taps.
+    el('div', { class: 'r-main clickable', onclick: () => eventSheet(e) }, [
       el('div', { class: 'r-title' }, titleText(e)),
       el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
       memLine(e),
@@ -2107,11 +2148,16 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
   // Memories + rating make sense once it's happened (or when editing a past entry).
   const showExtras = !planned || (entry && entry.date <= todayStr());
   const memInputs = {};
+  let recapIn = null;
   if (showExtras) {
     for (const [k, label] of MEMQ[type]) {
       memInputs[k] = el('input', { class: 'input', placeholder: 'optional', value: entry?.mem?.[k] || '' });
       body.push(el('label', { class: 'field-label' }, label), memInputs[k]);
     }
+    // Plain textarea, not field(): `recap` isn't HIDEABLE, so a 🔒 marker here
+    // would be an affordance apply() has no path to honour. Same as the album.
+    recapIn = el('textarea', { class: 'input', rows: '4', placeholder: 'What happened, and what you’d want to remember in ten years…' }, entry?.recap || '');
+    body.push(el('label', { class: 'field-label' }, 'The recap'), recapIn);
     let rating = entry ? (entry.rating || 0) : 0;
     var getRating = () => rating;
     const stars = [1,2,3,4,5].map((n) => el('button', { class: n <= rating ? 'on' : '', onclick: () => { rating = rating === n ? 0 : n; stars.forEach((s,i) => s.classList.toggle('on', i < rating)); } }, '♥'));
@@ -2145,6 +2191,7 @@ function logModal(type, { planned = false, prefill = '', ideaId = null, entry = 
       const mem = {};
       for (const [k] of MEMQ[type]) if (memInputs[k]?.value.trim()) mem[k] = memInputs[k].value.trim();
       e.mem = mem; e.rating = getRating();
+      if (recapIn) e.recap = recapIn.value.trim();
     }
     e.updatedAt = now();
   }
