@@ -147,6 +147,15 @@ Three sections with jump-chips (a mini table of contents) at the top:
   `recap` is separate from `notes` on purpose: `notes` is the plan you followed
   ("dinner at 5:45 first"), `recap` is what happened, so writing one can never
   overwrite the other. Both show, separately, on the event sheet.
+- **📖 The recap book (v48)** — a sub-view off History (`current = 'recaps'`,
+  alongside 🎞 Rewind, which now links into it). Where Rewind *counts* things,
+  this one *quotes* you: every completed entry that has a recap or any `mem`
+  answer, all-time, newest first, grouped by year — labelled prompt answers
+  plus the write-up as a quote-ruled block in the hand font, so it reads as a
+  journal rather than a dashboard. Header counts recaps against total logged
+  and nudges the ones still blank. Planning `notes` are deliberately excluded.
+  Titles go through `titleText()` like everywhere else, so a 🔒 locked title
+  shows its cover here too. Tapping an entry opens its event sheet.
 
 ### Rhythm delights (v31)
 - **💫 This week in your story** — past entries whose month-day falls within

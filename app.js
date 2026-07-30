@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v47 · the recap';
+const APP_VERSION = 'v48 · recap book';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1132,6 +1132,7 @@ function render() {
   else if (current === 'q36') renderQ36();
   else if (current === 'settings') renderSettings();
   else if (current === 'rewind') renderRewind();
+  else if (current === 'recaps') renderRecaps();
   else renderHistory();
 }
 
@@ -1190,7 +1191,58 @@ function renderRewind() {
   ].filter(Boolean);
   for (const b of bits) view.append(el('p', { class: 'small', style: 'margin:4px 0' }, b));
 
+  const anyRecap = done.some(hasRecap);
+  if (anyRecap) view.append(el('p', { style: 'margin:14px 0 0' },
+    el('button', { class: 'btn btn-sm', onclick: () => { current = 'recaps'; render(); } }, '📖 Read the recaps in full')));
   view.append(el('p', { class: 'muted small center', style: 'margin-top:18px' }, 'Same time next year — keep going. 💞'));
+}
+
+// ---------- 📖 the recap book (every recap you've written, in one read) ----------
+// Rewind counts things; this one quotes you. All-time and grouped by year, so it
+// reads like a journal rather than a dashboard. Titles go through titleText()
+// like everywhere else, so a locked surprise stays masked even here.
+function renderRecaps() {
+  const t = todayStr();
+  view.append(
+    el('h1', {}, '📖 The recap book'),
+    el('p', { class: 'sub' }, 'Everything you two wrote down, in your own words.'),
+    el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'history'; setTab(); render(); } }, '← back'),
+  );
+  const done = DB.entries.filter((e) => !e.deleted && !e.planned && e.date <= t);
+  const written = done.filter(hasRecap).sort((a, b) => a.date < b.date ? 1 : -1);
+  if (!written.length) {
+    view.append(el('p', { class: 'muted' }, done.length
+      ? 'No recaps yet. Tap any night in History and add one — ♥ a night and the app offers it too. 💞'
+      : 'Nothing logged yet — go make some history first. 💞'));
+    return;
+  }
+  const rated = written.filter((e) => e.rating);
+  const avg = rated.length ? rated.reduce((s, e) => s + e.rating, 0) / rated.length : 0;
+  view.append(el('p', { class: 'small', style: 'margin:0 0 4px' },
+    `${written.length} recap${written.length === 1 ? '' : 's'} across ${done.length} logged${avg ? ` · averaging ${'♥'.repeat(Math.round(avg))} (${avg.toFixed(1)})` : ''}`));
+  const missing = done.length - written.length;
+  if (missing) view.append(el('p', { class: 'muted small', style: 'margin:0 0 6px' },
+    `${missing} more logged without a recap — tap one in History to fill it in.`));
+
+  let year = '';
+  for (const e of written) {
+    const y = e.date.slice(0, 4);
+    if (y !== year) { year = y; view.append(el('h2', {}, y)); }
+    const bits = MEMQ[e.type].map(([k, label]) => e.mem?.[k]
+      ? el('div', { class: 'rb-mem' }, [el('b', {}, `${MEM_ICONS[k] || '•'} ${label}: `), e.mem[k]]) : null).filter(Boolean);
+    view.append(el('div', { class: 'card rbcard clickable', onclick: () => eventSheet(e) }, [
+      el('div', { class: 'rb-head' }, [
+        el('span', { class: 'card-emoji' }, cadenceOf(e.type).emoji),
+        el('div', {}, [
+          el('div', { class: 'card-title' }, titleText(e)),
+          el('div', { class: 'card-cadence' }, `${fmt(e.date)}${e.rating ? ' · ' + '♥'.repeat(e.rating) : ''}`),
+        ]),
+      ]),
+      ...bits,
+      e.recap ? el('div', { class: 'rb-recap' }, e.recap) : null,
+    ]));
+  }
+  view.append(el('p', { class: 'muted small center', style: 'margin-top:18px' }, 'Keep writing them down. 💞'));
 }
 
 // ---------- couple's goals ----------
@@ -1924,7 +1976,10 @@ function jarSheet(w) {
 }
 function renderHistory() {
   view.append(el('h1', {}, 'History'), el('p', { class: 'sub' }, 'Everything you’ve shared, most recent first.'));
-  view.append(el('button', { class: 'btn btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'rewind'; render(); } }, '🎞 Rewind — your year together'));
+  view.append(el('div', { class: 'seg', style: 'margin-bottom:12px' }, [
+    el('button', { onclick: () => { current = 'rewind'; render(); } }, '🎞 Rewind'),
+    el('button', { onclick: () => { current = 'recaps'; render(); } }, '📖 Recap book'),
+  ]));
 
   const keeps = DB.acts.filter((r) => r.id.startsWith('tq:keep:') && !r.deleted).sort((a, b) => a.id < b.id ? 1 : -1);
   if (keeps.length) {

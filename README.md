@@ -110,7 +110,9 @@ after an update.
   it a ♥ right in the details sheet; it files itself away. Rating something for
   the first time then offers **📝 the recap** — favorite moment / food / drink
   plus a free-form write-up, kept separate from your planning notes. Add or
-  revise it any time by tapping the event (in History, tap the row).
+  revise it any time by tapping the event (in History, tap the row). All of
+  them collect into **📖 the recap book** (button at the top of History) — every
+  night you wrote up, grouped by year, in your own words.
 - **🧲 The Fridge (its own tab)** — a real fridge for the two of you.
   Freezer: **tonight's question** (same one on both phones), answer it each
   from your own phone, then **heart** the good ones (the heart shows up once
