@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v50 · scrapbook';
+const APP_VERSION = 'v51 · edit today’s answer';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -675,7 +675,8 @@ function renderFridge() {
   const ansRow = (w) => {
     const v = tqAns(w);
     const kids = [el('span', { class: 'who ' + w }, COUPLE[w].name.toUpperCase())];
-    if (v) kids.push(el('span', { class: 'a' }, `“${v}”`));
+    if (v && w === y) kids.push(el('button', { class: 'a a-edit', onclick: (ev) => { ev.stopPropagation(); answerModal(); } }, [`“${v}”`, el('span', { class: 'a-pencil' }, ' ✎')]));
+    else if (v) kids.push(el('span', { class: 'a' }, `“${v}”`));
     else if (w === y) kids.push(el('button', { onclick: (ev) => { ev.stopPropagation(); answerModal(); } }, '✍️ your answer…'));
     else kids.push(el('span', { class: 'a pending' }, 'hasn’t answered yet'));
     return el('div', { class: 'q-ans' }, kids);
