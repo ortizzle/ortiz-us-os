@@ -195,7 +195,8 @@ Everything is discovery — the tab carries no instruction text.
 - **Freezer — tonight's question.** 40 dinner-table questions (`TQ_ITEMS`,
   static), picked deterministically from the date so both phones match with
   zero sync. Each of you answers on your own phone (`tq:ans:<who>` — one
-  record per person, overwritten daily). A **heart in the card's bottom-right
+  record per person, overwritten daily); tapping your own saved answer (v51)
+  reopens the same input, prefilled, to revise it. A **heart in the card's bottom-right
   corner** (v41) is the keep — a like button, not a labelled action. It only
   appears once BOTH of you have answered (before that there's nothing to
   keep, and no disabled control sits there explaining itself); tapping it

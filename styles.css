@@ -247,6 +247,8 @@ textarea.input { resize: vertical; min-height: 60px; }
 .q-ans .who.chris { color: var(--chris-ink); } .q-ans .who.kat { color: var(--kat-ink); }
 .q-ans .a { font-family: var(--hand); font-size: 16px; line-height: 1.35; }
 .q-ans .a.pending { font-family: inherit; font-size: 12px; color: var(--text-2); font-style: italic; }
+.q-ans .a-edit { background: none; border: none; padding: 0; margin: 0; color: inherit; text-align: left; cursor: pointer; }
+.q-ans .a-pencil { font-size: 12px; color: var(--text-2); }
 .q-ans button { font: inherit; font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
   border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); cursor: pointer; }
 .qfoot { display: flex; justify-content: flex-end; margin: 0 -6px -10px 0; }
