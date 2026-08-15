@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v51 · edit today’s answer';
+const APP_VERSION = 'v52 · calendar view';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1120,10 +1120,12 @@ function modal(title, body, actions) {
 // ---------- views ----------
 const view = document.getElementById('view');
 let current = 'rhythm';
+let calCursor = null; // 'YYYY-MM-01', the month the calendar view is showing
 function render() {
   clear(view);
   clearInterval(eyeTimer); // leaving the 36Q closer view stops its countdown
   if (current !== 'fridge') { doorOpen = false; freezerOpen = false; } // doors shut behind you
+  if (current !== 'calendar') calCursor = null; // reopens on today's month, not wherever you left it
   if (current === 'rhythm') renderRhythm();
   else if (current === 'fridge') renderFridge();
   else if (current === 'ideas') renderIdeas();
@@ -1134,6 +1136,7 @@ function render() {
   else if (current === 'settings') renderSettings();
   else if (current === 'rewind') renderRewind();
   else if (current === 'recaps') renderRecaps();
+  else if (current === 'calendar') renderCalendar();
   else renderHistory();
 }
 
@@ -1659,6 +1662,114 @@ const IDEA_SCOPE = {
   trip: 'Options are bigger destination trips — flights and multiple nights are fine.',
 };
 
+const shiftMonth = (cursor, delta) => {
+  const [y, m] = cursor.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+};
+// A day's contents, tapped from the grid: same tap-through as everywhere
+// else — a booked (or already-happened) entry opens the read-only sheet, a
+// still-planning one opens straight into edit — so the calendar is a way
+// THROUGH to the real plan, not a second copy of it.
+function calDaySheet(dateStr, items) {
+  const rows = items.map(({ e, special }) => {
+    if (special) return el('div', { class: 'row rec', onclick: () => stashSheet(special) }, [
+      el('span', { class: 'r-emoji' }, special.emoji),
+      el('div', { class: 'r-main' }, [
+        el('div', { class: 'r-title' }, special.since ? `${special.label} — anniversary` : `${special.label}’s birthday`),
+        el('div', { class: 'r-meta' }, '🎁 tap for your private idea stash'),
+      ]),
+    ]);
+    const c = cadenceOf(e.type);
+    const open = (!e.planned || e.status === 'booked') ? () => eventSheet(e) : () => logModal(e.type, { entry: e });
+    const tag = e.planned
+      ? el('span', { class: 'chip' + (e.status === 'booked' ? ' love' : '') }, e.status === 'booked' ? '✅ booked' : '🔨 planning')
+      : e.rating ? el('span', { class: 'chip' }, '♥'.repeat(e.rating)) : null;
+    return el('div', { class: 'row rec', onclick: open }, [
+      el('span', { class: 'r-emoji' }, c.emoji),
+      el('div', { class: 'r-main' }, [
+        el('div', { class: 'r-title' }, titleText(e)),
+        el('div', { class: 'r-meta' }, `${whenWhere(e)}${notesSuffix(e)}`),
+      ]),
+      tag,
+    ].filter(Boolean));
+  });
+  const m = modal(fmt(dateStr), rows, [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
+}
+// A month grid, everything you two have planned or logged laid over it — a
+// getaway's whole span marked, not just its first day. Purely a guide THROUGH
+// to the real plans (Rhythm/History own the actual lists); nothing here can
+// be created or edited directly.
+function renderCalendar() {
+  if (!calCursor) calCursor = todayStr().slice(0, 7) + '-01';
+  const [y, cm] = calCursor.split('-').map(Number);
+  const m0 = cm - 1; // JS Date months are 0-indexed
+
+  view.append(
+    el('h1', {}, '🗓 Calendar'),
+    el('p', { class: 'sub' }, 'Everything planned and logged, laid out by day — tap one to open it.'),
+    el('button', { class: 'btn btn-ghost btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'rhythm'; setTab(); render(); } }, '← back'),
+  );
+
+  const todayCursor = todayStr().slice(0, 7) + '-01';
+  const monthLabel = new Date(y, m0, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  view.append(el('div', { class: 'calnav' }, [
+    el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { calCursor = shiftMonth(calCursor, -1); render(); } }, '‹'),
+    el('div', { class: 'calnav-label' }, [
+      monthLabel,
+      calCursor !== todayCursor ? el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { calCursor = todayCursor; render(); } }, 'today') : null,
+    ].filter(Boolean)),
+    el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { calCursor = shiftMonth(calCursor, 1); render(); } }, '›'),
+  ]));
+  view.append(el('p', { class: 'muted small', style: 'margin:0 0 10px' }, CADENCES.map((c) => `${c.emoji} ${c.title.split(' ')[0]}`).join('  ·  ')));
+
+  const daysInMonth = new Date(y, m0 + 1, 0).getDate();
+  const firstWeekday = new Date(y, m0, 1).getDay(); // 0 = Sunday
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const monthStart = `${y}-${pad2(m0 + 1)}-01`, monthEnd = `${y}-${pad2(m0 + 1)}-${pad2(daysInMonth)}`;
+
+  // Every entry that touches ANY day this month — including a getaway that
+  // started last month or ends next — so a span never looks like it starts
+  // mid-air. A hidden end date (the partner's surprise) collapses to a single
+  // marker on the start day rather than revealing how long the trip runs.
+  const byDay = {};
+  for (const e of DB.entries) {
+    if (e.deleted) continue;
+    const rawEnd = cardVal(e, 'dateEnd');
+    const end = rawEnd === null ? e.date : (rawEnd || e.date);
+    if (end < monthStart || e.date > monthEnd) continue;
+    const from = e.date < monthStart ? monthStart : e.date;
+    const to = end > monthEnd ? monthEnd : end;
+    for (let ds = from; ds <= to; ds = addDays(ds, 1)) (byDay[ds] ||= []).push({ e });
+  }
+  for (const s of SPECIAL) {
+    if (s.month - 1 === m0) (byDay[`${y}-${pad2(s.month)}-${pad2(s.day)}`] ||= []).push({ special: s });
+  }
+
+  const t = todayStr();
+  const cells = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const grid = el('div', { class: 'calgrid' }, [
+    ...['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((w) => el('div', { class: 'calwd' }, w)),
+    ...cells.map((d) => {
+      if (d === null) return el('div', { class: 'calday empty' });
+      const ds = `${y}-${pad2(m0 + 1)}-${pad2(d)}`;
+      const items = byDay[ds] || [];
+      const cls = 'calday' + (ds === t ? ' today' : '') + (items.length ? ' has' : '');
+      const kids = [
+        el('span', { class: 'calnum' }, String(d)),
+        items.length ? el('span', { class: 'calmarks' }, items.slice(0, 4).map(({ e, special }) => el('span', {}, special ? special.emoji : cadenceOf(e.type).emoji))) : null,
+        items.length > 4 ? el('span', { class: 'calmore' }, `+${items.length - 4}`) : null,
+      ].filter(Boolean);
+      return items.length ? el('button', { class: cls, onclick: () => calDaySheet(ds, items) }, kids) : el('div', { class: cls }, kids);
+    }),
+  ]);
+  view.append(grid);
+}
+
 function renderRhythm() {
   view.append(el('h1', {}, 'Your rhythm'), el('p', { class: 'sub' }, 'The 2-2-2 you two live by — kept on pace.'));
 
@@ -1671,6 +1782,7 @@ function renderRhythm() {
     el('button', { onclick: jump('sec-booked') }, '✅ Booked'),
     el('button', { onclick: jump('sec-planning') }, '🔨 Planning'),
   ].filter(Boolean)));
+  view.append(el('button', { class: 'btn btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'calendar'; render(); } }, '🗓 Calendar view'));
   const upcoming = DB.entries.filter((e) => !e.deleted && (e.planned || e.date > t)).sort((a,b) => a.date < b.date ? -1 : 1);
   // Already-happened plans come out of the forward-looking lists entirely —
   // most recent first, since the freshest memory is the easiest to rate.
