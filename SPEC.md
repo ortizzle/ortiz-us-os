@@ -58,6 +58,23 @@ Three sections with jump-chips (a mini table of contents) at the top:
   into the normal edit sheet. Privacy rules match editing exactly: own 🔒
   fields show, the partner's stay teasers, and a secret location gets
   city-only links.
+- **🗓 Calendar view** (`renderCalendar`, reached from Rhythm's "🗓 Calendar
+  view" button) — a month grid over every non-deleted entry, planned or
+  logged, plus `SPECIAL` birthdays/anniversary landing that month. A
+  getaway/trip's full `date`–`dateEnd` span is marked on every day it
+  touches (clamped to the visible month, so a trip that started last month
+  or runs into next doesn't look like it starts mid-air) — not just its
+  first day. A day's marker(s) are purely a `cadenceOf(e.type).emoji` (or
+  the special's own emoji); tapping a marked day opens a sheet listing that
+  day's items, and tapping an item hands off to the SAME real views
+  everywhere else — `eventSheet` for anything already booked or logged,
+  `logModal` for a still-planning entry, `stashSheet` for a special date —
+  so the calendar is a lens over the real data, not a second copy of it.
+  Privacy matches every other glance view: `cardVal`'s masking (private
+  plans, locked fields) applies here too, and a locked `dateEnd` collapses
+  the marker to a single day rather than revealing how long the trip runs.
+  Month navigation (‹ / today / ›) resets to the current month on leaving
+  the view, same as the fridge's doors closing behind you.
 - **Event owner** — each event belongs to its creator (`owner`). Only the
   owner can lock fields (add surprises); the other of you can edit the open
   fields but not privatise. The sheet names the owner when it isn't you.

@@ -97,6 +97,21 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .seg button { border: 0; background: none; font: inherit; font-weight: 600; font-size: 13px; color: var(--text-2); padding: 7px 12px; border-radius: 9px; cursor: pointer; }
 .seg button.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 
+/* calendar */
+.calnav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.calnav-label { font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.calgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.calwd { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-2); padding: 4px 0; }
+.calday { font: inherit; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 2px; color: var(--text); min-width: 0; }
+.calday.empty { border-color: transparent; background: none; }
+.calday.has { cursor: pointer; border-color: var(--accent); }
+.calday.has:active { background: var(--accent-soft); }
+.calday.today .calnum { color: var(--accent-ink); font-weight: 800; text-decoration: underline; }
+.calnum { font-size: 13px; }
+.calmarks { display: flex; gap: 1px; font-size: 10px; line-height: 1; }
+.calmore { font-size: 9px; color: var(--text-2); }
+
 /* rhythm status boxes */
 .statgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 6px; }
 .stat { font: inherit; text-align: left; display: flex; flex-direction: column; gap: 1px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px; box-shadow: var(--shadow); cursor: pointer; min-width: 0; }

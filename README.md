@@ -63,7 +63,11 @@ after an update.
   `anytime` (occasions). **Tap a box to plan the next one**: pick the date,
   name it (*"date night" is the type — "Odyssey at Harkins" is the title*),
   fill in what you know, then **Just plan it** or **✅ Book it**. A small link
-  flips the sheet to *log one that already happened* instead.
+  flips the sheet to *log one that already happened* instead. **🗓 Calendar
+  view** lays everything — planned, booked, and logged — over a month grid,
+  a getaway's whole span marked, not just its first day; tap a day to see
+  what's on it, tap an entry to open the real plan. Purely a guide through
+  to Rhythm/History — nothing is created or edited from the calendar itself.
 - **Details per type** — date nights & occasions: location, time, dress code,
   notes. Getaways & trips: location, end date, what to pack, notes. All
   optional, all editable any time. **Cards have no buttons** — tap a card to
@@ -229,4 +233,4 @@ npx serve .
 
 ---
 
-*Current build: v51 · edit today’s answer.*
+*Current build: v52 · calendar view.*
