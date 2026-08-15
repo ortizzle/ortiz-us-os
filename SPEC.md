@@ -75,18 +75,31 @@ Three sections with jump-chips (a mini table of contents) at the top:
   the marker to a single day rather than revealing how long the trip runs.
   Month navigation (‹ / today / ›) resets to the current month on leaving
   the view, same as the fridge's doors closing behind you.
-- **Cadence holds** (`holdWindow`) — a computed-not-stored placeholder for a
-  date/getaway/trip cadence with nothing planned yet: the week containing
-  `lastDone(type).date + cadenceOf(type).days`, dashed-bordered on the
-  calendar and faded to distinguish it from a real entry's solid marker.
-  Occasions don't get one (`cadence.days === 0`, not cadence-based), and a
-  hold disappears the instant `nextPlanned(type)` finds a real plan — it's
-  recomputed on every render, never written to `DB`. Whose turn: simply the
-  OTHER of you from whoever owned the last one (`last.owner`), no new state
-  to track; unknown if that entry predates the `owner` field. Tapping a hold
-  day opens a sheet naming the cadence, the due week, and whose turn — the
-  row itself is the plan-it button (`logModal(type, { planned: true })`),
-  same forward-planning entry point as Rhythm's status boxes.
+- **Cadence holds** (`holdWindows`) — the rhythm projected FORWARD as
+  computed-not-stored placeholder weeks, so either of you can plan months
+  ahead rather than only ever seeing the next slot. Anchored on the last
+  entry you actually DID (falling back to the earliest one on the books when
+  nothing's logged yet), then stepped by `cadenceOf(type).days`, emitting
+  the week around each due date out to `HOLD_HORIZON` (400d — past that it's
+  fiction). Dashed-bordered and faded on the calendar to read as *not
+  booked* against a real entry's solid marker. Occasions get none
+  (`days === 0`, not cadence-based).
+  - **A taken week is not a hold**: any real entry of that type overlapping
+    the week (a getaway's whole span counts) fills the slot, and that
+    entry's `owner` — not the alternation — sets who's up next. So booking
+    something doesn't just delete one hold, it re-phases every later one.
+  - **Whose turn** alternates slot to slot, starting from the OTHER of
+    whoever owned the anchor; unknown (omitted) if that entry predates the
+    `owner` field. No new state to track, nothing written to `DB` — the
+    whole series is recomputed on every render.
+  - The generator steps one week past the requested range, because a slot
+    due just after a month boundary can still *start* inside it; the
+    overlap test (`to >= fromDate && from <= toDate`) decides what's
+    actually emitted.
+  - Tapping a hold day opens a sheet naming the cadence, the due week, and
+    whose turn — the row itself is the plan-it button
+    (`logModal(type, { planned: true })`), same forward-planning entry
+    point as Rhythm's status boxes.
 - **Event owner** — each event belongs to its creator (`owner`). Only the
   owner can lock fields (add surprises); the other of you can edit the open
   fields but not privatise. The sheet names the owner when it isn't you.
