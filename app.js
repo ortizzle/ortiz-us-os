@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v52 · calendar view';
+const APP_VERSION = 'v53 · calendar holds';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1667,12 +1667,42 @@ const shiftMonth = (cursor, delta) => {
   const d = new Date(y, m - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 };
+// A temporary, computed-not-stored placeholder for a cadence that's coming
+// up but has nothing on the calendar for it yet: the week containing
+// last-time + the cadence's target interval, plus whose turn it is (simply
+// the other of you from whoever owned the last one — no new state to track).
+// Vanishes the moment a real plan exists for the type (`nextPlanned`), and
+// occasions don't get one — they're not cadence-based (`cadence.days === 0`).
+function holdWindow(type) {
+  if (nextPlanned(type)) return null;
+  const last = lastDone(type);
+  if (!last) return null;
+  const c = cadenceOf(type);
+  if (!c.days) return null;
+  const due = addDays(last.date, c.days);
+  const dow = parse(due).getDay();
+  const from = addDays(due, -dow), to = addDays(from, 6);
+  const turn = last.owner === 'chris' ? 'kat' : last.owner === 'kat' ? 'chris' : null;
+  return { from, to, turn, due };
+}
 // A day's contents, tapped from the grid: same tap-through as everywhere
 // else — a booked (or already-happened) entry opens the read-only sheet, a
-// still-planning one opens straight into edit — so the calendar is a way
-// THROUGH to the real plan, not a second copy of it.
+// still-planning one opens straight into edit, a hold jumps right into
+// planning it — so the calendar is a way THROUGH to the real plan, not a
+// second copy of it.
 function calDaySheet(dateStr, items) {
-  const rows = items.map(({ e, special }) => {
+  const rows = items.map(({ e, special, hold }) => {
+    if (hold) {
+      const c = cadenceOf(hold.type);
+      return el('div', { class: 'row rec', onclick: () => logModal(hold.type, { planned: true }) }, [
+        el('span', { class: 'r-emoji' }, c.emoji),
+        el('div', { class: 'r-main' }, [
+          el('div', { class: 'r-title' }, `${c.title} — coming up`),
+          el('div', { class: 'r-meta' }, `Around this week, going by your usual ${c.cadence}${hold.turn ? ` · ${COUPLE[hold.turn].name}’s turn to plan` : ''}`),
+        ]),
+        el('span', { class: 'chip' }, '📅 plan it'),
+      ]);
+    }
     if (special) return el('div', { class: 'row rec', onclick: () => stashSheet(special) }, [
       el('span', { class: 'r-emoji' }, special.emoji),
       el('div', { class: 'r-main' }, [
@@ -1745,6 +1775,15 @@ function renderCalendar() {
   for (const s of SPECIAL) {
     if (s.month - 1 === m0) (byDay[`${y}-${pad2(s.month)}-${pad2(s.day)}`] ||= []).push({ special: s });
   }
+  // Cadence holds — clipped to this month the same way a spanning entry is.
+  for (const c of CADENCES) {
+    const hw = holdWindow(c.type);
+    if (!hw) continue;
+    const from = hw.from < monthStart ? monthStart : hw.from;
+    const to = hw.to > monthEnd ? monthEnd : hw.to;
+    if (from > to) continue;
+    for (let ds = from; ds <= to; ds = addDays(ds, 1)) (byDay[ds] ||= []).push({ hold: { type: c.type, turn: hw.turn, due: hw.due } });
+  }
 
   const t = todayStr();
   const cells = [];
@@ -1758,10 +1797,12 @@ function renderCalendar() {
       if (d === null) return el('div', { class: 'calday empty' });
       const ds = `${y}-${pad2(m0 + 1)}-${pad2(d)}`;
       const items = byDay[ds] || [];
-      const cls = 'calday' + (ds === t ? ' today' : '') + (items.length ? ' has' : '');
+      const holdOnly = items.length > 0 && items.every((i) => i.hold);
+      const cls = 'calday' + (ds === t ? ' today' : '') + (items.length ? ' has' : '') + (holdOnly ? ' holdonly' : '');
       const kids = [
         el('span', { class: 'calnum' }, String(d)),
-        items.length ? el('span', { class: 'calmarks' }, items.slice(0, 4).map(({ e, special }) => el('span', {}, special ? special.emoji : cadenceOf(e.type).emoji))) : null,
+        items.length ? el('span', { class: 'calmarks' }, items.slice(0, 4).map(({ e, special, hold }) =>
+          el('span', { class: hold ? 'calmark-hold' : '' }, special ? special.emoji : hold ? cadenceOf(hold.type).emoji : cadenceOf(e.type).emoji))) : null,
         items.length > 4 ? el('span', { class: 'calmore' }, `+${items.length - 4}`) : null,
       ].filter(Boolean);
       return items.length ? el('button', { class: cls, onclick: () => calDaySheet(ds, items) }, kids) : el('div', { class: cls }, kids);

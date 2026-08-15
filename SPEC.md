@@ -75,6 +75,18 @@ Three sections with jump-chips (a mini table of contents) at the top:
   the marker to a single day rather than revealing how long the trip runs.
   Month navigation (‹ / today / ›) resets to the current month on leaving
   the view, same as the fridge's doors closing behind you.
+- **Cadence holds** (`holdWindow`) — a computed-not-stored placeholder for a
+  date/getaway/trip cadence with nothing planned yet: the week containing
+  `lastDone(type).date + cadenceOf(type).days`, dashed-bordered on the
+  calendar and faded to distinguish it from a real entry's solid marker.
+  Occasions don't get one (`cadence.days === 0`, not cadence-based), and a
+  hold disappears the instant `nextPlanned(type)` finds a real plan — it's
+  recomputed on every render, never written to `DB`. Whose turn: simply the
+  OTHER of you from whoever owned the last one (`last.owner`), no new state
+  to track; unknown if that entry predates the `owner` field. Tapping a hold
+  day opens a sheet naming the cadence, the due week, and whose turn — the
+  row itself is the plan-it button (`logModal(type, { planned: true })`),
+  same forward-planning entry point as Rhythm's status boxes.
 - **Event owner** — each event belongs to its creator (`owner`). Only the
   owner can lock fields (add surprises); the other of you can edit the open
   fields but not privatise. The sheet names the owner when it isn't you.
