@@ -108,6 +108,8 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .calday.has { cursor: pointer; border-color: var(--accent); }
 .calday.has:active { background: var(--accent-soft); }
 .calday.today .calnum { color: var(--accent-ink); font-weight: 800; text-decoration: underline; }
+.calday.holdonly { border-style: dashed; }
+.calmark-hold { opacity: 0.55; }
 .calnum { font-size: 13px; }
 .calmarks { display: flex; gap: 1px; font-size: 10px; line-height: 1; }
 .calmore { font-size: 9px; color: var(--text-2); }
