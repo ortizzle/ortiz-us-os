@@ -68,10 +68,13 @@ after an update.
   a getaway's whole span marked, not just its first day; tap a day to see
   what's on it, tap an entry to open the real plan. Purely a guide through
   to Rhythm/History — nothing is created or edited from the calendar itself.
-  When a cadence has nothing planned yet, a dashed **hold week** marks when
-  it's due (last time + the cadence's target interval) and whose turn it is
-  to plan — tap it to jump straight into planning. It's computed, not
-  stored, so it vanishes the moment a real plan exists.
+  Dashed **hold weeks** project your rhythm *forward* — not just the next
+  date night but the one after that, and the one after that, out about a
+  year — each marked with whose turn it is to plan (alternating, starting
+  from whoever didn't do the last one). Tap one to jump straight into
+  planning it. A week that already has something real in it isn't a hold,
+  and holds are computed on the fly, never stored — so they rearrange
+  themselves the moment you book something.
 - **Details per type** — date nights & occasions: location, time, dress code,
   notes. Getaways & trips: location, end date, what to pack, notes. All
   optional, all editable any time. **Cards have no buttons** — tap a card to
@@ -237,4 +240,4 @@ npx serve .
 
 ---
 
-*Current build: v53 · calendar holds.*
+*Current build: v54 · the rhythm projected ahead.*

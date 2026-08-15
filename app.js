@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v53 · calendar holds';
+const APP_VERSION = 'v54 · the rhythm projected ahead';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1667,23 +1667,44 @@ const shiftMonth = (cursor, delta) => {
   const d = new Date(y, m - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 };
-// A temporary, computed-not-stored placeholder for a cadence that's coming
-// up but has nothing on the calendar for it yet: the week containing
-// last-time + the cadence's target interval, plus whose turn it is (simply
-// the other of you from whoever owned the last one — no new state to track).
-// Vanishes the moment a real plan exists for the type (`nextPlanned`), and
-// occasions don't get one — they're not cadence-based (`cadence.days === 0`).
-function holdWindow(type) {
-  if (nextPlanned(type)) return null;
-  const last = lastDone(type);
-  if (!last) return null;
+// The rhythm projected FORWARD, not just its next slot: computed-not-stored
+// placeholder weeks for a cadence, stepped by its target interval from the
+// last one you actually did, so either of you can plan months ahead instead
+// of only ever seeing the next one. A week that already holds a real entry
+// isn't a hold — that slot is taken, and the actual owner sets who's up
+// next. Occasions get none (`days === 0`, not cadence-based).
+const HOLD_HORIZON = 400; // days ahead worth projecting — past that it's fiction
+function holdWindows(type, fromDate, toDate) {
   const c = cadenceOf(type);
-  if (!c.days) return null;
-  const due = addDays(last.date, c.days);
-  const dow = parse(due).getDay();
-  const from = addDays(due, -dow), to = addDays(from, 6);
-  const turn = last.owner === 'chris' ? 'kat' : last.owner === 'kat' ? 'chris' : null;
-  return { from, to, turn, due };
+  if (!c.days) return [];
+  const mine = DB.entries.filter((e) => !e.deleted && e.type === type).sort((a, b) => a.date < b.date ? -1 : 1);
+  // Anchor on the last one you DID; with nothing logged yet, the earliest
+  // thing on the books still establishes a rhythm to count from.
+  const anchor = [...mine].reverse().find((e) => !e.planned && e.date <= todayStr()) || mine[0];
+  if (!anchor) return [];
+  const horizon = addDays(todayStr(), HOLD_HORIZON);
+  const stop = toDate < horizon ? toDate : horizon;
+  const out = [];
+  let turn = anchor.owner ? other(anchor.owner) : null;
+  let due = addDays(anchor.date, c.days);
+  // +7: a slot due just past the range can still START inside it (its week
+  // straddles the month boundary), so step one week further and let the
+  // overlap test below decide.
+  for (let i = 0; i < 500 && due <= addDays(stop, 7); i++, due = addDays(due, c.days)) {
+    const dow = parse(due).getDay();
+    const from = addDays(due, -dow), to = addDays(from, 6);
+    // A real entry anywhere in this week (a getaway's whole span counts)
+    // fills the slot — and its owner, not the alternation, sets who's next.
+    const taken = mine.find((e) => {
+      const rawEnd = cardVal(e, 'dateEnd');
+      const end = rawEnd === null ? e.date : (rawEnd || e.date);
+      return e.date <= to && end >= from;
+    });
+    if (taken) { if (taken.owner) turn = other(taken.owner); continue; }
+    if (to >= fromDate && from <= toDate) out.push({ type, from, to, turn, due });
+    turn = turn ? other(turn) : null;
+  }
+  return out;
 }
 // A day's contents, tapped from the grid: same tap-through as everywhere
 // else — a booked (or already-happened) entry opens the read-only sheet, a
@@ -1751,7 +1772,8 @@ function renderCalendar() {
     ].filter(Boolean)),
     el('button', { class: 'btn btn-ghost btn-sm', onclick: () => { calCursor = shiftMonth(calCursor, 1); render(); } }, '›'),
   ]));
-  view.append(el('p', { class: 'muted small', style: 'margin:0 0 10px' }, CADENCES.map((c) => `${c.emoji} ${c.title.split(' ')[0]}`).join('  ·  ')));
+  view.append(el('p', { class: 'muted small', style: 'margin:0 0 10px' },
+    `${CADENCES.map((c) => `${c.emoji} ${c.title.split(' ')[0]}`).join('  ·  ')}  —  dashed weeks are your usual rhythm, not booked yet`));
 
   const daysInMonth = new Date(y, m0 + 1, 0).getDate();
   const firstWeekday = new Date(y, m0, 1).getDay(); // 0 = Sunday
@@ -1775,14 +1797,15 @@ function renderCalendar() {
   for (const s of SPECIAL) {
     if (s.month - 1 === m0) (byDay[`${y}-${pad2(s.month)}-${pad2(s.day)}`] ||= []).push({ special: s });
   }
-  // Cadence holds — clipped to this month the same way a spanning entry is.
+  // Cadence holds — every projected slot landing in this month, clipped to
+  // it the same way a spanning entry is.
   for (const c of CADENCES) {
-    const hw = holdWindow(c.type);
-    if (!hw) continue;
-    const from = hw.from < monthStart ? monthStart : hw.from;
-    const to = hw.to > monthEnd ? monthEnd : hw.to;
-    if (from > to) continue;
-    for (let ds = from; ds <= to; ds = addDays(ds, 1)) (byDay[ds] ||= []).push({ hold: { type: c.type, turn: hw.turn, due: hw.due } });
+    for (const hw of holdWindows(c.type, monthStart, monthEnd)) {
+      const from = hw.from < monthStart ? monthStart : hw.from;
+      const to = hw.to > monthEnd ? monthEnd : hw.to;
+      if (from > to) continue;
+      for (let ds = from; ds <= to; ds = addDays(ds, 1)) (byDay[ds] ||= []).push({ hold: hw });
+    }
   }
 
   const t = todayStr();
