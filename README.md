@@ -240,4 +240,4 @@ npx serve .
 
 ---
 
-*Current build: v54 · the rhythm projected ahead.*
+*Current build: v55 · status box names the real event.*

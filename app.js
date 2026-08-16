@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v54 · the rhythm projected ahead';
+const APP_VERSION = 'v55 · status box names the real event';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1508,8 +1508,10 @@ function upcomingCard(e) {
   const c = cadenceOf(e.type);
   const left = daysBetween(t, e.date);
   const past = awaitingRating(e);
-  // A past date counted forward reads "in -2d", so it counts back instead.
-  const when = past ? (left === -1 ? 'yesterday' : `${-left}d ago`)
+  // A past date counted forward reads "in -2d", so it counts back instead —
+  // keyed on the date, not on awaitingRating: a still-PLANNING entry whose
+  // date has slipped by is past too, and used to render "in -40d".
+  const when = left < 0 ? (left === -1 ? 'yesterday' : `${-left}d ago`)
     : left === 0 ? 'today!' : left === 1 ? 'tomorrow' : `in ${left}d`;
   const booked = e.status === 'booked';
   const kids = [
@@ -1891,11 +1893,19 @@ function renderRhythm() {
       status = left < 0 ? `${-left}d overdue` : left === 0 ? 'due today' : `due in ${left}d`;
       cls = left <= 3 ? 'due' : 'ok';
     }
-    const pt = planned ? cardVal(planned, 'title') : null;
+    // Name the event exactly as every other surface does (titleText), so an
+    // untitled getaway can't read "planned" here and "Weekend getaway" on its
+    // own card. When it has no title of its own, titleText falls back to the
+    // cadence name — which this box's heading already says — so the location
+    // is the identifier worth the space instead.
     const anyHidden = planned && (planned.hidden || []).length;
-    const meta = planned
-      ? `${anyHidden ? '🔒 ' : ''}${pt === null ? 'surprise' : pt || 'planned'} · ${fmt(planned.date)}`
-      : last ? `last: ${fmt(last.date)}` : 'no history yet';
+    let meta;
+    if (planned) {
+      const name = titleText(planned);
+      const label = name === c.title ? (cardVal(planned, 'loc') || '') : name;
+      const lock = anyHidden && !label.startsWith('🔒') ? '🔒 ' : '';
+      meta = lock + [label, fmt(planned.date)].filter(Boolean).join(' · ');
+    } else meta = last ? `last: ${fmt(last.date)}` : 'no history yet';
 
     return el('button', { class: 'stat', onclick: () => logModal(c.type, { planned: true }) }, [
       el('span', { class: 's-emoji' }, c.emoji),

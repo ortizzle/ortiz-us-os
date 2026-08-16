@@ -37,7 +37,14 @@ Three sections with jump-chips (a mini table of contents) at the top:
 - **Plan & log** — a 2×2 grid of compact status boxes, one per cadence:
   live status (`due in Nd` / `Nd overdue` / `🔨 planning` / `✅ booked`;
   occasions show `anytime`) plus a one-line meta (what's planned, or last
-  time). Tapping a box goes straight to picking a date — plans-forward
+  time). The meta names the event through **`titleText`**, the same helper
+  every other surface uses, so a box can't describe an event differently
+  from its own card. Where `titleText` falls back to the cadence name (an
+  untitled event), the box shows its **location** instead — the box heading
+  already says which cadence this is — or just the date when there's no
+  location either. It used to print the literal word "planned" there, which
+  read as a different event from the card beside it. Tapping a box goes
+  straight to picking a date — plans-forward
   first — with a Title field ("date night" is the type; "Odyssey at
   Harkins" is the title) and a small "…or log one that already happened"
   link that flips the sheet into log mode.
