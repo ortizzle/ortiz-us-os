@@ -502,6 +502,16 @@ textarea.input { resize: vertical; min-height: 60px; }
 /* Received coupons carry the sender's colour so the shelf reads at a glance. */
 .ticket.from-chris, .coupon-card.from-chris { border-color: var(--chris); background: var(--chris-soft); color: var(--chris-ink); }
 .ticket.from-kat, .coupon-card.from-kat { border-color: var(--kat); background: var(--kat-soft); color: var(--kat-ink); }
+/* a claimed goal ticket keeps its owner's colour — the tint IS the attribution,
+   so it must survive .used's grayscale. */
+.ticket.used.from-chris, .ticket.used.from-kat { filter: none; opacity: 0.85; }
+.pass-tally { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; font-weight: 700; margin: -2px 0 8px; }
+.pass-tally .ty { color: var(--text-2); }
+.pass-tally .ty.chris { color: var(--chris-ink); }
+.pass-tally .ty.kat { color: var(--kat-ink); }
+.whoused { font-weight: 800; margin: 0 0 2px; }
+.whoused.chris { color: var(--chris-ink); }
+.whoused.kat { color: var(--kat-ink); }
 .coupon-card { border: 1.5px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); border-radius: 14px; padding: 16px 14px; text-align: center; margin: 10px 0; }
 .coupon-card .c-emoji { font-size: 30px; line-height: 1; }
 .coupon-card .c-text { font-weight: 700; font-size: 16px; line-height: 1.35; margin-top: 6px; }

@@ -108,7 +108,12 @@ after an update.
   into a dated plan.
 - **Goals** — shared commitments with grace built in: the alcohol-free
   stretch through Jan 17, 2027 (12 🎟️ drink tickets, 3 🏖️ escape passes —
-  tap to use, tap again to give back), and **💌 love coupons**: ten each,
+  tap to use, tap again to give back). The passes are **one shared pool**,
+  not one each, so a claim is stamped with **who** made it: a used ticket
+  takes that person's colour (💙 Chris / 💜 Kat), the sheet says "used by",
+  and a running tally sits under each heading. Anything claimed before the
+  app tracked this stays unlabelled rather than guessed at. Also
+  **💌 love coupons**: ten each,
   his & hers. Send one when you mean it — it lands on the other phone as a
   surprise reveal (plus an email teaser if configured) and lives on their
   shelf tinted the sender's color, 💙 from Chris, 💜 from Kat. Unsent coupons
@@ -240,4 +245,4 @@ npx serve .
 
 ---
 
-*Current build: v55 · status box names the real event.*
+*Current build: v56 · tickets say whose.*

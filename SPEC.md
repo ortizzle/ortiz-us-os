@@ -421,6 +421,18 @@ unlike 🔒 secrets).
 - Shared commitments rendered as interactive passes, synced to both phones.
 - First goal: **alcohol-free through Jan 17, 2027**, with grace built in —
   12 🎟️ drink tickets and 3 🏖️ weekend escape passes for the whole stretch.
+  These are **one shared pool between the two of you**, not one set each:
+  the ids are `dry-2027:<kind>:<n>`, so both phones hold the same tickets
+  and either of you can spend or return any of them. Because the pool is
+  shared, a claim records **`by`** (`me()` at the moment of use) — without
+  it a ✓ on one phone reads as the other person's own claim, which is
+  exactly how it was misread. A claimed ticket takes that person's colour
+  (`.ticket.used.from-<who>`, which must override `.used`'s grayscale — the
+  tint IS the attribution), shows their 💙/💜 in place of the ✓, names them
+  in the detail sheet (marked "(you)" on your own), and a per-person tally
+  sits under the heading. Tickets used before `by` existed keep no
+  attribution and are counted as "unlabelled" rather than guessed at;
+  giving a ticket back clears `by` along with `used`/`usedAt`/`note`.
 - Second goal: **💌 Love coupons** — his & hers books of 10 acts-of-service
   coupons each (💙 Chris, 💜 Kat), no expiration. **Send semantics**: each
   phone shows only its owner's unsent book (pick "I'm Chris / I'm Kat" once,

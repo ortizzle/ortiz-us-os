@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v55 · status box names the real event';
+const APP_VERSION = 'v56 · tickets say whose';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -40,7 +40,7 @@ DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: 
 DB.stash ||= {};     // 🎁 per-person surprise scratchpads (gift/trip ideas), DEVICE-LOCAL: { kat: [{id,text,done,createdAt}] } — never synced
 DB.deepcache ||= {}; // paid-for ✨ results, DEVICE-LOCAL: { 'rec:<name>'|'plan:<entryId>': {text,at} } — kept ~30 days, never synced
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
-DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,note,updatedAt}
+DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,by,note,updatedAt} — `by` is who claimed it; the pool itself is shared
 DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seenAt,updatedAt,deleted}
 DB.bingo ||= [];     // easter-egg bingo squares: {id,n,done,updatedAt}
 DB.bingo2 ||= [];    // the card behind the card
@@ -1283,14 +1283,30 @@ function renderGoals() {
         el('span', {}, `${p.emoji} ${p.label}`),
         el('span', { class: 'chip' + (remaining ? ' love' : '') }, `${remaining} of ${tix.length} left`),
       ]));
-      kids.push(el('div', { class: 'tickets' }, tix.map((x) => el('button', {
-        class: 'ticket' + (x.used ? ' used' : ''),
-        title: x.used ? `Used ${x.usedAt ? fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}` : `${p.one} #${x.n}`,
-        onclick: () => ticketModal(x, p),
-      }, [
-        el('span', { class: 't-emoji' }, p.emoji),
-        el('span', { class: 't-n' }, x.used ? '✓' : x.n),
-      ]))));
+      // The pool is SHARED (one set of ids, both phones), so a claim has to say
+      // whose it was — otherwise the other of you reads a ✓ as your own.
+      // Tickets used before `by` existed stay unlabelled rather than guessed at.
+      const nBy = (w) => tix.filter((x) => x.used && x.by === w).length;
+      const nAnon = tix.filter((x) => x.used && !x.by).length;
+      if (tix.length - remaining) {
+        kids.push(el('div', { class: 'pass-tally' }, [
+          ...['chris', 'kat'].map((w) => el('span', { class: 'ty ' + w }, `${COUPLE[w].emoji} ${COUPLE[w].name} ${nBy(w)}`)),
+          nAnon ? el('span', { class: 'ty' }, `· ${nAnon} unlabelled`) : null,
+        ].filter(Boolean)));
+      }
+      kids.push(el('div', { class: 'tickets' }, tix.map((x) => {
+        const who = x.used && COUPLE[x.by] ? COUPLE[x.by] : null;
+        return el('button', {
+          class: 'ticket' + (x.used ? ' used' : '') + (who ? ' from-' + x.by : ''),
+          title: x.used
+            ? `Used${who ? ' by ' + who.name : ''}${x.usedAt ? ' · ' + fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}`
+            : `${p.one} #${x.n}`,
+          onclick: () => ticketModal(x, p),
+        }, [
+          el('span', { class: 't-emoji' }, p.emoji),
+          el('span', { class: 't-n' }, x.used ? (who ? who.emoji : '✓') : x.n),
+        ]);
+      })));
     }
     view.append(el('div', { class: 'card' }, kids));
   }
@@ -1313,12 +1329,14 @@ function renderGoals() {
 
 function ticketModal(x, p) {
   if (x.used) {
+    const who = COUPLE[x.by] || null;
     const m = modal(`${p.emoji} Used: ${p.one}`, [
+      who ? el('p', { class: 'whoused ' + x.by }, `${who.emoji} ${who.name}${x.by === me() ? ' (you)' : ''}`) : null,
       el('p', { class: 'muted' }, `${x.usedAt ? fmt(x.usedAt) : 'Date unknown'}${x.note ? ' — ' + x.note : ''}`),
-    ], [
+    ].filter(Boolean), [
       el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
       el('button', { class: 'btn btn-primary', onclick: () => {
-        x.used = false; x.usedAt = null; x.note = ''; x.updatedAt = now();
+        x.used = false; x.usedAt = null; x.note = ''; x.by = ''; x.updatedAt = now();
         commit(); m.close(); toast('Ticket returned 🎟️'); render();
       } }, 'Give it back'),
     ]);
@@ -1332,7 +1350,7 @@ function ticketModal(x, p) {
   ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Not yet'),
     el('button', { class: 'btn btn-primary', onclick: () => {
-      x.used = true; x.usedAt = date.value || todayStr(); x.note = note.value.trim(); x.updatedAt = now();
+      x.used = true; x.usedAt = date.value || todayStr(); x.note = note.value.trim(); x.by = me(); x.updatedAt = now();
       commit(); m.close(); toast('Enjoy it — you earned it 🥂'); render();
     } }, 'Use it'),
   ]);
