@@ -58,9 +58,12 @@ after an update.
 
 ## How it thinks
 
-- **Rhythm (home)** — four status boxes, one per cadence, each showing where
-  you stand: `due in 9d`, `3d overdue`, `🔨 planning`, `✅ booked`, or
-  `anytime` (occasions). **Tap a box to plan the next one**: pick the date,
+- **Rhythm (home)** — **✅ Booked** leads (what's actually locked in), then
+  **Plan & log**, then **🔨 Still planning**. Four status boxes, one per
+  cadence, each showing where you stand: `due in 9d`, `3d overdue`,
+  `🔨 planning`, `✅ booked`, or `anytime` (occasions) — plus **when the next
+  one is**, either the planned event or the projected slot (`next ~ Aug 20`).
+  **Tap a box to plan the next one**: pick the date,
   name it (*"date night" is the type — "Odyssey at Harkins" is the title*),
   fill in what you know, then **Just plan it** or **✅ Book it**. A small link
   flips the sheet to *log one that already happened* instead. **🗓 Calendar
@@ -92,7 +95,8 @@ after an update.
 - **Idea generation lives in the Ideas tab** (API key required) — scoped
   sensibly: date nights stay local, occasions roam the metro, getaways go
   statewide/~6 h drive, trips go anywhere. Anniversary and birthdays
-  auto-surface in ✅ Booked within 45 days — and tapping one opens a **🎁
+  auto-surface under 🔨 Still planning within 45 days (they're not *booked* —
+  nothing's locked in for them, they just arrive) — and tapping one opens a **🎁
   private idea stash** for that person (gift ideas, trip thoughts, hints
   they dropped): your phone only, never syncs. The stashes are also
   available year-round from the **Surprise stashes** card on Goals. ✨
@@ -245,4 +249,4 @@ npx serve .
 
 ---
 
-*Current build: v56 · tickets say whose.*
+*Current build: v57 · booked first, next date shown.*

@@ -36,8 +36,14 @@ Three cadences, each with a target interval:
 Three sections with jump-chips (a mini table of contents) at the top:
 - **Plan & log** — a 2×2 grid of compact status boxes, one per cadence:
   live status (`due in Nd` / `Nd overdue` / `🔨 planning` / `✅ booked`;
-  occasions show `anytime`) plus a one-line meta (what's planned, or last
-  time). The meta names the event through **`titleText`**, the same helper
+  occasions show `anytime`) plus a one-line meta that always answers **when
+  the next one is**: the planned event when there is one, otherwise the
+  projected next slot (`next ~ Aug 20`, the same rhythm the calendar's hold
+  weeks draw). It falls back to `last:` only once that projected date is
+  behind you — at which point the status line is already saying
+  "Nd overdue", so the last one is the more useful thing to show — and to
+  `no history yet` when there's nothing to project from.
+  The meta names the event through **`titleText`**, the same helper
   every other surface uses, so a box can't describe an event differently
   from its own card. Where `titleText` falls back to the cadence name (an
   untitled event), the box shows its **location** instead — the box heading
@@ -138,15 +144,25 @@ Three sections with jump-chips (a mini table of contents) at the top:
   nights stay local (Chandler/Gilbert/southeast valley), special occasions
   range across the metro, getaways reach statewide or within ~6 hours'
   drive, trips go destination-wide.
+- **Section order on Rhythm** — ♥ How was it? (the only thing waiting on
+  you) → **✅ Booked** → **Plan & log** → **🔨 Still planning** → 💫 This
+  week in your story. What's locked in leads, everything actionable stays
+  contiguous, and the nostalgia block sits last rather than splitting the
+  actionable sections.
 - **✅ Booked** — plans that are locked in, soonest first, with countdowns.
-  Special dates (anniversary Sep 12, 2013 with years count; birthdays
-  Chris Feb 26, Kat Aug 15) auto-surface here only when within 45 days —
-  clean the rest of the year (defined in `SPECIAL` in `app.js`). Tapping a
-  special-date row opens a **🎁 private stash** for that person/occasion —
-  gift ideas, trip thoughts, hints they dropped — device-local, never
-  synced, so it works like a surprise scratchpad. All three stashes (Kat,
-  Chris, Anniversary) are reachable year-round from the **Surprise stashes**
-  card on Goals, without special dates cluttering ✅ Booked out of season.
+  Only real entries with `status === 'booked'` appear here: a birthday or
+  anniversary is **not** booked (nothing is locked in for it — it just
+  arrives), so special dates sit under 🔨 Still planning instead, which is
+  what they actually want from you.
+- **Special dates** (anniversary Sep 12, 2013 with years count; birthdays
+  Chris Feb 26, Kat Aug 15) surface under 🔨 Still planning only when
+  within 45 days — clean the rest of the year (defined in `SPECIAL` in
+  `app.js`). Tapping a special-date row opens a **🎁 private stash** for
+  that person/occasion — gift ideas, trip thoughts, hints they dropped —
+  device-local, never synced, so it works like a surprise scratchpad. All
+  three stashes (Kat, Chris, Anniversary) are reachable year-round from the
+  **Surprise stashes** card on Goals, without special dates cluttering
+  Rhythm out of season.
 - **✨ results are keepers** — deep dives and per-plan idea runs cache
   on-device for ~30 days (`deepcache`) and show instantly on reopen; an
   explicit ↻ refresh is the only thing that re-spends tokens.

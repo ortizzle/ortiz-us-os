@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v56 · tickets say whose';
+const APP_VERSION = 'v57 · booked first, next date shown';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1862,8 +1862,8 @@ function renderRhythm() {
   const anyToRate = DB.entries.some((e) => !e.deleted && awaitingRating(e));
   view.append(el('div', { class: 'seg' }, [
     anyToRate ? el('button', { onclick: jump('sec-rate') }, '♥ How was it?') : null,
-    el('button', { onclick: jump('sec-log') }, '💞 Plan & log'),
     el('button', { onclick: jump('sec-booked') }, '✅ Booked'),
+    el('button', { onclick: jump('sec-log') }, '💞 Plan & log'),
     el('button', { onclick: jump('sec-planning') }, '🔨 Planning'),
   ].filter(Boolean)));
   view.append(el('button', { class: 'btn btn-sm', style: 'margin-bottom:12px', onclick: () => { current = 'calendar'; render(); } }, '🗓 Calendar view'));
@@ -1884,6 +1884,11 @@ function renderRhythm() {
         : 'These already happened — give each a ♥ and they file themselves into History.'));
     for (const e of rateList) view.append(upcomingCard(e));
   }
+
+  // What's locked in leads — it's the thing you actually want to see first.
+  view.append(el('h2', { id: 'sec-booked' }, '✅ Booked'));
+  if (!bookedList.length) view.append(el('p', { class: 'muted small' }, 'Nothing locked in yet — when a plan is set, mark it ✅ booked.'));
+  for (const e of bookedList) view.append(upcomingCard(e));
 
   view.append(el('h2', { id: 'sec-log' }, 'Plan & log'));
   // Compact status boxes, one per cadence. Tap = straight into picking a
@@ -1923,7 +1928,15 @@ function renderRhythm() {
       const label = name === c.title ? (cardVal(planned, 'loc') || '') : name;
       const lock = anyHidden && !label.startsWith('🔒') ? '🔒 ' : '';
       meta = lock + [label, fmt(planned.date)].filter(Boolean).join(' · ');
-    } else meta = last ? `last: ${fmt(last.date)}` : 'no history yet';
+    } else {
+      // Nothing on the books: the box still answers "when's the next one?"
+      // with the projected slot (the same rhythm the calendar's hold weeks
+      // draw). Once that date is behind you the status line already says
+      // "Nd overdue", so the last one is the more useful thing to show.
+      const hw = holdWindows(c.type, t, addDays(t, HOLD_HORIZON))[0];
+      meta = hw && hw.due >= t ? `next ~ ${fmt(hw.due)}`
+        : last ? `last: ${fmt(last.date)}` : 'no history yet';
+    }
 
     return el('button', { class: 'stat', onclick: () => logModal(c.type, { planned: true }) }, [
       el('span', { class: 's-emoji' }, c.emoji),
@@ -1936,6 +1949,23 @@ function renderRhythm() {
     ]);
   })));
 
+  view.append(el('h2', { id: 'sec-planning' }, '🔨 Still planning'));
+  // A birthday or anniversary is NOT booked — nothing is locked in for it, it
+  // just arrives. It belongs with the things that still want a plan.
+  if (nearSpecial.length) for (const { s, nx } of nearSpecial) {
+    view.append(el('div', { class: 'row rec', onclick: () => stashSheet(s), title: 'Your private scratchpad for this one' }, [
+      el('span', { class: 'r-emoji' }, s.emoji),
+      el('div', { class: 'r-main' }, [
+        el('div', { class: 'r-title' }, s.since ? `${s.label} — ${nx.years} years` : `${s.label}’s birthday`),
+        el('div', { class: 'r-meta' }, `${fmt(nx.date)} · 🎁 tap for your private idea stash`),
+      ]),
+      el('span', { class: 'chip love' }, nx.left === 0 ? 'today! 🎉' : `in ${nx.left}d`),
+    ]));
+  }
+  if (!planningList.length && !nearSpecial.length) view.append(el('p', { class: 'muted small' }, 'Nothing in the works — tap ＋ Plan ahead above, or raid the Ideas tab.'));
+  for (const e of planningList) view.append(upcomingCard(e));
+
+  // Nostalgia last — everything you can act on stays together above it.
   const otw = onThisWeek();
   if (otw.length) {
     view.append(el('h2', {}, '💫 This week in your story'));
@@ -1950,24 +1980,6 @@ function renderRhythm() {
       ]));
     }
   }
-
-  view.append(el('h2', { id: 'sec-booked' }, '✅ Booked'));
-  if (nearSpecial.length) for (const { s, nx } of nearSpecial) {
-    view.append(el('div', { class: 'row rec', onclick: () => stashSheet(s), title: 'Your private scratchpad for this one' }, [
-      el('span', { class: 'r-emoji' }, s.emoji),
-      el('div', { class: 'r-main' }, [
-        el('div', { class: 'r-title' }, s.since ? `${s.label} — ${nx.years} years` : `${s.label}’s birthday`),
-        el('div', { class: 'r-meta' }, `${fmt(nx.date)} · 🎁 tap for your private idea stash`),
-      ]),
-      el('span', { class: 'chip love' }, nx.left === 0 ? 'today! 🎉' : `in ${nx.left}d`),
-    ]));
-  }
-  if (!bookedList.length && !nearSpecial.length) view.append(el('p', { class: 'muted small' }, 'Nothing locked in yet — when a plan is set, mark it ✅ booked.'));
-  for (const e of bookedList) view.append(upcomingCard(e));
-
-  view.append(el('h2', { id: 'sec-planning' }, '🔨 Still planning'));
-  if (!planningList.length) view.append(el('p', { class: 'muted small' }, 'Nothing in the works — tap ＋ Plan ahead above, or raid the Ideas tab.'));
-  for (const e of planningList) view.append(upcomingCard(e));
 }
 
 // 🎰 "Surprise us": picks tonight's plan from the idea backlog + live
