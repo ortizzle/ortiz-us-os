@@ -111,12 +111,11 @@ after an update.
   generates fresh city-and-interests-aware suggestions. "Plan" turns any idea
   into a dated plan.
 - **Goals** — shared commitments with grace built in: the alcohol-free
-  stretch through Jan 17, 2027 (12 🎟️ drink tickets, 3 🏖️ escape passes —
-  tap to use, tap again to give back). The passes are **one shared pool**,
-  not one each, so a claim is stamped with **who** made it: a used ticket
-  takes that person's colour (💙 Chris / 💜 Kat), the sheet says "used by",
-  and a running tally sits under each heading. Anything claimed before the
-  app tracked this stays unlabelled rather than guessed at. Also
+  stretch through Jan 17, 2027, where **you each get your own** 12 🎟️ drink
+  tickets and 3 🏖️ escape passes — spending yours never moves the other's
+  total. Your set sits on top and is the tappable one (tap to use, tap again
+  to give back); theirs shows below, dimmed, to look at but not spend. Used
+  ones take their owner's colour, 💙 Chris / 💜 Kat. Also
   **💌 love coupons**: ten each,
   his & hers. Send one when you mean it — it lands on the other phone as a
   surprise reveal (plus an email teaser if configured) and lives on their
@@ -249,4 +248,4 @@ npx serve .
 
 ---
 
-*Current build: v57 · booked first, next date shown.*
+*Current build: v58 · a set of passes each.*

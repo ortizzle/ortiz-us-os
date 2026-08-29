@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v57 · booked first, next date shown';
+const APP_VERSION = 'v58 · a set of passes each';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -40,7 +40,7 @@ DB.secrets ||= {};   // per-event hidden field values, DEVICE-LOCAL: { entryId: 
 DB.stash ||= {};     // 🎁 per-person surprise scratchpads (gift/trip ideas), DEVICE-LOCAL: { kat: [{id,text,done,createdAt}] } — never synced
 DB.deepcache ||= {}; // paid-for ✨ results, DEVICE-LOCAL: { 'rec:<name>'|'plan:<entryId>': {text,at} } — kept ~30 days, never synced
 DB.ideas ||= [];     // idea backlog: {id,type,text,source,done,private,updatedAt,deleted}
-DB.tickets ||= [];   // goal passes: {id,goal,kind,n,used,usedAt,by,note,updatedAt} — `by` is who claimed it; the pool itself is shared
+DB.tickets ||= [];   // goal passes: {id,goal,kind,who,n,used,usedAt,note,updatedAt} — `who` owns the set; you each hold your own
 DB.coupons ||= [];   // SENT love coupons only: {id,from,n,text,note,sentAt,seenAt,updatedAt,deleted}
 DB.bingo ||= [];     // easter-egg bingo squares: {id,n,done,updatedAt}
 DB.bingo2 ||= [];    // the card behind the card
@@ -205,19 +205,52 @@ const GOALS = [{
   sub: 'Through Jan 17, 2027 — with passes saved for the moments worth toasting.',
   ends: '2027-01-17',
   passes: [
-    { kind: 'drink',  emoji: '🎟️', label: 'Drink tickets',         one: 'drink ticket',         count: 12 },
-    { kind: 'escape', emoji: '🏖️', label: 'Weekend escape passes', one: 'weekend escape pass',  count: 3 },
+    { kind: 'drink',  emoji: '🎟️', label: 'Drink tickets',         short: 'drink tickets',  one: 'drink ticket',         count: 12 },
+    { kind: 'escape', emoji: '🏖️', label: 'Weekend escape passes', short: 'escape passes',  one: 'weekend escape pass',  count: 3 },
   ],
 }];
 // Tickets get fixed ids (goal:kind:n) so both phones seed the identical set
 // and merge per-ticket instead of doubling up. Seeds carry updatedAt:'' so a
 // real tap on either phone always outranks the untouched seed in a merge.
+// Each of you gets your OWN set of every pass — spending yours never touches
+// the other's total. Ids stay deterministic (`goal:kind:who:n`) so both
+// phones seed identical records and the merge is idempotent.
+const PASS_OWNERS = ['chris', 'kat'];
 function seedTickets() {
   const have = new Set(DB.tickets.map((t) => t.id));
-  for (const g of GOALS) for (const p of g.passes) for (let n = 1; n <= p.count; n++) {
-    const id = `${g.id}:${p.kind}:${n}`;
-    if (!have.has(id)) DB.tickets.push({ id, goal: g.id, kind: p.kind, n, used: false, updatedAt: '' });
+  for (const g of GOALS) for (const p of g.passes) for (const w of PASS_OWNERS) for (let n = 1; n <= p.count; n++) {
+    const id = `${g.id}:${p.kind}:${w}:${n}`;
+    if (!have.has(id)) DB.tickets.push({ id, goal: g.id, kind: p.kind, who: w, n, used: false, updatedAt: '' });
   }
+}
+// The passes used to be ONE shared pool (`goal:kind:n`). A claim from it
+// carries `by` (recorded once claims started naming who made them), so it
+// moves to that person's own set — assigned in order, so both phones derive
+// the same records. Claims from before `by` existed can't be attributed and
+// are left behind rather than guessed at; the old records themselves stay put
+// for a phone still running the shared build.
+//
+// The already-moved marker sits on the SOURCE record, which syncs — not in
+// settings, which doesn't. Otherwise a phone with no local flag (a fresh
+// install pulling the Gist) would re-run this and resurrect a pass its owner
+// had since given back.
+const isSharedPass = (t) => t.id.split(':').length === 3;
+function migrateTickets() {
+  const byId = new Map(DB.tickets.map((t) => [t.id, t]));
+  let moved = 0;
+  for (const g of GOALS) for (const p of g.passes) for (const w of PASS_OWNERS) {
+    DB.tickets
+      .filter((t) => t.goal === g.id && t.kind === p.kind && isSharedPass(t) && t.used && !t.moved && t.by === w)
+      .sort((a, b) => a.n - b.n)
+      .forEach((src, i) => {
+        const dest = byId.get(`${g.id}:${p.kind}:${w}:${i + 1}`);
+        if (!dest || dest.used) return;
+        Object.assign(dest, { used: true, usedAt: src.usedAt || '', note: src.note || '', updatedAt: src.updatedAt || now() });
+        src.moved = true; src.updatedAt = now();
+        moved++;
+      });
+  }
+  if (moved) commit();
 }
 
 // Love coupons moved from mark-after-done tickets (love-coupons:kind:n) to
@@ -1277,36 +1310,33 @@ function renderGoals() {
       ]),
     ];
     for (const p of g.passes) {
-      const tix = DB.tickets.filter((x) => x.goal === g.id && x.kind === p.kind).sort((a,b) => a.n - b.n);
-      const remaining = tix.filter((x) => !x.used).length;
-      kids.push(el('div', { class: 'pass-head' }, [
-        el('span', {}, `${p.emoji} ${p.label}`),
-        el('span', { class: 'chip' + (remaining ? ' love' : '') }, `${remaining} of ${tix.length} left`),
-      ]));
-      // The pool is SHARED (one set of ids, both phones), so a claim has to say
-      // whose it was — otherwise the other of you reads a ✓ as your own.
-      // Tickets used before `by` existed stay unlabelled rather than guessed at.
-      const nBy = (w) => tix.filter((x) => x.used && x.by === w).length;
-      const nAnon = tix.filter((x) => x.used && !x.by).length;
-      if (tix.length - remaining) {
-        kids.push(el('div', { class: 'pass-tally' }, [
-          ...['chris', 'kat'].map((w) => el('span', { class: 'ty ' + w }, `${COUPLE[w].emoji} ${COUPLE[w].name} ${nBy(w)}`)),
-          nAnon ? el('span', { class: 'ty' }, `· ${nAnon} unlabelled`) : null,
-        ].filter(Boolean)));
-      }
-      kids.push(el('div', { class: 'tickets' }, tix.map((x) => {
-        const who = x.used && COUPLE[x.by] ? COUPLE[x.by] : null;
-        return el('button', {
-          class: 'ticket' + (x.used ? ' used' : '') + (who ? ' from-' + x.by : ''),
+      // You each hold your own set, so each gets its own heading and count —
+      // yours first and tappable, theirs below as a read-only look at where
+      // they're at. Spending yours never moves their number.
+      const y = me();
+      const order = y ? [y, other(y)] : PASS_OWNERS;
+      for (const w of order) {
+        const own = w === y;
+        const tix = DB.tickets.filter((x) => x.goal === g.id && x.kind === p.kind && x.who === w).sort((a,b) => a.n - b.n);
+        if (!tix.length) continue;
+        const remaining = tix.filter((x) => !x.used).length;
+        kids.push(el('div', { class: 'pass-head' }, [
+          el('span', {}, `${p.emoji} ${own ? 'Your' : COUPLE[w].name + '’s'} ${p.short}`),
+          el('span', { class: 'chip' + (remaining ? ' love' : '') }, `${remaining} of ${tix.length} left`),
+        ]));
+        kids.push(el('div', { class: 'tickets' + (own ? '' : ' theirs') }, tix.map((x) => el('button', {
+          class: 'ticket' + (x.used ? ' used from-' + w : ''),
           title: x.used
-            ? `Used${who ? ' by ' + who.name : ''}${x.usedAt ? ' · ' + fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}`
+            ? `Used${x.usedAt ? ' · ' + fmt(x.usedAt) : ''}${x.note ? ' · ' + x.note : ''}`
             : `${p.one} #${x.n}`,
-          onclick: () => ticketModal(x, p),
+          onclick: () => own ? ticketModal(x, p) : peekTicket(x, p, w),
         }, [
           el('span', { class: 't-emoji' }, p.emoji),
-          el('span', { class: 't-n' }, x.used ? (who ? who.emoji : '✓') : x.n),
-        ]);
-      })));
+          el('span', { class: 't-n' }, x.used ? COUPLE[w].emoji : x.n),
+        ]))));
+      }
+      if (!y) kids.push(el('p', { class: 'muted small', style: 'margin:2px 0 0' },
+        'Set “This phone belongs to” in Settings and your own set becomes the tappable one.'));
     }
     view.append(el('div', { class: 'card' }, kids));
   }
@@ -1327,16 +1357,24 @@ function renderGoals() {
   ]));
 }
 
+// The other person's set is theirs to spend — you can look, not touch.
+function peekTicket(x, p, w) {
+  const who = COUPLE[w];
+  const m = modal(`${p.emoji} ${who.name}’s ${p.one}`, [
+    el('p', { class: 'whoused ' + w }, `${who.emoji} ${who.name}`),
+    el('p', { class: 'muted' }, x.used
+      ? `Used${x.usedAt ? ' ' + fmt(x.usedAt) : ''}${x.note ? ' — ' + x.note : ''}`
+      : 'Still unspent — theirs to use.'),
+  ], [el('button', { class: 'btn btn-primary', onclick: () => m.close() }, 'Close')]);
+}
 function ticketModal(x, p) {
   if (x.used) {
-    const who = COUPLE[x.by] || null;
     const m = modal(`${p.emoji} Used: ${p.one}`, [
-      who ? el('p', { class: 'whoused ' + x.by }, `${who.emoji} ${who.name}${x.by === me() ? ' (you)' : ''}`) : null,
       el('p', { class: 'muted' }, `${x.usedAt ? fmt(x.usedAt) : 'Date unknown'}${x.note ? ' — ' + x.note : ''}`),
-    ].filter(Boolean), [
+    ], [
       el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
       el('button', { class: 'btn btn-primary', onclick: () => {
-        x.used = false; x.usedAt = null; x.note = ''; x.by = ''; x.updatedAt = now();
+        x.used = false; x.usedAt = null; x.note = ''; x.updatedAt = now();
         commit(); m.close(); toast('Ticket returned 🎟️'); render();
       } }, 'Give it back'),
     ]);
@@ -1350,7 +1388,7 @@ function ticketModal(x, p) {
   ], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Not yet'),
     el('button', { class: 'btn btn-primary', onclick: () => {
-      x.used = true; x.usedAt = date.value || todayStr(); x.note = note.value.trim(); x.by = me(); x.updatedAt = now();
+      x.used = true; x.usedAt = date.value || todayStr(); x.note = note.value.trim(); x.updatedAt = now();
       commit(); m.close(); toast('Enjoy it — you earned it 🥂'); render();
     } }, 'Use it'),
   ]);
@@ -3016,6 +3054,7 @@ document.querySelector('.wordmark').addEventListener('click', () => {
 applyTheme();
 pruneTombstones();
 seedTickets();
+migrateTickets(); // must follow seedTickets — it moves old shared claims into the seeded per-person sets
 seedBingo();
 migrateCoupons();
 graduatePast(); // a plan booked & rated last time that's now past retires to History

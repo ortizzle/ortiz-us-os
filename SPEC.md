@@ -436,19 +436,30 @@ unlike 🔒 secrets).
 ### Couple's Goals
 - Shared commitments rendered as interactive passes, synced to both phones.
 - First goal: **alcohol-free through Jan 17, 2027**, with grace built in —
-  12 🎟️ drink tickets and 3 🏖️ weekend escape passes for the whole stretch.
-  These are **one shared pool between the two of you**, not one set each:
-  the ids are `dry-2027:<kind>:<n>`, so both phones hold the same tickets
-  and either of you can spend or return any of them. Because the pool is
-  shared, a claim records **`by`** (`me()` at the moment of use) — without
-  it a ✓ on one phone reads as the other person's own claim, which is
-  exactly how it was misread. A claimed ticket takes that person's colour
-  (`.ticket.used.from-<who>`, which must override `.used`'s grayscale — the
-  tint IS the attribution), shows their 💙/💜 in place of the ✓, names them
-  in the detail sheet (marked "(you)" on your own), and a per-person tally
-  sits under the heading. Tickets used before `by` existed keep no
-  attribution and are counted as "unlabelled" rather than guessed at;
-  giving a ticket back clears `by` along with `used`/`usedAt`/`note`.
+  **each of you gets your own** 12 🎟️ drink tickets and 3 🏖️ weekend escape
+  passes for the whole stretch — spending yours never moves the other's
+  total. Ids are `dry-2027:<kind>:<who>:<n>` (`PASS_OWNERS`), so the sets are
+  seeded deterministically on both phones and the merge stays idempotent;
+  the owner is the record's **`who`**, not who happened to tap it.
+  - **Your set renders first and is the only tappable one**; theirs shows
+    below in `.tickets.theirs` (dimmed, solid-bordered) and taps open a
+    read-only `peekTicket` — you can see where they're at, not spend it.
+    With no `settings.who` yet, neither set is spendable and a line points
+    at Settings. Used passes take their owner's colour
+    (`.ticket.used.from-<who>`, which must override `.used`'s grayscale).
+  - **Migration from the old shared pool** (`migrateTickets`, run right
+    after `seedTickets`): passes were once one shared pool
+    (`dry-2027:<kind>:<n>`, 3 id segments — `isSharedPass`). A used shared
+    pass carrying **`by`** moves into that person's own set, assigned in
+    order so both phones derive identical records, timestamps and occasion
+    included. Claims from before `by` existed can't be attributed and are
+    **left behind rather than guessed at**. Old records stay untouched so a
+    phone still on the shared build keeps working.
+  - The already-migrated marker (**`moved`**) sits on the *source* record,
+    which syncs — deliberately **not** in `settings`, which doesn't. A local
+    flag would let a phone with no such flag (a fresh install pulling the
+    Gist) re-run the migration and resurrect a pass its owner had since
+    given back.
 - Second goal: **💌 Love coupons** — his & hers books of 10 acts-of-service
   coupons each (💙 Chris, 💜 Kat), no expiration. **Send semantics**: each
   phone shows only its owner's unsent book (pick "I'm Chris / I'm Kat" once,
