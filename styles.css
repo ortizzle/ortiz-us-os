@@ -505,10 +505,9 @@ textarea.input { resize: vertical; min-height: 60px; }
 /* a claimed goal ticket keeps its owner's colour — the tint IS the attribution,
    so it must survive .used's grayscale. */
 .ticket.used.from-chris, .ticket.used.from-kat { filter: none; opacity: 0.85; }
-.pass-tally { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; font-weight: 700; margin: -2px 0 8px; }
-.pass-tally .ty { color: var(--text-2); }
-.pass-tally .ty.chris { color: var(--chris-ink); }
-.pass-tally .ty.kat { color: var(--kat-ink); }
+/* the other person's set: visible, but plainly not yours to spend */
+.tickets.theirs { opacity: 0.72; }
+.tickets.theirs .ticket { border-style: solid; cursor: default; }
 .whoused { font-weight: 800; margin: 0 0 2px; }
 .whoused.chris { color: var(--chris-ink); }
 .whoused.kat { color: var(--kat-ink); }
