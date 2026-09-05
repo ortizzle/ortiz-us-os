@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v59 · find us an idea';
+const APP_VERSION = 'v60 · farther getaways';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1103,6 +1103,36 @@ const RECS = [
   { type: 'getaway', name: 'Greer / White Mountains', area: '4h east', stars: 4,
     why: 'Creeks, meadows, and cabin fireplaces — the summer heat escape.',
     more: 'When Phoenix hits 110°, Greer is 75°. Book a fireplace cabin, walk the Little Colorado, bring books. Winter version: Sunrise ski weekend.' },
+  { type: 'getaway', name: 'Payson & the Mogollon Rim', area: '1.5h northeast', stars: 3.5,
+    why: 'The closest pines — Rim lookouts, Tonto Natural Bridge, creekside cabins.',
+    more: 'Drive the Rim Road for the drop-off views, walk under Tonto Natural Bridge, and book a cabin in Christopher Creek or on Woods Canyon Lake. Best in fall for color, or as a same-day heat escape.' },
+  { type: 'getaway', name: 'Roosevelt Lake & Tonto', area: '2h east', stars: 3.5,
+    why: 'Big desert lake, Salado cliff dwellings, and the Apache Trail on the way.',
+    more: 'Go out through Globe on paved US-60/SR-188: climb to the Tonto National Monument cliff dwellings, then a lakeside sunset. Stop at Tortilla Flat and the Canyon Lake steamboat on the Apache Trail side — check ADOT before trying the unpaved stretch.' },
+  { type: 'getaway', name: 'Pinetop-Lakeside', area: '3.5h east', stars: 4,
+    why: '7,200 ft of ponderosa — cabins, Woodland Lake, and a steakhouse from 1938.',
+    more: 'The other White Mountains base, with more to do than Greer: rent a lakeside cabin, loop Woodland Lake, dinner at Charlie Clark’s. Sunrise Park is 40 minutes on for a winter ski weekend.' },
+  { type: 'getaway', name: 'Bisbee', area: '3.5h southeast', stars: 4.5,
+    why: 'Victorian mining town on a hillside — art, stairs, and the Copper Queen Hotel.',
+    more: 'Stay at the (haunted) Copper Queen, do the Queen Mine tour in hard hats, climb the stair streets, browse the galleries on Main. Pair with Kartchner Caverns or a kitschy hour in Tombstone on the way.' },
+  { type: 'getaway', name: 'Zion National Park', area: '6.5h north (Utah)', stars: 5,
+    why: 'Wading The Narrows, red canyon walls, a Springdale base — worth the long drive.',
+    more: 'Base in Springdale and ride the park shuttle in. Rent Narrows gear in town and walk the river; Angels Landing needs a permit lottery, so Canyon Overlook at sunset is the sure-thing view. Kolob Canyons is the quiet side. Spring and fall are prime; summer works if the river is your plan.' },
+  { type: 'getaway', name: 'Las Vegas', area: '5h, Las Vegas', stars: 4,
+    why: 'A show, a tasting menu, a pool day — and Red Rock Canyon 20 minutes out.',
+    more: 'Do it as a couple, not a bachelor party: one great Cirque show, one splurge dinner, a resort pool afternoon, then the Arts District (Esther’s Kitchen) or Fremont for the low-key night. Red Rock’s scenic loop at sunrise resets the whole thing.' },
+  { type: 'getaway', name: 'San Diego', area: '5.5h west, San Diego', stars: 5,
+    why: 'Ocean air, Sunset Cliffs, La Jolla sea lions — the ultimate Phoenix summer escape.',
+    more: 'Leave early Friday to beat the I-8 rush. Sunset Cliffs for golden hour, Little Italy or Liberty Public Market for dinner, La Jolla Cove and the sea lions in the morning, and a Coronado beach walk past the Hotel del. Balboa Park if it rains (it won’t).' },
+  { type: 'getaway', name: 'Los Angeles', area: '6h west, Los Angeles', stars: 4,
+    why: 'Griffith at sunset, the Getty, a concert at the Bowl, PCH to Malibu.',
+    more: 'Pick a side of town and stay there. Westside: Santa Monica–Venice walk, Getty Center (free, reserve parking), Malibu on PCH. Central: Griffith Observatory at sunset, Grand Central Market, a Hollywood Bowl summer show. Book the show first, plan around it.' },
+  { type: 'getaway', name: 'Palm Springs', area: '4h west, Palm Springs', stars: 4,
+    why: 'Mid-century pools and palms, the Aerial Tramway, Joshua Tree a day-trip away.',
+    more: 'A pool-first weekend: a boutique mid-century hotel, the Tramway up to 8,500 ft of pines, an Indian Canyons palm-oasis hike, dinner at Workshop Kitchen + Bar. Add Joshua Tree for a day. Fall through spring; summer is Phoenix-hot.' },
+  { type: 'getaway', name: 'Rocky Point (Puerto Peñasco)', area: '4h south, Mexico beach', stars: 4,
+    why: 'Arizona’s beach — Sandy Beach resorts, fish tacos, sunsets on the Malecón.',
+    more: 'Passports and Mexican auto insurance, then a straight shot down SR-85. A Sandy Beach condo with a balcony, shrimp and fish tacos on the Malecón, a sunset boat cruise, and nothing else on the schedule. Skip March (spring break).' },
 
   { type: 'trip', name: 'Kauai or Maui', area: 'Hawaii', stars: 5,
     why: 'The reset-button trip — beaches, waterfalls, slow mornings, no jet lag to speak of.',
@@ -1716,7 +1746,7 @@ function eventSheet(entry) {
 const IDEA_SCOPE = {
   date: 'Keep every option LOCAL to the southeast valley — Chandler, Gilbert, Queen Creek, Mesa, Tempe — a short drive from home, a normal evening out. Downtown Chandler and downtown Gilbert (Heritage District) are the home turf; only reach to Scottsdale or Phoenix for something truly worth the drive.',
   occasion: 'Options can range across the greater Phoenix metro (Chandler, Gilbert, Scottsdale, Mesa, Tempe, downtown Phoenix) — worth a longer drive for something special.',
-  getaway: 'Options can be anywhere in Arizona or within about a 6-hour drive of Phoenix (Sedona, Flagstaff, Prescott, Tucson, Bisbee, even San Diego, Vegas, or Rocky Point).',
+  getaway: 'Options can be anywhere in Arizona or within about a 6–7 hour drive of Phoenix (Sedona, Flagstaff, Prescott, the White Mountains, Tucson, Bisbee, even Zion, San Diego, Los Angeles, Palm Springs, Vegas, or Rocky Point).',
   trip: 'Options are bigger destination trips — flights and multiple nights are fine.',
 };
 
@@ -2082,15 +2112,15 @@ const FINDER_AREAS = {
     { v: 'any', label: '🎲 Anywhere in the Valley', sub: 'no preference' },
   ],
   getaway: [
-    { v: 'north', label: '🌲 Up north', sub: 'Sedona · Flag · Prescott', re: /north|bradshaw/i,
-      ask: 'up north — Sedona, Flagstaff, Prescott, Jerome, Payson — cooler air, pines and red rock' },
+    { v: 'north', label: '🌲 Up north', sub: 'Sedona · Flag · Zion', re: /north|bradshaw|utah/i,
+      ask: 'up north — Sedona, Flagstaff, Prescott, Jerome, Payson, even Zion and southern Utah — cooler air, pines and red rock' },
     { v: 'south', label: '🌵 South', sub: 'Tucson · Tubac · Bisbee', re: /south/i,
       ask: 'south — Tucson, Tubac, Bisbee, Patagonia' },
-    { v: 'east', label: '⛰️ East', sub: 'White Mountains', re: /east/i,
-      ask: 'east — the White Mountains, Greer, Pinetop' },
-    { v: 'road', label: '🏖️ Longer road trip', sub: 'San Diego · Rocky Point · Vegas', re: /san diego|rocky point|vegas/i,
-      ask: 'a longer road trip — San Diego, Rocky Point (Puerto Peñasco), or Las Vegas' },
-    { v: 'any', label: '🎲 Surprise us', sub: 'anywhere within ~6 hours' },
+    { v: 'east', label: '⛰️ East', sub: 'Rim · White Mountains · Bisbee', re: /east/i,
+      ask: 'east — the Mogollon Rim, Roosevelt Lake, the White Mountains (Greer, Pinetop), out to Bisbee' },
+    { v: 'road', label: '🏖️ Longer road trip', sub: 'San Diego · LA · Vegas · Rocky Point', re: /san diego|los angeles|palm springs|rocky point|vegas|mexico/i,
+      ask: 'a longer road trip — San Diego, Los Angeles, Palm Springs, Las Vegas, or Rocky Point (Puerto Peñasco)' },
+    { v: 'any', label: '🎲 Surprise us', sub: 'anywhere within ~6–7 hours' },
   ],
   trip: [
     { v: 'beach', label: '🏝️ Beach & islands', sub: 'Hawaii · Mexico · Caribbean', re: /hawaii|mexico|caribbean/i,
@@ -2113,9 +2143,9 @@ const FINDER_BUDGET = [
 const FINDER_VIBE = [
   { v: 'romantic', e: '💞', label: '💞 Romantic & cozy', re: /romantic|candle|cozy|intimate|sunset|golden hour|creekside|stargaz|spa/i, ask: 'romantic and cozy — slow, intimate, just the two of them' },
   { v: 'food', e: '🍽️', label: '🍽️ Foodie', re: /dinner|pizza|prix|menu|craft|tasting|brunch|guac|wine|cocktail|caf|brewer|restaurant|chef|beard/i, ask: 'food-first — a great meal, drinks, somewhere with a real kitchen' },
-  { v: 'active', e: '🥾', label: '🥾 Active & outdoorsy', re: /hike|sunrise|ride|lake|trail|red.rock|preserve|garden|hot spring|mountain|ski|snorkel|surf|kayak/i, ask: 'active and outdoorsy — moving, fresh air, a view earned' },
+  { v: 'active', e: '🥾', label: '🥾 Active & outdoorsy', re: /hik(e|ing)|sunrise|\bride\b|\blakes?\b|trail|red.rock|preserve|garden|hot.spring|mountain|\bski\b|snorkel|\bsurf|kayak|beach|cliffs|canyon|narrows|walk/i, ask: 'active and outdoorsy — moving, fresh air, a view earned' },
   { v: 'culture', e: '🎭', label: '🎭 Arts, shows & culture', re: /theat|museum|galler|mural|stand.up|comedy|music|instrument|first friday|observatory|temple|ruins/i, ask: 'arts, shows and culture — a performance, a museum, something to talk about after' },
-  { v: 'playful', e: '🎉', label: '🎉 Playful & silly', re: /crawl|farm|olive|brewer|festival|pie|comedy|stand.up|game|karaoke|arcade|ostrich/i, ask: 'playful and a little silly — low-pressure fun, laughing more than dressing up' },
+  { v: 'playful', e: '🎉', label: '🎉 Playful & silly', re: /crawl|farm|olive|brewer|festival|\bpies?\b|comedy|stand.up|\bgames?\b|karaoke|arcade|ostrich|kitschy|haunted|steamboat/i, ask: 'playful and a little silly — low-pressure fun, laughing more than dressing up' },
   { v: 'any', label: '🎲 Surprise us' },
 ];
 const FINDER_WHEN = {
