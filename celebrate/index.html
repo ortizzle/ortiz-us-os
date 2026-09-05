@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2e7d63">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Celebrate">
+<title>Celebrate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --mat:#2e7d63; --mat-grid:rgba(255,255,255,.10); --mat-tick:rgba(255,255,255,.35);
+    --paper:#fbf7ef; --paper-edge:#e8e0cf; --paper-2:#f1ebdf;
+    --ink:#163229; --ink-soft:rgba(22,50,41,.66);
+    --accent:#ff5d6c; --accent-ink:#fff; --accent-2:#f2b134;
+    --focus:#ffd166; --danger:#c94a3f; --ok:#2e7d63;
+    --tab-bg:rgba(255,255,255,.14);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --mat:#0e2620; --mat-grid:rgba(255,255,255,.06); --mat-tick:rgba(255,255,255,.22);
+      --paper:#1b3a32; --paper-edge:rgba(255,255,255,.10); --paper-2:#22453c;
+      --ink:#eef3ee; --ink-soft:rgba(238,243,238,.66);
+      --accent:#ff7b87; --accent-ink:#201014; --accent-2:#ffcf5c; --ok:#7fd3b4;
+      --tab-bg:rgba(0,0,0,.22);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --mat:#0e2620; --mat-grid:rgba(255,255,255,.06); --mat-tick:rgba(255,255,255,.22);
+    --paper:#1b3a32; --paper-edge:rgba(255,255,255,.10); --paper-2:#22453c;
+    --ink:#eef3ee; --ink-soft:rgba(238,243,238,.66);
+    --accent:#ff7b87; --accent-ink:#201014; --accent-2:#ffcf5c; --ok:#7fd3b4;
+    --tab-bg:rgba(0,0,0,.22);
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; min-height:100vh; background:var(--mat); color:var(--ink);
+    font-family:'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-image:
+      repeating-linear-gradient(0deg, var(--mat-grid) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, var(--mat-grid) 0 1px, transparent 1px 44px);
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1,h2,h3{ font-family:'Baloo 2', system-ui, sans-serif; margin:0; text-wrap:balance; }
+  h2{ font-size:1.15rem; }
+  button{ font-family:inherit; }
+  :focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+  [hidden]{ display:none !important; }
+
+  .app{ max-width:1040px; margin:0 auto; padding:calc(env(safe-area-inset-top) + 14px) max(14px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 28px) max(14px, env(safe-area-inset-left)); }
+
+  header.workbench{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .wordmark{ display:flex; align-items:center; gap:10px; color:#fff; }
+  .wordmark h1{ font-size:1.5rem; font-weight:800; letter-spacing:.2px; line-height:1; }
+  .wordmark .tag{ display:block; font-family:'Caveat',cursive; font-size:1rem; color:rgba(255,255,255,.78); margin-top:2px; }
+  .ruler{ display:flex; gap:6px; margin-bottom:14px; }
+  .ruler span{ width:2px; height:8px; background:var(--mat-tick); }
+  .ruler span:nth-child(5n){ height:14px; }
+
+  .nav{ display:inline-flex; border:1px solid rgba(255,255,255,.28); border-radius:14px; overflow:hidden; background:rgba(255,255,255,.1); }
+  .nav button{ min-height:44px; padding:0 16px; border:none; background:transparent; color:#fff; font-weight:700; font-size:.92rem; cursor:pointer; }
+  .nav button[aria-pressed="true"]{ background:var(--paper); color:var(--ink); }
+  .header-right{ display:flex; align-items:center; gap:8px; }
+
+  .icon-btn{ width:44px; height:44px; border-radius:12px; border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.12); color:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .icon-btn svg{ width:20px; height:20px; }
+  .icon-btn.on-paper{ background:transparent; border-color:var(--paper-edge); color:var(--ink); }
+
+  main{ display:grid; gap:18px; grid-template-columns:1fr; }
+  @media (min-width:860px){ main.maker{ grid-template-columns:420px 1fr; align-items:start; } .stage{ position:sticky; top:14px; } }
+
+  .stage{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:22px; padding:16px; }
+  .stage-frame{ display:flex; justify-content:center; }
+  .stage-frame{ display:flex; justify-content:center; width:100%; }
+  .card-canvas{ position:relative; width:min(100%, 340px); aspect-ratio:4/5; border-radius:14px; overflow:hidden; container-type:inline-size;
+    box-shadow:0 18px 34px rgba(0,0,0,.35); }
+  .card-canvas[data-orientation="landscape"]{ aspect-ratio:16/9; width:min(100%, 480px); }
+  .card-canvas .bg{ position:absolute; inset:0; }
+  .card-canvas .content{ position:absolute; inset:0; display:flex; flex-direction:column; padding:7% 8%; }
+  .kicker{ font-family:'Caveat',cursive; font-size:clamp(1.1rem, 6cqw, 1.7rem); font-weight:700; line-height:1.1; }
+  .name{ font-family:'Baloo 2',sans-serif; font-weight:800; line-height:1.02; }
+  .message{ font-family:'Plus Jakarta Sans',sans-serif; white-space:pre-wrap; line-height:1.4; }
+  .from{ font-family:'Caveat',cursive; font-weight:700; margin-top:auto; align-self:flex-end; font-size:clamp(1rem, 5.5cqw, 1.5rem); opacity:.9; }
+  .tape{ position:absolute; top:5%; left:-6%; width:38%; height:6.5%; transform:rotate(-8deg); opacity:.9; }
+  .rule{ height:3px; width:18%; border-radius:2px; margin:.2em 0 .4em; }
+
+  .layout-big-name .content{ justify-content:center; align-items:center; text-align:center; gap:.35em; }
+  .layout-big-name .name{ font-size:clamp(2rem, 14cqw, 3.4rem); }
+  .layout-big-name .message{ font-size:clamp(.8rem, 3.6cqw, 1rem); max-width:90%; }
+  .layout-big-name .from{ align-self:center; margin-top:.8em; }
+  .card-canvas[data-orientation="landscape"].layout-big-name .name{ font-size:clamp(1.8rem, 9cqw, 3rem); }
+
+  .photo-area{ position:absolute; left:0; right:0; top:0; height:58%; overflow:hidden; }
+  .layout-photo-hero .content{ position:absolute; top:58%; left:0; right:0; bottom:0; padding:5% 8% 6%; justify-content:flex-start; gap:.25em; }
+  .layout-photo-hero .name{ font-size:clamp(1.4rem, 8cqw, 2.1rem); }
+  .layout-photo-hero .message{ font-size:clamp(.72rem, 3.2cqw, .9rem); }
+  .layout-photo-hero .bar{ position:absolute; left:0; right:0; top:58%; height:4px; }
+  .card-canvas[data-orientation="landscape"].layout-photo-hero .photo-area{ height:100%; width:50%; right:auto; }
+  .card-canvas[data-orientation="landscape"].layout-photo-hero .content{ top:0; left:50%; padding:6% 6%; justify-content:center; }
+  .card-canvas[data-orientation="landscape"].layout-photo-hero .bar{ top:0; bottom:0; left:50%; right:auto; width:4px; height:auto; }
+
+  .layout-collage .photo-area{ height:100%; }
+  .collage-grid{ position:absolute; inset:0; display:grid; gap:3px; background:#111; }
+  .collage-grid[data-count="1"]{ grid-template-columns:1fr; }
+  .collage-grid[data-count="2"]{ grid-template-columns:1fr 1fr; }
+  .collage-grid[data-count="3"]{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+  .collage-grid[data-count="3"] > :first-child{ grid-row:1 / 3; }
+  .card-canvas[data-orientation="landscape"] .collage-grid[data-count="3"]{ grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr; }
+  .card-canvas[data-orientation="landscape"] .collage-grid[data-count="3"] > :first-child{ grid-row:auto; }
+  .layout-collage .content{ position:absolute; inset:auto 0 0 0; padding:14% 6% 5%; background:linear-gradient(0deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,0) 100%); color:#fff !important; gap:.2em; }
+  .layout-collage .name{ font-size:clamp(1.3rem, 7cqw, 1.9rem); }
+  .layout-collage .message{ font-size:clamp(.72rem, 3.2cqw, .9rem); }
+  .layout-collage .from{ margin-top:.3em; }
+
+  .layout-minimal-note .content{ justify-content:center; gap:.5em; }
+  .layout-minimal-note .paper{ position:absolute; inset:7%; border-radius:6px; }
+  .layout-minimal-note .content{ padding:14% 15%; }
+  .layout-minimal-note .name{ font-size:clamp(1.5rem, 8cqw, 2.2rem); }
+  .layout-minimal-note .message{ font-size:clamp(.8rem, 3.6cqw, 1rem); }
+  .card-canvas[data-orientation="landscape"].layout-minimal-note .content{ padding:8% 12%; }
+
+  .photo-slot{ position:relative; width:100%; height:100%; touch-action:none; cursor:grab; overflow:hidden; }
+  .photo-slot canvas{ width:100%; height:100%; display:block; }
+  .polaroid-frame{ position:absolute; top:2%; left:50%; height:96%; aspect-ratio:5/6; transform:translateX(-50%) rotate(-2.5deg);
+    background:#fff; padding:4% 4% 14%; box-shadow:0 6px 14px rgba(0,0,0,.28); }
+  .polaroid-frame canvas{ width:100%; height:100%; display:block; }
+
+  .sticker{ position:absolute; width:60px; height:60px; touch-action:none; cursor:grab; }
+  .sticker svg{ width:100%; height:100%; display:block; }
+  .sticker .del{ position:absolute; top:-16px; right:-16px; width:44px; height:44px; background:transparent; border:none;
+    display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer; touch-action:none; }
+  .sticker .del span{ width:22px; height:22px; border-radius:50%; background:var(--danger); color:#fff; font-size:13px; line-height:1;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .card-canvas.exporting .sticker .del{ display:none; }
+
+  @keyframes drift{ 0%{ transform:translate(-50%,-50%) rotate(var(--rot)) translateY(0); } 100%{ transform:translate(-50%,-50%) rotate(var(--rot)) translateY(10px); } }
+  @keyframes flicker{ 0%,100%{ opacity:1; } 50%{ opacity:.78; } }
+  .sticker.anim-drift{ animation:drift 2.4s ease-in-out infinite alternate; }
+  .sticker.anim-flicker .flame{ animation:flicker 1.1s ease-in-out infinite; transform-origin:50% 90%; }
+  @media (prefers-reduced-motion: reduce){ .sticker.anim-drift, .sticker.anim-flicker .flame{ animation:none !important; } }
+  .card-canvas.exporting .sticker.anim-drift, .card-canvas.exporting .sticker.anim-flicker .flame{ animation:none !important; }
+
+  .stage-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+  .stage-actions .wide{ grid-column:1 / -1; }
+  .btn{ min-height:44px; padding:0 16px; border-radius:12px; border:1px solid var(--paper-edge); background:var(--paper); color:var(--ink);
+    font-weight:600; font-size:.92rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; }
+  .btn.primary{ background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+  .btn.ghost{ background:rgba(255,255,255,.1); color:#fff; border-color:rgba(255,255,255,.25); }
+  .btn.quiet{ background:var(--paper-2); }
+  .btn.danger{ background:var(--danger); color:#fff; border-color:transparent; }
+  .btn:disabled{ opacity:.55; cursor:progress; }
+  .btn svg{ width:18px; height:18px; flex:none; }
+
+  .panel-card{ background:var(--paper); border:1px solid var(--paper-edge); border-radius:20px; padding:16px; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+  .tabs{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .tab{ flex:1 0 auto; min-height:44px; padding:0 14px; border-radius:999px; border:1px solid var(--paper-edge); background:var(--paper-2);
+    color:var(--ink); font-weight:700; font-size:.86rem; cursor:pointer; }
+  .tab[aria-selected="true"]{ background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+
+  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .field label, .lbl{ font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); }
+  .field input[type="text"], .field input[type="date"], .field input[type="password"], .field textarea, .field select{
+    min-height:44px; padding:10px 12px; border-radius:10px; border:1px solid var(--paper-edge);
+    background:var(--paper-2); color:var(--ink); font-size:1rem; font-family:inherit; resize:vertical; width:100%;
+  }
+  .field textarea{ min-height:96px; }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .hint{ font-size:.85rem; color:var(--ink-soft); line-height:1.5; margin:0; }
+  .hint code{ font-size:.82rem; background:var(--paper-2); padding:1px 5px; border-radius:5px; }
+
+  .chip-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(128px,1fr)); gap:10px; }
+  .chip{ min-height:44px; border-radius:14px; border:1px solid var(--paper-edge); background:var(--paper-2);
+    color:var(--ink); font-weight:700; font-size:.85rem; padding:10px 12px; cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:2px; }
+  .chip small{ font-weight:500; color:var(--ink-soft); font-family:'Caveat',cursive; font-size:.95rem; }
+  .chip[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+  .chip[aria-pressed="true"] small{ color:var(--accent-ink); opacity:.85; }
+  .chip.sm{ min-height:44px; padding:6px 12px; flex-direction:row; align-items:center; }
+
+  .swatch-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px; }
+  .swatch{ border-radius:14px; border:2px solid transparent; padding:10px; cursor:pointer; text-align:left; background:var(--paper-2); color:var(--ink); }
+  .swatch[aria-pressed="true"]{ border-color:var(--accent); }
+  .swatch .dots{ display:flex; gap:4px; margin-bottom:8px; }
+  .swatch .dots i{ width:18px; height:18px; border-radius:50%; display:block; border:1px solid rgba(0,0,0,.12); }
+  .swatch b{ display:block; font-size:.85rem; }
+
+  .sticker-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(64px,1fr)); gap:8px; margin-bottom:14px; }
+  .sticker-pick{ min-height:44px; aspect-ratio:1; border-radius:12px; border:1px solid var(--paper-edge); background:var(--paper-2);
+    display:flex; align-items:center; justify-content:center; padding:8px; cursor:pointer; }
+  .sticker-pick svg{ width:100%; height:100%; }
+
+  .segmented{ display:inline-flex; border:1px solid var(--paper-edge); border-radius:12px; overflow:hidden; }
+  .segmented button{ min-height:44px; padding:0 14px; border:none; background:var(--paper-2); color:var(--ink); font-weight:600; cursor:pointer; }
+  .segmented button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
+
+  /* Upcoming */
+  .status-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .status-line .hint{ flex:1 1 200px; }
+  .group-title{ font-family:'Caveat',cursive; font-size:1.35rem; font-weight:700; color:var(--ink); margin:16px 0 8px; display:flex; align-items:baseline; gap:8px; }
+  .group-title small{ font-family:'Plus Jakarta Sans',sans-serif; font-size:.75rem; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+  .occ-list{ display:flex; flex-direction:column; gap:8px; }
+  .occ-row{ display:grid; grid-template-columns:52px 1fr; gap:8px 12px; align-items:center; padding:10px 10px 10px 12px; border-radius:14px; background:var(--paper-2); border:1px solid var(--paper-edge); }
+  .occ-row .occ-actions{ grid-column:2; justify-self:end; }
+  @media (min-width:560px){ .occ-row{ grid-template-columns:52px 1fr auto; } .occ-row .occ-actions{ grid-column:auto; } }
+  .occ-row.today{ border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .date-badge{ text-align:center; line-height:1.05; font-variant-numeric:tabular-nums; }
+  .date-badge b{ display:block; font-family:'Baloo 2',sans-serif; font-size:1.35rem; font-weight:800; }
+  .date-badge span{ display:block; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); }
+  .occ-main{ min-width:0; }
+  .occ-name{ font-weight:700; font-size:1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .occ-meta{ font-size:.8rem; color:var(--ink-soft); display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .pill{ display:inline-block; font-size:.7rem; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--paper); border:1px solid var(--paper-edge); letter-spacing:.02em; }
+  .pill.made{ background:var(--ok); color:#fff; border-color:transparent; }
+  .occ-actions{ display:flex; gap:6px; align-items:center; }
+  .check-btn{ width:44px; height:44px; border-radius:12px; border:1px solid var(--paper-edge); background:var(--paper); color:var(--ink-soft); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+  .check-btn[aria-pressed="true"]{ background:var(--ok); color:#fff; border-color:transparent; }
+  .check-btn svg{ width:20px; height:20px; }
+  .empty{ text-align:center; padding:26px 12px; color:var(--ink-soft); }
+  .empty h3{ color:var(--ink); margin-bottom:4px; }
+  .setup-card{ border:1px dashed var(--paper-edge); border-radius:14px; padding:14px; margin-bottom:14px; background:var(--paper-2); }
+  .setup-card ol{ margin:8px 0 0 18px; padding:0; font-size:.88rem; line-height:1.55; }
+  details.add-occ{ margin-top:18px; border-top:1px solid var(--paper-edge); padding-top:12px; }
+  details.add-occ summary{ cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:700; list-style:none; }
+  details.add-occ summary::-webkit-details-marker{ display:none; }
+  details.add-occ summary::before{ content:'+'; font-family:'Baloo 2',sans-serif; font-size:1.4rem; margin-right:8px; color:var(--accent); }
+  details[open].add-occ summary::before{ content:'–'; }
+  .chk{ display:flex; align-items:center; gap:10px; min-height:44px; font-size:.95rem; }
+  .chk input{ width:22px; height:22px; accent-color:var(--accent); }
+
+  .toast-region{ position:fixed; left:0; right:0; bottom:calc(env(safe-area-inset-bottom) + 16px); display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; z-index:80; padding:0 14px; }
+  .toast{ background:var(--ink); color:var(--paper); padding:10px 16px; border-radius:999px; font-size:.88rem; box-shadow:0 8px 20px rgba(0,0,0,.3); max-width:100%; text-align:center; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:20px; z-index:90; }
+  .sheet{ background:var(--paper); color:var(--ink); border-radius:20px; padding:20px; max-width:440px; width:100%; max-height:86vh; overflow:auto; }
+  .sheet h3{ margin-bottom:10px; font-size:1.2rem; }
+  .sheet img{ width:100%; border-radius:12px; margin-bottom:12px; display:block; }
+  .sheet .row{ margin-top:12px; }
+  .sheet .row .btn{ flex:1; }
+  .close-row{ display:flex; justify-content:flex-end; margin-bottom:6px; }
+  .version{ font-size:.72rem; color:var(--ink-soft); margin-top:16px; text-align:center; }
+  .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="workbench">
+    <div class="wordmark">
+      <svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true">
+        <rect x="14" y="10" width="72" height="80" rx="8" fill="#fbf7ef" stroke="#163229" stroke-width="4"/>
+        <path d="M50 34 C44 24 28 26 28 40 C28 52 50 66 50 66 C50 66 72 52 72 40 C72 26 56 24 50 34 Z" fill="#ff5d6c"/>
+      </svg>
+      <div>
+        <h1>Celebrate</h1>
+        <span class="tag">nothing sneaks up on you</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <nav class="nav" aria-label="Screens">
+        <button type="button" id="navUpcoming" aria-pressed="true">Upcoming</button>
+        <button type="button" id="navMaker" aria-pressed="false">Make a card</button>
+      </nav>
+      <button class="icon-btn" id="settingsBtn" aria-label="Open settings" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="ruler" aria-hidden="true" id="ruler"></div>
+
+  <!-- Upcoming -->
+  <main id="viewUpcoming">
+    <section class="panel-card" aria-label="Upcoming occasions">
+      <div class="panel-head">
+        <h2>Coming up in the next 30 days</h2>
+        <button class="btn quiet" id="refreshBtn" type="button">Refresh</button>
+      </div>
+      <div class="status-line">
+        <p class="hint" id="calStatus"></p>
+        <button class="btn primary" id="signInBtn" type="button">Sign in with Google</button>
+      </div>
+      <div id="setupCard" class="setup-card" hidden>
+        <b>Connect your calendar</b>
+        <ol>
+          <li>Open Settings (gear, top right) and paste your Google OAuth client ID.</li>
+          <li>Tap <b>Sign in with Google</b> — read-only calendar access, the token lives only in memory.</li>
+          <li>Celebrate scans every calendar you can see, plus the Birthdays contacts calendar.</li>
+        </ol>
+      </div>
+      <div id="upcomingList"></div>
+
+      <details class="add-occ" id="addOcc">
+        <summary>Add an occasion that isn't on the calendar</summary>
+        <div class="field" style="margin-top:8px">
+          <label for="manName">Who</label>
+          <input type="text" id="manName" placeholder="Grandma June" autocomplete="off">
+        </div>
+        <div class="row" style="align-items:flex-start">
+          <div class="field" style="flex:1 1 150px">
+            <label for="manOcc">Occasion</label>
+            <select id="manOcc"></select>
+          </div>
+          <div class="field" style="flex:1 1 150px">
+            <label for="manDate">Date</label>
+            <input type="date" id="manDate">
+          </div>
+        </div>
+        <label class="chk"><input type="checkbox" id="manYearly" checked> Repeats every year</label>
+        <div class="row" style="margin-top:6px">
+          <button class="btn primary" id="manAddBtn" type="button">Add occasion</button>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <!-- Maker -->
+  <main id="viewMaker" class="maker" hidden>
+    <section class="stage" aria-label="Card preview">
+      <div class="stage-frame">
+        <div class="card-canvas" id="cardCanvas">
+          <div class="bg" id="cardBg"></div>
+          <div class="content" id="cardContent"></div>
+        </div>
+      </div>
+      <div class="stage-actions">
+        <button class="btn primary wide" id="shareBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share card
+        </button>
+        <button class="btn ghost" id="exportBtn" type="button">Preview PNG</button>
+        <button class="btn ghost" id="downloadBtn" type="button">Download PNG</button>
+        <button class="btn ghost" id="copyMsgBtn" type="button">Copy message</button>
+        <button class="btn ghost" id="emailBtn" type="button">Email HTML</button>
+      </div>
+    </section>
+
+    <section class="panel-card" aria-label="Card editor">
+      <div class="panel-head">
+        <h2 id="makerTitle">Make a card</h2>
+        <button class="btn quiet" id="newCardBtn" type="button">New card</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div id="panelOccasion" class="panel" role="tabpanel"></div>
+      <div id="panelText" class="panel" role="tabpanel" hidden></div>
+      <div id="panelPhoto" class="panel" role="tabpanel" hidden></div>
+      <div id="panelStickers" class="panel" role="tabpanel" hidden></div>
+      <div id="panelLayout" class="panel" role="tabpanel" hidden></div>
+      <div id="panelPalette" class="panel" role="tabpanel" hidden></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast-region" id="toastRegion" aria-live="polite"></div>
+
+<div class="overlay" id="settingsOverlay" hidden>
+  <div class="sheet" role="dialog" aria-label="Settings" aria-modal="true">
+    <div class="close-row"><button class="icon-btn on-paper" id="closeSettings" aria-label="Close settings" type="button">✕</button></div>
+    <h3>Settings</h3>
+    <div class="field">
+      <label for="clientIdInput">Google OAuth client ID</label>
+      <input type="text" id="clientIdInput" autocomplete="off" spellcheck="false" placeholder="1234567890-abc.apps.googleusercontent.com">
+      <p class="hint">From Google Cloud Console → Credentials. Authorized JavaScript origin must be this site's origin.</p>
+    </div>
+    <div class="field">
+      <label for="keywordsInput">Extra occasion keywords</label>
+      <textarea id="keywordsInput" placeholder="quinceañera, bar mitzvah, housewarming"></textarea>
+      <p class="hint" id="defaultKeywordsHint"></p>
+    </div>
+    <div class="field">
+      <label for="fromDefaultInput">Default sign-off</label>
+      <input type="text" id="fromDefaultInput" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="apiKeyInput">Anthropic API key (optional)</label>
+      <input type="password" id="apiKeyInput" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+      <p class="hint">Lets “Ask Claude” draft a message. Stored only in this browser.</p>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="saveSettingsBtn" type="button">Save</button>
+      <button class="btn quiet" id="signOutBtn" type="button">Sign out of Google</button>
+    </div>
+    <p class="version" id="versionLabel"></p>
+  </div>
+</div>
+
+<div class="overlay" id="exportOverlay" hidden>
+  <div class="sheet" role="dialog" aria-label="Exported card" aria-modal="true">
+    <div class="close-row"><button class="icon-btn on-paper" id="closeExport" aria-label="Close" type="button">✕</button></div>
+    <h3>Your card</h3>
+    <img id="exportImg" alt="Exported card">
+    <p class="hint" id="exportNote"></p>
+    <div class="row">
+      <button class="btn primary" id="exportShareBtn" type="button">Share</button>
+      <button class="btn quiet" id="exportDownloadBtn" type="button">Download</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay" hidden>
+  <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle"></h3>
+    <p class="hint" id="confirmMsg" style="font-size:.95rem;color:var(--ink)"></p>
+    <div class="row">
+      <button class="btn quiet" id="confirmCancel" type="button">Cancel</button>
+      <button class="btn danger" id="confirmOk" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+(function(){
+  'use strict';
+  const APP_VERSION = '1.0.0';
+
+  // ---------- helpers ----------
+  function el(tag, attrs, kids){
+    const n = document.createElement(tag);
+    if (attrs) for (const k in attrs){
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'text') n.textContent = attrs[k];
+      else if (k === 'value') n.value = attrs[k];
+      else if (k.startsWith('on') && typeof attrs[k] === 'function') n.addEventListener(k.slice(2), attrs[k]);
+      else n.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(k => { if (k) n.appendChild(k); });
+    return n;
+  }
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  const Store = {
+    ns: 'celebrate_',
+    get(key, fallback = null){ try { const r = localStorage.getItem(this.ns + key); return r === null ? fallback : JSON.parse(r); } catch (e) { return fallback; } },
+    set(key, val){ try { localStorage.setItem(this.ns + key, JSON.stringify(val)); return true; } catch (e) { return false; } }
+  };
+
+  // Arizona has no DST, so "today" must never come from toISOString() (UTC drifts after 5pm).
+  const AZ = {
+    tz: 'America/Phoenix',
+    today(){ return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date()); },
+    dateKey(d){ return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(d); },
+    pretty(s){ const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); },
+    parts(s){ const [y, m, d] = s.split('-').map(Number); const dt = new Date(y, m - 1, d); return { day: d, mon: dt.toLocaleDateString('en-US', { month: 'short' }), wd: dt.toLocaleDateString('en-US', { weekday: 'short' }) }; },
+    daysBetween(a, b){ return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000); },
+    addDays(s, n){ const [y, m, d] = s.split('-').map(Number); const dt = new Date(y, m - 1, d + n); return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`; }
+  };
+
+  function showToast(msg, ms = 3200){
+    const t = el('div', { class: 'toast', text: msg });
+    $('toastRegion').appendChild(t);
+    setTimeout(() => t.remove(), ms);
+  }
+
+  function confirmSheet({ title, message, okText = 'OK', danger = true }){
+    return new Promise(resolve => {
+      const ov = $('confirmOverlay');
+      $('confirmTitle').textContent = title;
+      $('confirmMsg').textContent = message;
+      const ok = $('confirmOk'), cancel = $('confirmCancel');
+      ok.textContent = okText;
+      ok.className = 'btn ' + (danger ? 'danger' : 'primary');
+      const done = (v) => { ov.hidden = true; ok.onclick = null; cancel.onclick = null; ov.onclick = null; resolve(v); };
+      ok.onclick = () => done(true);
+      cancel.onclick = () => done(false);
+      ov.onclick = (e) => { if (e.target === ov) done(false); };
+      ov.hidden = false;
+      cancel.focus();
+    });
+  }
+
+  const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const normName = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  // ---------- static content: stickers, palettes, layouts, occasions ----------
+  const STICKERS = {
+    balloons:  { label: 'Balloons',  svg: '<svg viewBox="0 0 100 100"><ellipse cx="30" cy="34" rx="16" ry="20" fill="#ff5d6c"/><ellipse cx="60" cy="26" rx="14" ry="18" fill="#f2b134"/><ellipse cx="46" cy="46" rx="13" ry="17" fill="#2ec4b6"/><ellipse cx="25" cy="27" rx="4" ry="6" fill="#fff" opacity=".45"/><ellipse cx="56" cy="20" rx="3.5" ry="5" fill="#fff" opacity=".45"/><path d="M30 54 L40 84" stroke="#7c6a8e" stroke-width="2" fill="none"/><path d="M60 44 L46 84" stroke="#7c6a8e" stroke-width="2" fill="none"/><path d="M46 63 L44 84" stroke="#7c6a8e" stroke-width="2" fill="none"/></svg>' },
+    cake:      { label: 'Cake',      svg: '<svg viewBox="0 0 100 100"><rect x="20" y="62" width="60" height="26" rx="5" fill="#fbf7ef" stroke="#163229" stroke-width="3"/><rect x="28" y="46" width="44" height="18" rx="5" fill="#ff9fb0"/><path d="M28 52 q5 6 10 0 q5 6 10 0 q5 6 10 0 q5 6 10 0 q4 6 4 0" stroke="#fff" stroke-width="3" fill="none"/><rect x="46" y="26" width="8" height="20" fill="#f2b134"/><path d="M50 26 C46 20 54 16 50 10" stroke="#ff5d6c" stroke-width="3" fill="none" stroke-linecap="round"/></svg>' },
+    candle:    { label: 'Candle',    svg: '<svg viewBox="0 0 100 100"><rect x="42" y="46" width="16" height="44" rx="3" fill="#f2b134"/><path d="M42 50 q8 -4 16 0" stroke="#e59d1a" stroke-width="2" fill="none"/><path class="flame" d="M50 44 C42 34 50 26 50 14 C58 26 62 36 50 44 Z" fill="#ff5d6c"/><path class="flame" d="M50 40 C46 35 50 31 50 25 C54 31 56 36 50 40 Z" fill="#ffd166"/></svg>', animate: 'flicker' },
+    confetti:  { label: 'Confetti',  svg: '<svg viewBox="0 0 100 100"><rect x="14" y="16" width="10" height="10" fill="#ff5d6c" transform="rotate(20 19 21)"/><rect x="70" y="10" width="9" height="9" fill="#2ec4b6" transform="rotate(-15 74 14)"/><circle cx="50" cy="20" r="5" fill="#f2b134"/><rect x="30" y="50" width="9" height="9" fill="#7c6a8e" transform="rotate(30 34 54)"/><circle cx="76" cy="56" r="5" fill="#ff5d6c"/><rect x="55" y="66" width="9" height="9" fill="#2ec4b6" transform="rotate(-10 59 70)"/><circle cx="20" cy="80" r="4" fill="#f2b134"/><rect x="80" y="82" width="8" height="8" fill="#ff5d6c" transform="rotate(35 84 86)"/></svg>', animate: 'drift' },
+    streamers: { label: 'Streamers', svg: '<svg viewBox="0 0 100 100"><path d="M4 20 C30 6 30 40 56 26 C82 12 82 46 96 34" stroke="#ff5d6c" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M4 46 C30 32 30 66 56 52 C82 38 82 72 96 60" stroke="#f2b134" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M4 72 C30 58 30 92 56 78 C82 64 82 96 96 86" stroke="#2ec4b6" stroke-width="5" fill="none" stroke-linecap="round"/></svg>' },
+    heart:     { label: 'Heart',     svg: '<svg viewBox="0 0 100 100"><path d="M50 88 C10 60 8 30 30 18 C42 11 50 24 50 24 C50 24 58 11 70 18 C92 30 90 60 50 88 Z" fill="#ff5d6c"/><path d="M28 30 C22 34 20 42 22 50" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".5"/></svg>' },
+    rings:     { label: 'Rings',     svg: '<svg viewBox="0 0 100 100"><circle cx="38" cy="58" r="20" fill="none" stroke="#f2b134" stroke-width="6"/><circle cx="62" cy="58" r="20" fill="none" stroke="#d4af37" stroke-width="6"/><path d="M62 30 L68 38 L62 44 L56 38 Z" fill="#bfe6e0" stroke="#7c97a0" stroke-width="2"/></svg>' },
+    gradcap:   { label: 'Grad cap',  svg: '<svg viewBox="0 0 100 100"><path d="M50 22 L94 42 L50 62 L6 42 Z" fill="#103b5c"/><path d="M34 52 L34 66 C34 74 66 74 66 66 L66 52" fill="#0c2c46"/><path d="M80 44 L80 66" stroke="#ffc857" stroke-width="3"/><circle cx="80" cy="70" r="4" fill="#ffc857"/><rect x="18" y="78" width="30" height="10" rx="5" fill="#fbf7ef" stroke="#163229" stroke-width="2"/><path d="M33 78 L33 88" stroke="#ff5d6c" stroke-width="3"/></svg>' },
+    onesie:    { label: 'Onesie',    svg: '<svg viewBox="0 0 100 100"><path d="M32 14 L32 26 L18 34 L18 50 L32 42 L32 82 C32 88 68 88 68 82 L68 42 L82 50 L82 34 L68 26 L68 14 Z" fill="#dce8da" stroke="#2f4a3b" stroke-width="3"/><path d="M40 14 q10 10 20 0" stroke="#2f4a3b" stroke-width="3" fill="none"/><circle cx="50" cy="52" r="3" fill="#c98b8b"/><circle cx="50" cy="62" r="3" fill="#c98b8b"/><circle cx="50" cy="72" r="3" fill="#c98b8b"/></svg>' },
+    champagne: { label: 'Champagne', svg: '<svg viewBox="0 0 100 100"><path d="M30 14 L44 40 L44 78 L36 84 L56 84 L48 78 L48 40 L62 14 Z" fill="none" stroke="#d4af37" stroke-width="3" stroke-linejoin="round"/><path d="M34 22 L58 22" stroke="#d4af37" stroke-width="2"/><circle cx="42" cy="30" r="2" fill="#f2b134"/><circle cx="48" cy="24" r="1.6" fill="#f2b134"/><circle cx="44" cy="18" r="1.4" fill="#f2b134"/><circle cx="70" cy="18" r="3" fill="#f2b134"/><circle cx="78" cy="30" r="2" fill="#f2b134"/></svg>' },
+    firework:  { label: 'Firework',  svg: '<svg viewBox="0 0 100 100"><g stroke="#ff5d6c" stroke-width="3" stroke-linecap="round"><path d="M50 10 L50 30"/><path d="M50 70 L50 90"/><path d="M10 50 L30 50"/><path d="M70 50 L90 50"/><path d="M22 22 L36 36"/><path d="M64 64 L78 78"/><path d="M78 22 L64 36"/><path d="M36 64 L22 78"/></g><g fill="#f2b134"><circle cx="50" cy="8" r="3"/><circle cx="50" cy="92" r="3"/><circle cx="8" cy="50" r="3"/><circle cx="92" cy="50" r="3"/></g><circle cx="50" cy="50" r="6" fill="#ffd166"/></svg>' },
+    pumpkin:   { label: 'Pumpkin',   svg: '<svg viewBox="0 0 100 100"><rect x="46" y="14" width="8" height="16" rx="2" fill="#5b7c4b"/><ellipse cx="50" cy="58" rx="36" ry="28" fill="#ef7b45"/><path d="M32 34 Q50 60 32 82 M50 30 Q50 60 50 88 M68 34 Q50 60 68 82" stroke="#c9541f" stroke-width="3" fill="none"/></svg>' },
+    snowflake: { label: 'Snowflake', svg: '<svg viewBox="0 0 100 100"><g stroke="#bfe6e0" stroke-width="4" stroke-linecap="round"><path d="M50 10 L50 90"/><path d="M15 30 L85 70"/><path d="M15 70 L85 30"/><path d="M50 24 L40 34 M50 24 L60 34 M50 76 L40 66 M50 76 L60 66"/><path d="M26 36 L26 48 M26 36 L37 40 M74 64 L74 52 M74 64 L63 60"/></g></svg>' },
+    sun:       { label: 'Sun',       svg: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" fill="#f2b134"/><g stroke="#f2b134" stroke-width="5" stroke-linecap="round"><path d="M50 8 L50 20"/><path d="M50 80 L50 92"/><path d="M8 50 L20 50"/><path d="M80 50 L92 50"/><path d="M20 20 L28 28"/><path d="M72 72 L80 80"/><path d="M80 20 L72 28"/><path d="M28 72 L20 80"/></g></svg>' },
+    star:      { label: 'Star',      svg: '<svg viewBox="0 0 100 100"><path d="M50 8 L61 38 L94 38 L67 57 L78 88 L50 69 L22 88 L33 57 L6 38 L39 38 Z" fill="#f2b134"/></svg>' },
+    sparkle:   { label: 'Sparkle',   svg: '<svg viewBox="0 0 100 100"><path d="M50 6 C52 34 54 46 84 50 C54 54 52 66 50 94 C48 66 46 54 16 50 C46 46 48 34 50 6 Z" fill="#fff3c4" stroke="#f2b134" stroke-width="2"/><path d="M78 14 C79 22 80 24 88 26 C80 28 79 30 78 38 C77 30 76 28 68 26 C76 24 77 22 78 14 Z" fill="#f2b134"/></svg>' }
+  };
+
+  const PALETTES = [
+    { id: 'marigold',    name: 'Marigold Fiesta', bg: '#FFB100', paper: '#FFF6E0', ink: '#5B2A00', accents: ['#FF5D6C', '#2EC4B6', '#5B2A86'] },
+    { id: 'rose',        name: 'Rosé Toast',      bg: '#F3D9DF', paper: '#FFFDF9', ink: '#5C2A3A', accents: ['#C97A8F', '#D8B26E', '#7C6A8E'] },
+    { id: 'sage',        name: 'Sage Bassinet',   bg: '#DCE8DA', paper: '#FBFBF6', ink: '#2F4A3B', accents: ['#8FB79A', '#E8C4A0', '#C98B8B'] },
+    { id: 'capconfetti', name: 'Cap & Confetti',  bg: '#103B5C', paper: '#F4F1E8', ink: '#F4F1E8', accents: ['#FFC857', '#EF7B45', '#63C7B2'] },
+    { id: 'champagne',   name: 'Champagne Toast', bg: '#F7E7CE', paper: '#FFFDF8', ink: '#4A3620', accents: ['#D4AF37', '#B76E79', '#5C8374'] },
+    { id: 'harbor',      name: 'Quiet Harbor',    bg: '#DDE6E8', paper: '#FAFCFC', ink: '#33474B', accents: ['#7C97A0', '#A9C0BF', '#C8B8A0'] },
+    { id: 'evergreen',   name: 'Evergreen Eve',   bg: '#1F4A3C', paper: '#FDF8EE', ink: '#FDF8EE', accents: ['#C8262A', '#E8B84B', '#8FBF9F'] },
+    { id: 'ember',       name: 'Ember Night',     bg: '#1C1430', paper: '#F6EDF7', ink: '#F6EDF7', accents: ['#FF5D6C', '#FFC857', '#63C7B2'] }
+  ];
+
+  const LAYOUTS = [
+    { id: 'big-name',     name: 'Big Name',     desc: 'The name is the hero',          photoSlots: 0 },
+    { id: 'photo-hero',   name: 'Photo Hero',   desc: 'Photo up top, message below',   photoSlots: 1 },
+    { id: 'collage',      name: 'Collage',      desc: '2–3 photos, text over a scrim', photoSlots: 3 },
+    { id: 'minimal-note', name: 'Minimal Note', desc: 'Mostly text, room to breathe',  photoSlots: 0 }
+  ];
+  const MASKS = [
+    { id: 'circle',     name: 'Circle' }, { id: 'arch', name: 'Arch' }, { id: 'blob', name: 'Blob' },
+    { id: 'polaroid',   name: 'Polaroid' }, { id: 'full-bleed', name: 'Full bleed' }
+  ];
+
+  const OCCASIONS = [
+    { id: 'birthday',     label: 'Birthday',        kicker: 'Happy birthday,',      palette: 'marigold',    layout: 'big-name',     quiet: false, stickers: ['balloons', 'cake', 'confetti'],   starter: "Hope your day is as wonderful as you are. Can't wait to celebrate with you!" },
+    { id: 'anniversary',  label: 'Anniversary',     kicker: 'Happy anniversary,',   palette: 'rose',        layout: 'photo-hero',   quiet: false, stickers: ['heart', 'rings', 'sparkle'],      starter: 'Here’s to another year of you two. Love watching your story keep going.' },
+    { id: 'graduation',   label: 'Graduation',      kicker: 'Congratulations,',     palette: 'capconfetti', layout: 'big-name',     quiet: false, stickers: ['gradcap', 'confetti', 'star'],    starter: 'You did it! So proud of everything you worked for. The world is yours.' },
+    { id: 'baby',         label: 'New baby',        kicker: 'Welcome, little one —', palette: 'sage',       layout: 'photo-hero',   quiet: false, stickers: ['onesie', 'heart', 'sparkle'],     starter: 'Congratulations on your new arrival. Sending so much love to your whole family.' },
+    { id: 'wedding',      label: 'Wedding',         kicker: 'Congratulations,',     palette: 'rose',        layout: 'collage',      quiet: false, stickers: ['rings', 'champagne', 'heart'],    starter: 'Wishing you a lifetime of love, laughter, and adventure together.' },
+    { id: 'congrats',     label: 'Congrats',        kicker: 'Congratulations,',     palette: 'champagne',   layout: 'big-name',     quiet: false, stickers: ['confetti', 'star', 'firework'],   starter: 'You earned this. So happy for you — celebrating from here!' },
+    { id: 'thankyou',     label: 'Thank you',       kicker: 'Thank you,',           palette: 'sage',        layout: 'minimal-note', quiet: false, stickers: ['heart', 'sparkle'],               starter: 'We’re so grateful for you. Thank you for everything you do.' },
+    { id: 'getwell',      label: 'Get well',        kicker: 'Thinking of you,',     palette: 'harbor',      layout: 'minimal-note', quiet: true,  stickers: ['sun', 'heart'],                   starter: 'Sending healing thoughts your way. Rest up — we’re cheering for a fast recovery.' },
+    { id: 'thinking',     label: 'Thinking of you', kicker: 'Thinking of you,',     palette: 'harbor',      layout: 'minimal-note', quiet: true,  stickers: ['heart', 'sun'],                   starter: 'Just a note to say you’ve been on our minds. We’re here whenever you need us.' },
+    { id: 'sympathy',     label: 'Sympathy',        kicker: 'With love,',           palette: 'harbor',      layout: 'minimal-note', quiet: true,  stickers: ['heart'],                          starter: 'Holding you close in our hearts during this difficult time. We’re here for you.' },
+    { id: 'thanksgiving', label: 'Thanksgiving',    kicker: 'Happy Thanksgiving,',  palette: 'champagne',   layout: 'big-name',     quiet: false, stickers: ['sun', 'star', 'heart'],           starter: 'Grateful for you this season and every season. Eat well and rest easy.' },
+    { id: 'christmas',    label: 'Christmas',       kicker: 'Merry Christmas,',     palette: 'evergreen',   layout: 'big-name',     quiet: false, stickers: ['snowflake', 'sparkle', 'star'],   starter: 'Wishing you a season full of warmth, joy, and good company.' },
+    { id: 'newyear',      label: 'New Year',        kicker: 'Happy New Year,',      palette: 'ember',       layout: 'big-name',     quiet: false, stickers: ['firework', 'champagne', 'sparkle'], starter: 'Here’s to fresh starts and good things ahead. Cheers to the year to come!' },
+    { id: 'valentine',    label: "Valentine's",     kicker: 'Happy Valentine’s Day,', palette: 'rose',      layout: 'photo-hero',   quiet: false, stickers: ['heart', 'sparkle', 'heart'],      starter: 'You make every ordinary day feel like something worth celebrating.' },
+    { id: 'mothers',      label: "Mother's Day",    kicker: 'Happy Mother’s Day,',  palette: 'sage',        layout: 'photo-hero',   quiet: false, stickers: ['heart', 'sun', 'sparkle'],        starter: 'Thank you for the love, the patience, and everything in between. We love you.' },
+    { id: 'fathers',      label: "Father's Day",    kicker: 'Happy Father’s Day,',  palette: 'capconfetti', layout: 'photo-hero',   quiet: false, stickers: ['star', 'sun', 'heart'],           starter: 'Thanks for showing up, every single time. Happy Father’s Day — we love you.' },
+    { id: 'halloween',    label: 'Halloween',       kicker: 'Happy Halloween,',     palette: 'ember',       layout: 'big-name',     quiet: false, stickers: ['pumpkin', 'star', 'sparkle'],     starter: 'Wishing you a spooky, silly, candy-filled night. Boo!' },
+    { id: 'july4',        label: '4th of July',     kicker: 'Happy 4th,',           palette: 'capconfetti', layout: 'big-name',     quiet: false, stickers: ['firework', 'star', 'confetti'],   starter: 'Fireworks, sunshine, and good people — hope your 4th has all three.' }
+  ];
+
+  const DEFAULT_KEYWORDS = ['birthday', 'bday', 'anniversary', 'graduation', 'wedding', 'baby', 'retirement', 'promotion', 'first day', 'last day'];
+  const KEYWORD_OCCASION = { birthday: 'birthday', bday: 'birthday', anniversary: 'anniversary', graduation: 'graduation', wedding: 'wedding', baby: 'baby' };
+  const BIRTHDAY_CAL = 'addressbook#contacts@group.v.calendar.google.com';
+
+  const byId = (list, id) => list.find(x => x.id === id);
+
+  // ---------- state ----------
+  const settings = Object.assign({ clientId: '', apiKey: '', keywords: [], from: '— Chris & Kat' }, Store.get('settings', {}));
+  let made = Store.get('made', {});
+  let manual = Store.get('manual', []);
+  let calCache = Store.get('calCache', null);
+
+  function defaultDraft(occId = 'birthday', name = ''){
+    const occ = byId(OCCASIONS, occId);
+    return {
+      occasionId: occ.id, name, message: occ.starter, lastAutoMessage: occ.starter, about: '',
+      from: settings.from, paletteId: occ.palette, layoutId: occ.layout, orientation: 'portrait',
+      photos: [null, null, null], stickers: seedStickers(occ), sourceKey: null
+    };
+  }
+  let stickerSeq = 0;
+  function seedStickers(occ){
+    return occ.stickers.map((sid, i) => ({ uid: 's' + (++stickerSeq), stickerId: sid, x: [18, 82, 84][i], y: [14, 12, 86][i], rot: [-8, 10, -4][i], scale: [1, .95, .85][i] }));
+  }
+  let state = Store.get('draft', null) || defaultDraft('birthday', 'Jordan');
+  if (!Array.isArray(state.photos) || state.photos.length < 3) state.photos = [state.photos?.[0] || null, state.photos?.[1] || null, null];
+  stickerSeq = state.stickers.reduce((m, s) => Math.max(m, parseInt(String(s.uid).slice(1), 10) || 0), 0);
+  let dirty = true;           // preview changed since the last PNG render
+  let lastBlob = null;
+
+  let saveTimer = null;
+  function saveDraft(){
+    if (!Store.set('draft', state)){
+      // Photos are the only thing big enough to blow the quota; keep the text safe at least.
+      Store.set('draft', Object.assign({}, state, { photos: [null, null, null] }));
+      showToast('Photos are too large to keep in the draft — they’ll be lost on refresh');
+    }
+  }
+  function touch(){ dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 400); }
+
+  // ---------- navigation ----------
+  const ruler = $('ruler');
+  for (let i = 0; i < 40; i++) ruler.appendChild(el('span'));
+
+  function showView(which){
+    $('viewUpcoming').hidden = which !== 'upcoming';
+    $('viewMaker').hidden = which !== 'maker';
+    $('navUpcoming').setAttribute('aria-pressed', which === 'upcoming' ? 'true' : 'false');
+    $('navMaker').setAttribute('aria-pressed', which === 'maker' ? 'true' : 'false');
+    if (which === 'maker') { render(); drawAllPhotos(); }
+    window.scrollTo({ top: 0 });
+  }
+  $('navUpcoming').addEventListener('click', () => showView('upcoming'));
+  $('navMaker').addEventListener('click', () => showView('maker'));
+
+  // ---------- card rendering ----------
+  const cardCanvas = $('cardCanvas'), cardBg = $('cardBg'), cardContent = $('cardContent');
+  const currentOccasion = () => byId(OCCASIONS, state.occasionId);
+  const currentPalette = () => byId(PALETTES, state.paletteId) || PALETTES[0];
+  const currentLayout = () => byId(LAYOUTS, state.layoutId) || LAYOUTS[0];
+
+  function attachDrag(node, onMove){
+    let dragging = false, lastX = 0, lastY = 0;
+    node.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch' && e.isPrimary === false) return;
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+      node.setPointerCapture(e.pointerId);
+    });
+    node.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      onMove(dx, dy);
+    });
+    const end = () => { dragging = false; };
+    node.addEventListener('pointerup', end);
+    node.addEventListener('pointercancel', end);
+  }
+
+  function makeStickerEl(rec, animate){
+    const def = STICKERS[rec.stickerId];
+    const size = 60 * rec.scale;
+    const wrap = el('div', { class: 'sticker' + (animate && def.animate ? ' anim-' + def.animate : ''),
+      style: `left:${rec.x}%; top:${rec.y}%; --rot:${rec.rot}deg; transform:translate(-50%,-50%) rotate(${rec.rot}deg); width:${size}px; height:${size}px;` });
+    const inner = el('div', { style: 'width:100%;height:100%' });
+    inner.innerHTML = def.svg; // static illustration data only — never user or calendar content
+    wrap.appendChild(inner);
+    const del = el('button', { class: 'del', type: 'button', 'aria-label': 'Remove ' + def.label });
+    del.appendChild(el('span', { text: '✕', 'aria-hidden': 'true' }));
+    del.addEventListener('pointerdown', (e) => e.stopPropagation());
+    del.addEventListener('click', (e) => { e.stopPropagation(); state.stickers = state.stickers.filter(s => s.uid !== rec.uid); wrap.remove(); touch(); });
+    wrap.appendChild(del);
+    attachDrag(wrap, (dx, dy) => {
+      const rect = cardCanvas.getBoundingClientRect();
+      rec.x = clamp(rec.x + (dx / rect.width) * 100, 3, 97);
+      rec.y = clamp(rec.y + (dy / rect.height) * 100, 3, 97);
+      wrap.style.left = rec.x + '%'; wrap.style.top = rec.y + '%';
+      touch();
+    });
+    return wrap;
+  }
+
+  // Photos are drawn on <canvas> because html2canvas ignores clip-path — a CSS blob mask
+  // would look right on screen and silently vanish from the exported PNG.
+  const imgCache = new Map();
+  function getImage(photo){
+    let im = imgCache.get(photo.id);
+    if (!im){
+      im = new Image();
+      im.onload = () => drawAllPhotos();
+      im.src = photo.dataUrl;
+      imgCache.set(photo.id, im);
+    }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  function maskPath(ctx, mask, w, h){
+    ctx.beginPath();
+    if (mask === 'circle'){ const r = Math.min(w, h) / 2; ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2); }
+    else if (mask === 'arch'){ const ry = Math.min(w / 2, h * .55); ctx.moveTo(0, h); ctx.lineTo(0, ry); ctx.ellipse(w / 2, ry, w / 2, ry, 0, Math.PI, 0); ctx.lineTo(w, h); ctx.closePath(); }
+    else if (mask === 'blob'){
+      ctx.save(); ctx.scale(w / 100, h / 100);
+      ctx.moveTo(48, 4); ctx.bezierCurveTo(72, 2, 96, 16, 96, 42); ctx.bezierCurveTo(96, 66, 84, 94, 56, 96);
+      ctx.bezierCurveTo(30, 98, 4, 82, 4, 56); ctx.bezierCurveTo(4, 30, 24, 6, 48, 4); ctx.closePath();
+      ctx.restore();
+    }
+    else { ctx.rect(0, 0, w, h); }
+  }
+  function photoGeometry(photo, img, w, h){
+    const cover = Math.max(w / img.naturalWidth, h / img.naturalHeight) * photo.scale;
+    const dw = img.naturalWidth * cover, dh = img.naturalHeight * cover;
+    return { dw, dh, dx: w / 2 - dw * photo.fx, dy: h / 2 - dh * photo.fy };
+  }
+  function drawPhoto(canvas, photo, mask, pal){
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    const DPR = 3;
+    canvas.width = Math.round(w * DPR); canvas.height = Math.round(h * DPR);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    maskPath(ctx, mask, w, h); ctx.clip();
+    const img = photo && getImage(photo);
+    if (img){
+      const g = photoGeometry(photo, img, w, h);
+      ctx.drawImage(img, g.dx, g.dy, g.dw, g.dh);
+    } else {
+      ctx.fillStyle = pal.accents[1]; ctx.globalAlpha = .45; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
+      ctx.strokeStyle = pal.accents[0]; ctx.lineWidth = 2; ctx.globalAlpha = .5;
+      for (let x = -h; x < w + h; x += 18){ ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + h, h); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+  function drawAllPhotos(){
+    const pal = currentPalette();
+    cardCanvas.querySelectorAll('canvas[data-slot]').forEach(c => {
+      const i = Number(c.dataset.slot);
+      const photo = state.photos[i];
+      drawPhoto(c, photo, photo ? photo.mask : 'full-bleed', pal);
+    });
+  }
+
+  function makePhotoSlot(index){
+    const photo = state.photos[index];
+    const slot = el('div', { class: 'photo-slot' });
+    const canvas = el('canvas', { 'data-slot': String(index), 'aria-hidden': 'true' });
+    if (photo && photo.mask === 'polaroid'){
+      const frame = el('div', { class: 'polaroid-frame' });
+      frame.appendChild(canvas); slot.appendChild(frame);
+    } else slot.appendChild(canvas);
+    if (!photo) return slot;
+
+    let pinch = null;
+    slot.addEventListener('touchstart', (e) => { if (e.touches.length === 2) pinch = touchDist(e); }, { passive: true });
+    slot.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && pinch){
+        const d = touchDist(e); photo.scale = clamp(photo.scale * (d / pinch), 1, 3.5); pinch = d;
+        clampFocus(photo, canvas); drawAllPhotos(); touch();
+      }
+    }, { passive: true });
+    slot.addEventListener('touchend', () => { pinch = null; });
+    slot.addEventListener('wheel', (e) => { e.preventDefault(); photo.scale = clamp(photo.scale * (e.deltaY < 0 ? 1.06 : .94), 1, 3.5); clampFocus(photo, canvas); drawAllPhotos(); touch(); }, { passive: false });
+    attachDrag(slot, (dx, dy) => {
+      const img = getImage(photo); if (!img) return;
+      const g = photoGeometry(photo, img, canvas.clientWidth, canvas.clientHeight);
+      photo.fx -= dx / g.dw; photo.fy -= dy / g.dh;
+      clampFocus(photo, canvas); drawAllPhotos(); touch();
+    });
+    return slot;
+  }
+  function clampFocus(photo, canvas){
+    const img = getImage(photo); if (!img) return;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const g = photoGeometry(photo, img, w, h);
+    photo.fx = clamp(photo.fx, w / (2 * g.dw), 1 - w / (2 * g.dw));
+    photo.fy = clamp(photo.fy, h / (2 * g.dh), 1 - h / (2 * g.dh));
+  }
+  const touchDist = (e) => Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+
+  function render(){
+    const occ = currentOccasion(), pal = currentPalette(), layout = currentLayout();
+    cardCanvas.className = 'card-canvas layout-' + layout.id;
+    cardCanvas.dataset.orientation = state.orientation;
+    cardBg.style.background = pal.bg;
+    cardContent.style.color = pal.ink;
+    cardContent.textContent = '';
+    cardCanvas.querySelectorAll(':scope > .photo-area, :scope > .sticker, :scope > .tape, :scope > .bar, :scope > .paper').forEach(n => n.remove());
+
+    if (layout.id === 'photo-hero'){
+      const area = el('div', { class: 'photo-area' });
+      area.appendChild(makePhotoSlot(0));
+      cardCanvas.insertBefore(area, cardContent);
+      cardCanvas.insertBefore(el('div', { class: 'bar', style: 'background:' + pal.accents[0] }), cardContent);
+      cardContent.style.background = pal.paper;
+    } else if (layout.id === 'collage'){
+      const area = el('div', { class: 'photo-area' });
+      const filled = [0, 1, 2].filter(i => state.photos[i]);
+      const grid = el('div', { class: 'collage-grid', 'data-count': String(Math.max(1, filled.length)) });
+      (filled.length ? filled : [0]).forEach(i => grid.appendChild(makePhotoSlot(i)));
+      area.appendChild(grid); cardCanvas.insertBefore(area, cardContent);
+      cardContent.style.background = '';
+    } else {
+      cardContent.style.background = '';
+      if (layout.id === 'big-name') cardCanvas.insertBefore(el('div', { class: 'tape', style: 'background:' + pal.accents[0] }), cardContent);
+      if (layout.id === 'minimal-note') cardCanvas.insertBefore(el('div', { class: 'paper', style: 'background:' + pal.paper }), cardContent);
+    }
+
+    const scrim = layout.id === 'collage';
+    cardContent.appendChild(el('div', { class: 'kicker', text: occ.kicker }));
+    cardContent.appendChild(el('div', { class: 'name', text: state.name.trim() || 'Someone wonderful' }));
+    if (layout.id === 'minimal-note' || layout.id === 'photo-hero') cardContent.appendChild(el('div', { class: 'rule', style: 'background:' + (scrim ? '#fff' : pal.accents[0]) }));
+    cardContent.appendChild(el('div', { class: 'message', text: state.message }));
+    cardContent.appendChild(el('div', { class: 'from', text: state.from }));
+
+    let animated = false;
+    state.stickers.forEach(rec => {
+      if (!STICKERS[rec.stickerId]) return;
+      const canAnimate = !animated && !!STICKERS[rec.stickerId].animate;
+      if (canAnimate) animated = true;
+      cardCanvas.appendChild(makeStickerEl(rec, canAnimate));
+    });
+    drawAllPhotos();
+  }
+  window.addEventListener('resize', () => { if (!$('viewMaker').hidden) drawAllPhotos(); });
+
+  // ---------- editor panels ----------
+  const TABS = [['Occasion', 'panelOccasion'], ['Text', 'panelText'], ['Photo', 'panelPhoto'], ['Stickers', 'panelStickers'], ['Layout', 'panelLayout'], ['Palette', 'panelPalette']];
+  const tabsEl = $('tabs');
+  TABS.forEach(([label, panel], i) => tabsEl.appendChild(el('button', { class: 'tab', role: 'tab', type: 'button', 'aria-selected': i === 0 ? 'true' : 'false', 'aria-controls': panel, text: label, onclick: () => selectTab(label) })));
+  function selectTab(label){
+    TABS.forEach(([l, panel], i) => { $(panel).hidden = l !== label; tabsEl.children[i].setAttribute('aria-selected', l === label ? 'true' : 'false'); });
+  }
+
+  function applyOccasion(occ, opts = {}){
+    const wasAuto = state.message === state.lastAutoMessage || !state.message.trim();
+    state.occasionId = occ.id; state.paletteId = occ.palette; state.layoutId = occ.layout;
+    if (wasAuto || opts.resetMessage){ state.message = occ.starter; state.lastAutoMessage = occ.starter; }
+    state.stickers = seedStickers(occ);
+    if (opts.name !== undefined) state.name = opts.name;
+    state.sourceKey = opts.sourceKey || null;
+    touch();
+  }
+
+  function buildOccasionPanel(){
+    const p = $('panelOccasion'); p.textContent = '';
+    p.appendChild(el('div', { class: 'lbl', text: 'Occasion', style: 'margin-bottom:10px' }));
+    const grid = el('div', { class: 'chip-grid' });
+    OCCASIONS.forEach(occ => {
+      grid.appendChild(el('button', { class: 'chip', type: 'button', 'aria-pressed': occ.id === state.occasionId ? 'true' : 'false',
+        onclick: () => { applyOccasion(occ); buildAll(); showToast(occ.label + ' — palette, layout and message updated'); } },
+        [el('span', { text: occ.label }), el('small', { text: occ.kicker })]));
+    });
+    p.appendChild(grid);
+  }
+
+  function buildTextPanel(){
+    const p = $('panelText'); p.textContent = '';
+    const nameIn = el('input', { type: 'text', id: 'nameInput', value: state.name, autocomplete: 'off', placeholder: 'Who is this for?' });
+    nameIn.addEventListener('input', () => { state.name = nameIn.value; render(); touch(); });
+    const msgIn = el('textarea', { id: 'msgInput' }); msgIn.value = state.message;
+    msgIn.addEventListener('input', () => { state.message = msgIn.value; render(); touch(); });
+    const aboutIn = el('input', { type: 'text', id: 'aboutInput', value: state.about || '', autocomplete: 'off', placeholder: 'e.g. just ran her first marathon' });
+    aboutIn.addEventListener('input', () => { state.about = aboutIn.value; touch(); });
+    const fromIn = el('input', { type: 'text', id: 'fromInput', value: state.from, autocomplete: 'off' });
+    fromIn.addEventListener('input', () => { state.from = fromIn.value; render(); touch(); });
+
+    p.append(
+      el('div', { class: 'field' }, [el('label', { for: 'nameInput', text: 'Name' }), nameIn]),
+      el('div', { class: 'field' }, [el('label', { for: 'msgInput', text: 'Message' }), msgIn]),
+      el('div', { class: 'field' }, [
+        el('label', { for: 'aboutInput', text: 'A line about them (for Ask Claude)' }), aboutIn,
+        el('div', { class: 'row', style: 'margin-top:4px' }, [el('button', { class: 'btn quiet', type: 'button', text: '✨ Ask Claude for a message', onclick: askClaude })])
+      ]),
+      el('div', { class: 'field' }, [el('label', { for: 'fromInput', text: 'From' }), fromIn])
+    );
+  }
+
+  async function askClaude(){
+    if (!settings.apiKey){ showToast('Add an Anthropic API key in Settings to use this'); return; }
+    const occ = currentOccasion();
+    showToast('Asking Claude…');
+    const about = (state.about || '').trim();
+    const prompt = `Occasion: ${occ.label}. Recipient: ${state.name.trim() || 'a friend'}.` + (about ? ` About them: ${about}.` : '') +
+      ' Write the message body only (2–3 sentences, warm and specific, no greeting line, no sign-off, no emoji).';
+    try {
+      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 20000);
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal: ctl.signal,
+        headers: { 'Content-Type': 'application/json', 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01',
+          'anthropic-beta': 'server-side-fallback-2026-07-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({
+          model: 'claude-opus-5', max_tokens: 300, output_config: { effort: 'low' }, fallbacks: 'default',
+          system: 'You write short, warm greeting-card messages for a family. Plain text only.' + (occ.quiet ? ' Keep the tone gentle and sincere — no exclamation points.' : ''),
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (data.stop_reason === 'refusal') throw new Error('refusal');
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+      if (!text) throw new Error('empty');
+      state.message = text; state.lastAutoMessage = text;
+      $('msgInput').value = text; render(); touch();
+      showToast('Message drafted — edit it however you like');
+    } catch (e) {
+      if (String(e.message).startsWith('HTTP 401')) showToast('Claude rejected the API key — check it in Settings');
+      else showToast('Couldn’t reach Claude — check your key and connection');
+    }
+  }
+
+  function importPhoto(file, cb){
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => {
+      const max = 1600, s = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * s); c.height = Math.round(im.naturalHeight * s);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      cb(c.toDataURL('image/jpeg', .86));
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); showToast('Couldn’t read that photo'); };
+    im.src = url;
+  }
+
+  function buildPhotoPanel(){
+    const p = $('panelPhoto'); p.textContent = '';
+    const layout = currentLayout();
+    if (layout.photoSlots === 0){
+      p.appendChild(el('p', { class: 'hint', text: 'This layout is text-only. Pick Photo Hero or Collage under Layout to add photos.' }));
+      p.appendChild(el('div', { class: 'row', style: 'margin-top:10px' }, [
+        el('button', { class: 'btn quiet', type: 'button', text: 'Switch to Photo Hero', onclick: () => { state.layoutId = 'photo-hero'; touch(); buildAll(); } }),
+        el('button', { class: 'btn quiet', type: 'button', text: 'Switch to Collage', onclick: () => { state.layoutId = 'collage'; touch(); buildAll(); } })
+      ]));
+      return;
+    }
+    p.appendChild(el('p', { class: 'hint', text: 'Photos never leave this phone. Drag on the card to reposition, pinch to zoom.', style: 'margin-bottom:12px' }));
+    for (let i = 0; i < layout.photoSlots; i++){
+      const photo = state.photos[i];
+      const box = el('div', { class: 'field' });
+      box.appendChild(el('label', { text: layout.photoSlots > 1 ? `Photo ${i + 1}` : 'Photo', for: 'photoIn' + i }));
+      const input = el('input', { type: 'file', accept: 'image/*', id: 'photoIn' + i, class: 'sr-only' });
+      input.addEventListener('change', () => {
+        const file = input.files[0]; if (!file) return;
+        importPhoto(file, (dataUrl) => {
+          state.photos[i] = { id: 'p' + Date.now() + i, dataUrl, mask: photo ? photo.mask : (layout.id === 'collage' ? 'full-bleed' : 'circle'), fx: .5, fy: .5, scale: 1 };
+          touch(); buildAll();
+        });
+      });
+      box.appendChild(el('div', { class: 'row' }, [el('label', { class: 'btn ' + (photo ? 'quiet' : 'primary'), for: 'photoIn' + i, text: photo ? 'Replace photo' : 'Choose photo' }), input]));
+      if (photo){
+        const maskRow = el('div', { class: 'row', style: 'margin-top:8px' });
+        MASKS.forEach(m => maskRow.appendChild(el('button', { class: 'chip sm', type: 'button', text: m.name, 'aria-pressed': photo.mask === m.id ? 'true' : 'false',
+          onclick: () => { photo.mask = m.id; touch(); buildAll(); } })));
+        box.appendChild(maskRow);
+        box.appendChild(el('div', { class: 'row', style: 'margin-top:8px' }, [
+          el('button', { class: 'btn quiet', type: 'button', text: 'Remove photo', onclick: () => { state.photos[i] = null; touch(); buildAll(); } })
+        ]));
+      }
+      p.appendChild(box);
+    }
+  }
+
+  function buildStickersPanel(){
+    const p = $('panelStickers'); p.textContent = '';
+    p.appendChild(el('p', { class: 'hint', text: 'Tap to add, drag on the card to place, tap the ✕ to remove. One confetti or candle per card animates (frozen in the PNG).', style: 'margin-bottom:12px' }));
+    const occ = currentOccasion();
+    const addSticker = (id) => { state.stickers.push({ uid: 's' + (++stickerSeq), stickerId: id, x: 50, y: 50, rot: 0, scale: 1 }); render(); touch(); };
+    const section = (title, ids) => {
+      p.appendChild(el('div', { class: 'lbl', text: title, style: 'margin-bottom:8px' }));
+      const grid = el('div', { class: 'sticker-grid' });
+      ids.forEach(id => {
+        const b = el('button', { class: 'sticker-pick', type: 'button', 'aria-label': 'Add ' + STICKERS[id].label, onclick: () => addSticker(id) });
+        b.innerHTML = STICKERS[id].svg; // static illustration data only
+        grid.appendChild(b);
+      });
+      p.appendChild(grid);
+    };
+    section('Suggested for ' + occ.label, [...new Set(occ.stickers)]);
+    section('All stickers', Object.keys(STICKERS));
+    if (state.stickers.length) p.appendChild(el('button', { class: 'btn quiet', type: 'button', text: 'Clear all stickers', onclick: () => { state.stickers = []; render(); touch(); buildStickersPanel(); } }));
+  }
+
+  function buildLayoutPanel(){
+    const p = $('panelLayout'); p.textContent = '';
+    p.appendChild(el('div', { class: 'lbl', text: 'Layout', style: 'margin-bottom:10px' }));
+    const grid = el('div', { class: 'chip-grid' });
+    LAYOUTS.forEach(l => grid.appendChild(el('button', { class: 'chip', type: 'button', 'aria-pressed': l.id === state.layoutId ? 'true' : 'false',
+      onclick: () => { state.layoutId = l.id; touch(); buildAll(); } }, [el('span', { text: l.name }), el('small', { text: l.desc })])));
+    p.appendChild(grid);
+    p.appendChild(el('div', { class: 'lbl', text: 'Orientation', style: 'margin:16px 0 10px' }));
+    const seg = el('div', { class: 'segmented' });
+    [['portrait', 'Portrait 4:5 · texts'], ['landscape', 'Landscape 16:9 · email']].forEach(([o, label]) =>
+      seg.appendChild(el('button', { type: 'button', text: label, 'aria-pressed': state.orientation === o ? 'true' : 'false', onclick: () => { state.orientation = o; touch(); buildAll(); } })));
+    p.appendChild(seg);
+  }
+
+  function buildPalettePanel(){
+    const p = $('panelPalette'); p.textContent = '';
+    p.appendChild(el('div', { class: 'lbl', text: 'Palette', style: 'margin-bottom:10px' }));
+    const grid = el('div', { class: 'swatch-grid' });
+    PALETTES.forEach(pal => {
+      const sw = el('button', { class: 'swatch', type: 'button', 'aria-pressed': pal.id === state.paletteId ? 'true' : 'false', onclick: () => { state.paletteId = pal.id; touch(); buildAll(); } });
+      sw.appendChild(el('div', { class: 'dots' }, [pal.bg, pal.paper, ...pal.accents].map(c => el('i', { style: 'background:' + c }))));
+      sw.appendChild(el('b', { text: pal.name }));
+      grid.appendChild(sw);
+    });
+    p.appendChild(grid);
+  }
+
+  function buildAll(){
+    buildOccasionPanel(); buildTextPanel(); buildPhotoPanel(); buildStickersPanel(); buildLayoutPanel(); buildPalettePanel();
+    render();
+  }
+
+  $('newCardBtn').addEventListener('click', async () => {
+    if (!await confirmSheet({ title: 'Start a new card?', message: 'The current card and its photos will be cleared.', okText: 'New card' })) return;
+    imgCache.clear();
+    state = defaultDraft(state.occasionId, '');
+    touch(); buildAll(); selectTab('Occasion');
+  });
+
+  // ---------- export / share ----------
+  const exportOverlay = $('exportOverlay');
+  $('closeExport').addEventListener('click', () => exportOverlay.hidden = true);
+  exportOverlay.addEventListener('click', (e) => { if (e.target === exportOverlay) exportOverlay.hidden = true; });
+
+  async function renderPng(){
+    // html2canvas paints a clone of the DOM with whatever fonts are loaded *right now* —
+    // export before the webfonts arrive and the PNG silently falls back to Arial.
+    await document.fonts.ready;
+    drawAllPhotos();
+    cardCanvas.classList.add('exporting');
+    try {
+      const [W, H] = state.orientation === 'landscape' ? [1600, 900] : [1080, 1350];
+      const rect = cardCanvas.getBoundingClientRect();
+      const raw = await html2canvas(cardCanvas, {
+        scale: W / rect.width, backgroundColor: null, useCORS: true, logging: false,
+        ignoreElements: (n) => n.classList && n.classList.contains('del'),
+        onclone: (doc) => doc.querySelectorAll('.sticker, .sticker .flame').forEach(n => { n.style.animation = 'none'; })
+      });
+      // html2canvas rounds the element box before scaling, so resample onto an exact-size canvas.
+      const out = document.createElement('canvas'); out.width = W; out.height = H;
+      out.getContext('2d').drawImage(raw, 0, 0, W, H);
+      const blob = await new Promise(r => out.toBlob(r, 'image/png'));
+      lastBlob = blob; dirty = false;
+      return blob;
+    } finally { cardCanvas.classList.remove('exporting'); }
+  }
+  async function ensureBlob(){ return (!dirty && lastBlob) ? lastBlob : renderPng(); }
+
+  function markMade(){
+    if (!state.sourceKey) return;
+    made[state.sourceKey] = { at: new Date().toISOString() };
+    Store.set('made', made);
+    buildUpcoming();
+  }
+  const fullText = () => `${currentOccasion().kicker} ${state.name.trim()}\n\n${state.message}\n\n${state.from}`;
+
+  async function withBusy(btn, label, fn){
+    const old = btn.textContent; btn.disabled = true; btn.textContent = label;
+    try { await fn(); } catch (e) { showToast('That didn’t work — try again'); } finally { btn.disabled = false; btn.textContent = old; }
+  }
+
+  $('exportBtn').addEventListener('click', () => withBusy($('exportBtn'), 'Rendering…', async () => {
+    const blob = await renderPng();
+    $('exportImg').src = URL.createObjectURL(blob);
+    $('exportNote').textContent = 'Long-press the image to save it, or use Share / Download.';
+    exportOverlay.hidden = false;
+    markMade();
+  }));
+
+  async function shareBlob(blob){
+    const file = new File([blob], 'celebrate-card.png', { type: 'image/png' });
+    if (!(navigator.canShare && navigator.canShare({ files: [file] }))) return 'unsupported';
+    try { await navigator.share({ files: [file], text: fullText() }); return 'shared'; }
+    catch (e) { return e && e.name === 'AbortError' ? 'cancelled' : 'blocked'; }
+  }
+  async function doShare(btn){
+    await withBusy(btn, 'Preparing…', async () => {
+      const blob = await ensureBlob();
+      const r = await shareBlob(blob);
+      if (r === 'shared') { showToast('Shared'); markMade(); }
+      else if (r === 'unsupported') { showToast('Sharing files isn’t available here — use Download or Copy message'); $('exportImg').src = URL.createObjectURL(blob); $('exportNote').textContent = 'Long-press the image to save it.'; exportOverlay.hidden = false; }
+      else if (r === 'blocked') { $('exportImg').src = URL.createObjectURL(blob); $('exportNote').textContent = 'Card is ready — tap Share once more to open the share sheet.'; exportOverlay.hidden = false; }
+    });
+  }
+  $('shareBtn').addEventListener('click', () => doShare($('shareBtn')));
+  $('exportShareBtn').addEventListener('click', () => doShare($('exportShareBtn')));
+
+  function downloadBlob(blob){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'celebrate-card.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    markMade();
+  }
+  $('downloadBtn').addEventListener('click', () => withBusy($('downloadBtn'), 'Rendering…', async () => downloadBlob(await ensureBlob())));
+  $('exportDownloadBtn').addEventListener('click', () => { if (lastBlob) downloadBlob(lastBlob); });
+
+  $('copyMsgBtn').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(fullText()); showToast('Message copied'); }
+    catch (e) { showToast('Couldn’t copy — select the message text and copy it manually'); }
+  });
+
+  function buildEmailHtml(dataUrl){
+    const occ = currentOccasion();
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f2f2;"><tr><td align="center" style="padding:32px 16px;">` +
+      `<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;">` +
+      `<tr><td><img src="${dataUrl}" width="600" style="display:block;width:100%;height:auto;" alt="${escapeHtml(occ.label)} card for ${escapeHtml(state.name)}"></td></tr>` +
+      `<tr><td style="padding:24px 32px;color:#222;font-size:16px;line-height:1.6;">` +
+      `<div style="font-size:20px;font-weight:bold;margin-bottom:12px;">${escapeHtml(occ.kicker)} ${escapeHtml(state.name)}</div>` +
+      `${escapeHtml(state.message).replace(/\n/g, '<br>')}<br><br><em>${escapeHtml(state.from)}</em></td></tr></table></td></tr></table>`;
+  }
+  $('emailBtn').addEventListener('click', () => {
+    // Safari only allows clipboard writes inside the tap — so hand ClipboardItem a promise
+    // and let the PNG render finish after the gesture has already been honoured.
+    const htmlP = ensureBlob().then(blob => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); })).then(buildEmailHtml);
+    const item = { 'text/plain': htmlP.then(h => new Blob([h], { type: 'text/plain' })) };
+    if (typeof ClipboardItem !== 'undefined' && ClipboardItem.supports?.('text/html') !== false) item['text/html'] = htmlP.then(h => new Blob([h], { type: 'text/html' }));
+    const write = (typeof ClipboardItem !== 'undefined') ? navigator.clipboard.write([new ClipboardItem(item)]) : htmlP.then(h => navigator.clipboard.writeText(h));
+    write.then(() => { showToast('Email HTML copied — in Gmail, start a new message and paste', 4500); markMade(); })
+      .catch(() => showToast('Couldn’t copy the email — try Share to Mail instead'));
+  });
+
+  // ---------- settings ----------
+  const settingsOverlay = $('settingsOverlay');
+  function openSettings(){
+    $('clientIdInput').value = settings.clientId;
+    $('keywordsInput').value = settings.keywords.join(', ');
+    $('fromDefaultInput').value = settings.from;
+    $('apiKeyInput').value = settings.apiKey;
+    $('defaultKeywordsHint').textContent = 'Always matched: ' + DEFAULT_KEYWORDS.join(', ') + '. Add more, separated by commas.';
+    $('versionLabel').textContent = 'Celebrate v' + APP_VERSION;
+    settingsOverlay.hidden = false;
+  }
+  $('settingsBtn').addEventListener('click', openSettings);
+  $('closeSettings').addEventListener('click', () => settingsOverlay.hidden = true);
+  settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.hidden = true; });
+  $('saveSettingsBtn').addEventListener('click', () => {
+    settings.clientId = $('clientIdInput').value.trim();
+    settings.keywords = $('keywordsInput').value.split(/[,\n]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+    settings.from = $('fromDefaultInput').value.trim() || '— Chris & Kat';
+    settings.apiKey = $('apiKeyInput').value.trim();
+    Store.set('settings', settings);
+    tokenClient = null;
+    settingsOverlay.hidden = true;
+    showToast('Settings saved');
+    buildUpcoming();
+  });
+  $('signOutBtn').addEventListener('click', () => {
+    if (token && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(token, () => {});
+    token = null; calCache = null; Store.set('calCache', null);
+    settingsOverlay.hidden = true; showToast('Signed out'); buildUpcoming();
+  });
+
+  // ---------- Google Calendar ----------
+  // GIS (token model) over a private ICS URL: the ICS link is a bearer secret that would sit in
+  // localStorage forever and can't be fetched cross-origin from a static site anyway; GIS hands us
+  // a scoped, read-only, one-hour token that only ever lives in memory.
+  let token = null, tokenClient = null;
+  const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+
+  function signIn(){
+    if (!settings.clientId){ openSettings(); showToast('Paste your Google OAuth client ID first'); return; }
+    if (!window.google?.accounts?.oauth2){ showToast('Google sign-in didn’t load — check your connection (it’s also blocked in the preview sandbox)'); return; }
+    if (!tokenClient){
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: settings.clientId, scope: SCOPE,
+        callback: (resp) => {
+          if (resp.error){ showToast('Google sign-in failed: ' + resp.error); return; }
+          token = resp.access_token;
+          refreshUpcoming();
+        },
+        error_callback: (err) => showToast('Google sign-in ' + (err && err.type === 'popup_closed' ? 'was cancelled' : 'failed'))
+      });
+    }
+    tokenClient.requestAccessToken();
+  }
+  $('signInBtn').addEventListener('click', signIn);
+  $('refreshBtn').addEventListener('click', () => token ? refreshUpcoming() : signIn());
+
+  async function gcal(path, params){
+    const u = new URL('https://www.googleapis.com/calendar/v3' + path);
+    Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null) u.searchParams.set(k, v); });
+    const r = await fetch(u, { headers: { Authorization: 'Bearer ' + token } });
+    if (r.status === 401){ token = null; throw new Error('AUTH'); }
+    if (r.status === 403) throw new Error('FORBIDDEN');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+  async function listAll(path, params){
+    const items = []; let pageToken;
+    do {
+      const page = await gcal(path, Object.assign({}, params, { pageToken }));
+      items.push(...(page.items || [])); pageToken = page.nextPageToken;
+    } while (pageToken);
+    return items;
+  }
+
+  function allKeywords(){ return [...new Set([...DEFAULT_KEYWORDS, ...settings.keywords])]; }
+  function matchKeyword(title){
+    const t = title.toLowerCase();
+    return allKeywords().find(kw => t.includes(kw)) || null;
+  }
+  function extractName(title, keyword){
+    let t = title.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, ' ');
+    t = t.replace(new RegExp(escapeRe(keyword), 'ig'), ' ');
+    t = t.replace(/\b(happy|party|celebration|dinner|lunch|brunch|the|of|at|for|and|is|turns?|school|work|kindergarten|preschool|\d+(st|nd|rd|th)?)\b/ig, ' ');
+    t = t.replace(/['’]s\b/g, '').replace(/[-–—:!,.()]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return t || title.trim();
+  }
+
+  async function refreshUpcoming(){
+    if (!token){ signIn(); return; }
+    setStatus('Scanning your calendars…');
+    const today = AZ.today(), end = AZ.addDays(today, 30);
+    try {
+      // Holiday calendars are skipped: "Washington's Birthday" is not someone we owe a card.
+      const cals = (await listAll('/users/me/calendarList', { showHidden: 'true' })).filter(c => !/#holiday@group\.v\.calendar\.google\.com$/.test(c.id));
+      const found = [];
+      await Promise.all(cals.map(async cal => {
+        let events;
+        try {
+          events = await listAll('/calendars/' + encodeURIComponent(cal.id) + '/events', {
+            singleEvents: 'true', orderBy: 'startTime', maxResults: '250',
+            timeMin: today + 'T00:00:00-07:00', timeMax: end + 'T23:59:59-07:00'   // Arizona is -07:00 all year
+          });
+        } catch (e) {
+          if (e.message === 'AUTH' || e.message === 'FORBIDDEN') throw e;
+          return; // one unreadable calendar shouldn't sink the whole scan
+        }
+        for (const ev of events){
+          if (ev.status === 'cancelled' || !ev.start) continue;
+          const title = (ev.summary || '').trim(); if (!title) continue;
+          const isBirthdayCal = cal.id === BIRTHDAY_CAL || ev.eventType === 'birthday';
+          const kw = matchKeyword(title) || (isBirthdayCal ? 'birthday' : null);
+          if (!kw) continue;
+          const date = ev.start.date || AZ.dateKey(new Date(ev.start.dateTime));
+          if (date < today || date > end) continue;
+          found.push({ name: extractName(title, kw), occasionId: KEYWORD_OCCASION[kw] || 'congrats', date, title, calendar: cal.summary || cal.id, source: 'calendar' });
+        }
+      }));
+      calCache = { fetchedAt: new Date().toISOString(), calendars: cals.length, items: found };
+      Store.set('calCache', calCache);
+      buildUpcoming();
+      showToast(`Scanned ${cals.length} calendar${cals.length === 1 ? '' : 's'}`);
+    } catch (e) {
+      if (e.message === 'AUTH'){ setStatus('Session expired — sign in again.'); }
+      else if (e.message === 'FORBIDDEN'){ setStatus('Google said no (403). Is the Calendar API enabled for your OAuth project, and is this origin authorized?'); }
+      else { setStatus('Couldn’t reach Google Calendar — showing the last scan.'); }
+      buildUpcoming(false);
+    }
+  }
+  function setStatus(msg){ $('calStatus').textContent = msg; }
+
+  function ago(iso){
+    const m = Math.round((Date.now() - new Date(iso)) / 60000);
+    if (m < 2) return 'just now'; if (m < 60) return m + ' min ago';
+    const h = Math.round(m / 60); if (h < 24) return h + ' hr ago';
+    return Math.round(h / 24) + ' day' + (h >= 48 ? 's' : '') + ' ago';
+  }
+
+  function manualOccurrences(){
+    const today = AZ.today(), end = AZ.addDays(today, 30), out = [];
+    for (const m of manual){
+      const dates = [];
+      if (m.yearly){
+        const md = m.date.slice(5);
+        for (const y of [Number(today.slice(0, 4)), Number(today.slice(0, 4)) + 1]) dates.push(`${y}-${md}`);
+      } else dates.push(m.date);
+      for (const d of dates){
+        if (d >= today && d <= end) out.push({ name: m.name, occasionId: m.occasionId, date: d, title: m.name, calendar: 'Added by you', source: 'manual', manualId: m.id });
+      }
+    }
+    return out;
+  }
+
+  function upcomingItems(){
+    const merged = new Map();
+    // Dedupe on name + date: the same birthday usually sits on both our calendars.
+    for (const it of [...manualOccurrences(), ...((calCache && calCache.items) || [])]){
+      const key = normName(it.name) + '|' + it.date;
+      const prev = merged.get(key);
+      if (!prev) merged.set(key, Object.assign({ key, calendars: [it.calendar] }, it));
+      else if (!prev.calendars.includes(it.calendar)) prev.calendars.push(it.calendar);
+    }
+    return [...merged.values()].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
+  }
+
+  function buildUpcoming(updateStatus = true){
+    const list = $('upcomingList'); list.textContent = '';
+    const today = AZ.today();
+    $('setupCard').hidden = !!(settings.clientId && (calCache || token));
+    $('signInBtn').hidden = !!token;
+    if (updateStatus){
+      if (token) setStatus(calCache ? `Signed in · ${calCache.calendars} calendars · updated ${ago(calCache.fetchedAt)}` : 'Signed in');
+      else if (calCache) setStatus(`Last scan ${ago(calCache.fetchedAt)} · sign in to refresh`);
+      else setStatus(settings.clientId ? 'Sign in to scan your calendars.' : 'Add your Google client ID in Settings to connect a calendar.');
+    }
+    const items = upcomingItems();
+    if (!items.length){
+      list.appendChild(el('div', { class: 'empty' }, [el('h3', { text: 'Nothing coming up' }), el('p', { class: 'hint', text: 'Nothing in the next 30 days — add an occasion below, or sign in to scan your calendars.' })]));
+      return;
+    }
+    const groups = [['Today', 'today', i => i.days === 0], ['This week', 'next 7 days', i => i.days >= 1 && i.days <= 6], ['Later', 'within 30 days', i => i.days >= 7]];
+    items.forEach(i => { i.days = AZ.daysBetween(today, i.date); });
+    for (const [title, sub, test] of groups){
+      const rows = items.filter(test); if (!rows.length) continue;
+      list.appendChild(el('div', { class: 'group-title' }, [el('span', { text: title }), el('small', { text: sub })]));
+      const ul = el('div', { class: 'occ-list' });
+      rows.forEach(it => ul.appendChild(occasionRow(it)));
+      list.appendChild(ul);
+    }
+  }
+
+  function occasionRow(it){
+    const occ = byId(OCCASIONS, it.occasionId) || byId(OCCASIONS, 'congrats');
+    const isMade = !!made[it.key];
+    const parts = AZ.parts(it.date);
+    const when = it.days === 0 ? 'Today' : it.days === 1 ? 'Tomorrow' : `in ${it.days} days`;
+    const meta = el('div', { class: 'occ-meta' }, [
+      el('span', { text: `${occ.label} · ${parts.wd} · ${when}` }),
+      isMade ? el('span', { class: 'pill made', text: 'Card made' }) : null,
+      it.calendars.length > 1 ? el('span', { class: 'pill', text: `${it.calendars.length} calendars` }) : null,
+      it.source === 'manual' ? el('span', { class: 'pill', text: 'Added by you' }) : null
+    ]);
+    const check = el('button', { class: 'check-btn', type: 'button', 'aria-pressed': isMade ? 'true' : 'false', 'aria-label': isMade ? 'Mark card as not made' : 'Mark card as made',
+      onclick: () => { if (made[it.key]) delete made[it.key]; else made[it.key] = { at: new Date().toISOString() }; Store.set('made', made); buildUpcoming(false); } });
+    check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const make = el('button', { class: 'btn ' + (isMade ? 'quiet' : 'primary'), type: 'button', text: isMade ? 'Again' : 'Make card',
+      onclick: () => { applyOccasion(occ, { name: it.name, sourceKey: it.key, resetMessage: true }); buildAll(); selectTab('Text'); showView('maker'); } });
+    const actions = el('div', { class: 'occ-actions' }, [check, make]);
+    if (it.source === 'manual'){
+      const del = el('button', { class: 'icon-btn on-paper', type: 'button', 'aria-label': 'Delete ' + it.name, text: '✕',
+        onclick: async () => {
+          if (!await confirmSheet({ title: 'Delete this occasion?', message: `${it.name} — ${occ.label}${it.days === 0 ? '' : ', ' + AZ.pretty(it.date)}.`, okText: 'Delete' })) return;
+          manual = manual.filter(m => m.id !== it.manualId); Store.set('manual', manual); buildUpcoming(false);
+        } });
+      actions.appendChild(del);
+    }
+    return el('div', { class: 'occ-row' + (it.days === 0 ? ' today' : '') }, [
+      el('div', { class: 'date-badge' }, [el('span', { text: parts.mon }), el('b', { text: String(parts.day) })]),
+      el('div', { class: 'occ-main' }, [el('div', { class: 'occ-name', text: it.name, title: it.title }), meta]),
+      actions
+    ]);
+  }
+
+  // manual add form
+  OCCASIONS.forEach(o => $('manOcc').appendChild(el('option', { value: o.id, text: o.label })));
+  $('manDate').min = AZ.today();
+  $('manAddBtn').addEventListener('click', () => {
+    const name = $('manName').value.trim(), date = $('manDate').value;
+    if (!name){ showToast('Add a name'); $('manName').focus(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)){ showToast('Pick a date'); $('manDate').focus(); return; }
+    manual.push({ id: 'm' + Date.now(), name, occasionId: $('manOcc').value, date, yearly: $('manYearly').checked, createdAt: new Date().toISOString() });
+    Store.set('manual', manual);
+    $('manName').value = ''; $('manDate').value = '';
+    $('addOcc').open = false;
+    buildUpcoming(false);
+    showToast('Added ' + name);
+  });
+
+  // ---------- init ----------
+  buildAll();
+  buildUpcoming();
+  showView('upcoming');
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') buildUpcoming(); });
+
+  window.__celebrate = { state: () => state, upcomingItems, extractName, matchKeyword, PALETTES, OCCASIONS };
+})();
+</script>
+</body>
+</html>
