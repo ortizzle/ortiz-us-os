@@ -191,6 +191,21 @@ textarea.input { resize: vertical; min-height: 60px; }
   filter: grayscale(1) opacity(.4); padding: 0; min-width: 48px; height: 48px; }
 .rating button.on { filter: none; }
 
+/* 🧭 idea finder — one question per screen, one tap per answer */
+.wiz-dots { display: flex; gap: 6px; margin-bottom: 12px; }
+.wiz-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.wiz-dots i.on { background: var(--accent); }
+.wiz-q { font-weight: 700; font-size: 18px; margin: 0 0 12px; }
+.wiz-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* 56px: taller than the 48px floor on purpose — these are the whole screen. */
+.wiz-opts button { font: inherit; font-weight: 600; font-size: 14px; line-height: 1.3; text-align: left; min-height: 56px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.wiz-opts button small { display: block; font-weight: 500; font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.wiz-opts button.on { border-color: var(--accent); background: var(--accent-soft); }
+.wiz-sum { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.wiz-sum button { font: inherit; font-weight: 600; font-size: 12.5px; min-height: 48px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--accent-soft); color: var(--accent-ink); cursor: pointer; }
+/* Result rows live in a sheet: the tap the finder asks for is Plan, so 48px. */
+.wiz-res .r-actions .btn { min-height: 48px; min-width: 48px; }
+
 /* curated picks */
 .row.rec { cursor: pointer; }
 .row.rec:hover { border-color: var(--accent); }

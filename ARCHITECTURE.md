@@ -88,9 +88,16 @@ One `localStorage` key, `ortiz-us-os`, holding:
   Device-local like `secrets` — never in `sharedPayload`, saved with
   `save()` not `commit()` since there's nothing to sync.
 - **`deepcache`** stores paid-for ✨ responses (curated-pick deep dives keyed
-  `rec:<name>`, per-plan idea runs keyed `plan:<entryId>`) so reopening shows
+  `rec:<name>`, per-plan idea runs keyed `plan:<entryId>`, 🧭 finder asks keyed
+  `find:<kind>:<area>:<budget>:<vibe>:<when>`) so reopening shows
   them instantly instead of re-spending tokens; explicit refresh re-fetches.
   Device-local, aged out after ~30 days in `pruneTombstones`.
+- **🧭 Find us an idea** (`finderModal`, Ideas tab) is a five-tap questionnaire
+  — kind → where → budget → vibe → when — over static option tables
+  (`FINDER_AREAS`, `FINDER_BUDGET`, `FINDER_VIBE`, `FINDER_WHEN`). Answers are
+  transient (never stored). With no API key it matches curated picks by area and
+  vibe keywords and lists your own ideas of that kind; with a key, one button
+  asks Claude for ideas tailored to all five answers (cached in `deepcache`).
 - `ideas.source` is `'you'` or `'claude'`.
 - `tickets` are goal passes (see `GOALS` in `app.js`). They use
   **deterministic ids** (`goal:kind:n`, e.g. `dry-2027:drink:1`) so both

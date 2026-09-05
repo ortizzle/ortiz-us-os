@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v58 · a set of passes each';
+const APP_VERSION = 'v59 · find us an idea';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -2066,6 +2066,212 @@ function rouletteModal() {
   ]);
 }
 
+// ---------- 🧭 idea finder ----------
+// A guided path to an idea instead of a blank list: kind → where → budget →
+// vibe → when, one tap per step. Static content only; answers never persist.
+// The whole thing works with no API key (own ideas + curated picks match on
+// kind, area and vibe); a key adds a Claude ask tailored to all five answers.
+const FINDER_AREAS = {
+  date: [
+    { v: 'home', label: '🏡 Close to home', sub: 'Chandler · Gilbert · Queen Creek', re: /chandler|gilbert|queen creek|heritage|gila river/i,
+      ask: 'close to home in the southeast valley — Chandler, Gilbert, Queen Creek; downtown Chandler and Gilbert’s Heritage District are home turf' },
+    { v: 'valley', label: '🌵 Tempe · Mesa · Phoenix', sub: '20–35 min drive', re: /tempe|mesa|phoenix|arcadia|papago/i,
+      ask: 'Tempe, Mesa, or Phoenix proper (downtown, Arcadia, Papago) — a 20–35 minute drive from Chandler' },
+    { v: 'scottsdale', label: '✨ Scottsdale · PV', sub: 'worth the drive', re: /scottsdale|paradise valley/i,
+      ask: 'Scottsdale or Paradise Valley — a 40-minute drive, so it should be worth the trip' },
+    { v: 'any', label: '🎲 Anywhere in the Valley', sub: 'no preference' },
+  ],
+  getaway: [
+    { v: 'north', label: '🌲 Up north', sub: 'Sedona · Flag · Prescott', re: /north|bradshaw/i,
+      ask: 'up north — Sedona, Flagstaff, Prescott, Jerome, Payson — cooler air, pines and red rock' },
+    { v: 'south', label: '🌵 South', sub: 'Tucson · Tubac · Bisbee', re: /south/i,
+      ask: 'south — Tucson, Tubac, Bisbee, Patagonia' },
+    { v: 'east', label: '⛰️ East', sub: 'White Mountains', re: /east/i,
+      ask: 'east — the White Mountains, Greer, Pinetop' },
+    { v: 'road', label: '🏖️ Longer road trip', sub: 'San Diego · Rocky Point · Vegas', re: /san diego|rocky point|vegas/i,
+      ask: 'a longer road trip — San Diego, Rocky Point (Puerto Peñasco), or Las Vegas' },
+    { v: 'any', label: '🎲 Surprise us', sub: 'anywhere within ~6 hours' },
+  ],
+  trip: [
+    { v: 'beach', label: '🏝️ Beach & islands', sub: 'Hawaii · Mexico · Caribbean', re: /hawaii|mexico|caribbean/i,
+      ask: 'beach and islands — Hawaii, Mexico, the Caribbean' },
+    { v: 'europe', label: '🏛️ Europe', sub: 'old cities, long dinners', re: /europe/i, ask: 'Europe' },
+    { v: 'far', label: '🌏 Far & different', sub: 'Asia · South America', re: /asia|south america/i,
+      ask: 'somewhere far and different — Asia, South America, beyond' },
+    { v: 'mountains', label: '🏔️ Mountains & parks', sub: 'Rockies · Banff · PNW', re: /rockies|canad|park/i,
+      ask: 'mountains and national parks — the Rockies, Banff, the Pacific Northwest' },
+    { v: 'any', label: '🎲 Dream big', sub: 'anywhere at all' },
+  ],
+};
+FINDER_AREAS.occasion = FINDER_AREAS.date;
+const FINDER_BUDGET = [
+  { v: '$', label: '💸 Easy on the wallet', sub: { date: 'free-ish to ~$40', getaway: 'under ~$300 all-in', trip: 'under ~$2k' }, ask: 'cheap — free or on the low end' },
+  { v: '$$', label: '💵 A normal one', sub: { date: '~$40–100', getaway: '~$300–700', trip: '~$2–4k' }, ask: 'a normal, middle-of-the-road spend' },
+  { v: '$$$', label: '🥂 Treat ourselves', sub: { date: '~$100–250', getaway: '~$700–1,500', trip: '~$4–8k' }, ask: 'a treat — upscale, but not silly' },
+  { v: '$$$$', label: '💎 Splurge', sub: { date: 'sky’s the limit', getaway: 'sky’s the limit', trip: 'sky’s the limit' }, ask: 'a splurge — cost is not the constraint' },
+];
+const FINDER_VIBE = [
+  { v: 'romantic', e: '💞', label: '💞 Romantic & cozy', re: /romantic|candle|cozy|intimate|sunset|golden hour|creekside|stargaz|spa/i, ask: 'romantic and cozy — slow, intimate, just the two of them' },
+  { v: 'food', e: '🍽️', label: '🍽️ Foodie', re: /dinner|pizza|prix|menu|craft|tasting|brunch|guac|wine|cocktail|caf|brewer|restaurant|chef|beard/i, ask: 'food-first — a great meal, drinks, somewhere with a real kitchen' },
+  { v: 'active', e: '🥾', label: '🥾 Active & outdoorsy', re: /hike|sunrise|ride|lake|trail|red.rock|preserve|garden|hot spring|mountain|ski|snorkel|surf|kayak/i, ask: 'active and outdoorsy — moving, fresh air, a view earned' },
+  { v: 'culture', e: '🎭', label: '🎭 Arts, shows & culture', re: /theat|museum|galler|mural|stand.up|comedy|music|instrument|first friday|observatory|temple|ruins/i, ask: 'arts, shows and culture — a performance, a museum, something to talk about after' },
+  { v: 'playful', e: '🎉', label: '🎉 Playful & silly', re: /crawl|farm|olive|brewer|festival|pie|comedy|stand.up|game|karaoke|arcade|ostrich/i, ask: 'playful and a little silly — low-pressure fun, laughing more than dressing up' },
+  { v: 'any', label: '🎲 Surprise us' },
+];
+const FINDER_WHEN = {
+  date: [
+    { v: 'weeknight', label: '🌙 A weeknight', ask: 'on a weeknight — after-work friendly, not a late one' },
+    { v: 'weekend', label: '☀️ This weekend', ask: 'this coming weekend' },
+    { v: 'month', label: '📅 Within the month', ask: 'sometime in the next month' },
+    { v: 'someday', label: '🗓️ No rush', ask: 'no date in mind' },
+  ],
+  getaway: [
+    { v: 'soon', label: '🚗 Next few weeks', ask: 'in the next few weeks' },
+    { v: 'season', label: '🍂 This season', ask: 'sometime this season' },
+    { v: 'later', label: '📅 A few months out', ask: 'about three months from now' },
+    { v: 'someday', label: '🗓️ No rush', ask: 'no date in mind — a someday plan' },
+  ],
+};
+FINDER_WHEN.occasion = FINDER_WHEN.date;
+FINDER_WHEN.trip = FINDER_WHEN.getaway;
+const budgetScale = (type) => (type === 'trip' ? 'trip' : type === 'getaway' ? 'getaway' : 'date');
+
+async function claudeText(prompt, maxTokens) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': DB.settings.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: maxTokens, thinking: { type: 'disabled' }, messages: [{ role: 'user', content: prompt }] }),
+  });
+  if (!res.ok) throw new Error('Claude ' + res.status);
+  const json = await res.json();
+  return (json.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+}
+
+function finderModal() {
+  const a = { type: null, area: null, budget: null, vibe: null, when: null };
+  let step = 0;
+  const kinds = CADENCES.map((c) => ({ v: c.type, label: `${c.emoji} ${c.title}`, sub: c.cadence }));
+  const steps = () => [
+    { key: 'type', q: 'What are we looking for?', opts: kinds },
+    { key: 'area', q: 'Where-ish?', opts: FINDER_AREAS[a.type] },
+    { key: 'budget', q: 'What’s the budget?', opts: FINDER_BUDGET.map((b) => ({ ...b, sub: b.sub[budgetScale(a.type)] })) },
+    { key: 'vibe', q: 'What’s the vibe?', opts: FINDER_VIBE },
+    { key: 'when', q: 'When?', opts: FINDER_WHEN[a.type] },
+  ];
+  const pick = (key) => steps().find((s) => s.key === key).opts.find((o) => o.v === a[key]);
+  const stage = el('div', {});
+  const backBtn = el('button', { class: 'btn', onclick: () => { step = Math.max(0, step - 1); draw(); } }, '‹ Back');
+  const m = modal('🧭 Find us an idea', [stage], [
+    backBtn,
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Close'),
+  ]);
+
+  function draw() {
+    clear(stage);
+    backBtn.style.display = step === 0 ? 'none' : '';
+    const all = steps();
+    stage.append(el('div', { class: 'wiz-dots' }, all.map((_, i) => el('i', { class: i <= step ? 'on' : '' }))));
+    if (step < all.length) {
+      const s = all[step];
+      stage.append(el('div', { class: 'wiz-q' }, s.q));
+      stage.append(el('div', { class: 'wiz-opts' }, s.opts.map((o) => el('button', { class: a[s.key] === o.v ? 'on' : '', onclick: () => {
+        // Changing the kind invalidates every later answer — options differ per kind.
+        if (s.key === 'type' && a.type !== o.v) { a.area = a.budget = a.vibe = a.when = null; }
+        a[s.key] = o.v; step++; draw();
+      } }, [o.label, o.sub ? el('small', {}, o.sub) : null]))));
+      stage.closest('.sheet').scrollTop = 0;
+    } else drawResults();
+  }
+
+  function drawResults() {
+    const type = a.type, c = cadenceOf(type);
+    const area = pick('area'), budget = pick('budget'), vibe = pick('vibe'), when = pick('when');
+    // Answers as tappable chips — tap one to jump back and change it.
+    stage.append(el('div', { class: 'wiz-sum' }, [['type', kinds.find((k) => k.v === type).label], ['area', area.label], ['budget', budget.label], ['vibe', vibe.label], ['when', when.label]]
+      .map(([key, label], i) => el('button', { onclick: () => { step = i; draw(); } }, label))));
+
+    const addIdea = (text, source) => {
+      const id = uid();
+      DB.ideas.unshift({ id, type, text, source, done: false, private: privateMode, updatedAt: now() }); commit();
+      return id;
+    };
+    const ideaRow = (emoji, text, meta, actions) => el('div', { class: 'row wiz-res' }, [
+      el('span', { class: 'r-emoji' }, emoji),
+      el('div', { class: 'r-main' }, [el('div', { class: 'r-title' }, text), meta ? el('div', { class: 'r-meta' }, meta) : null]),
+      el('div', { class: 'r-actions' }, actions),
+    ]);
+    const planBtn = (text, ideaId) => el('button', { class: 'btn btn-sm', title: 'Plan this', onclick: () => { m.close(); logModal(type, { planned: true, prefill: text, ideaId }); } }, 'Plan');
+
+    const vibeHit = (r) => Boolean(vibe.re && vibe.re.test(`${r.name} ${r.why} ${r.more}`));
+    const picks = RECS.filter((r) => r.type === type && !recState(r) && (!area.re || area.re.test(r.area)))
+      .sort((x, y) => (vibeHit(y) - vibeHit(x)) || (y.stars - x.stars))
+      .slice(0, 5);
+    const own = DB.ideas.filter((i) => !i.deleted && !i.done && i.type === type).slice(0, 4);
+
+    if (picks.length) {
+      stage.append(el('h2', { style: 'margin-top:4px' }, 'Curated picks that fit'));
+      for (const r of picks) stage.append(ideaRow(vibeHit(r) ? vibe.e : c.emoji, `${r.name} · ${starStr(r.stars)}`, `${r.area} — ${r.why}`, [
+        el('button', { class: 'btn btn-ghost btn-sm', title: 'The full story', onclick: () => recModal(r) }, 'ⓘ'),
+        planBtn(`${r.name} (${r.area})`, null),
+      ]));
+    } else if (area.re) stage.append(el('p', { class: 'muted small', style: 'margin:0 0 12px' }, `No curated picks for that area yet${hasKey() ? ' — ask Claude below.' : '.'}`));
+
+    if (own.length) {
+      stage.append(el('h2', {}, 'From your own list'));
+      for (const i of own) stage.append(ideaRow(i.private ? '🔒' : c.emoji, i.text, null, [planBtn(i.text, i.id)]));
+    }
+
+    const ai = el('div', {});
+    stage.append(ai);
+    if (!hasKey()) {
+      stage.append(el('p', { class: 'muted small', style: 'margin:8px 0 0' }, 'Add a Claude API key in Settings and ✨ Claude will tailor a few more to exactly these answers.'));
+      return;
+    }
+    const cacheKey = `find:${type}:${a.area}:${a.budget}:${a.vibe}:${a.when}`;
+    const showAI = (d) => {
+      clear(ai).append(el('h2', {}, `✨ Tailored to your answers${privateMode ? ' (private)' : ''}`));
+      for (const it of d.items) {
+        const row = ideaRow('✨', it.text, it.why, [
+          el('button', { class: 'btn btn-sm', title: 'Add to ideas', onclick: (ev) => { addIdea(it.text, 'claude'); ev.currentTarget.disabled = true; ev.currentTarget.textContent = '✓'; toast('Added to ideas 💡'); } }, '＋'),
+          el('button', { class: 'btn btn-sm', title: 'Plan this', onclick: () => { const id = addIdea(it.text, 'claude'); m.close(); logModal(type, { planned: true, prefill: it.text, ideaId: id }); } }, 'Plan'),
+        ]);
+        ai.append(row);
+      }
+      ai.append(el('p', { class: 'muted small', style: 'margin:0 0 10px' }, `✨ saved ${fmt(d.at.slice(0, 10))}`), aiBtn('↻ Ask again'));
+    };
+    const aiBtn = (label) => el('button', { class: 'btn btn-sm', onclick: async (ev) => {
+      const b = ev.currentTarget; b.disabled = true; b.innerHTML = '<span class="spinner"></span> thinking…';
+      try {
+        const s = DB.settings;
+        const existing = DB.ideas.filter((i) => i.type === type && !i.deleted).map((i) => i.text).join('; ');
+        const month = new Date().toLocaleDateString('en-US', { month: 'long' });
+        const prompt = `You help a married couple, Chris & Kat, keep their relationship playful. They answered a quick questionnaire to find a ${c.title.toLowerCase()} (${c.cadence}). Their answers:`
+          + `\n- Where: ${area.ask || IDEA_SCOPE[type]}`
+          + `\n- Budget: ${budget.ask}`
+          + `\n- Vibe: ${vibe.ask || 'no preference — surprise them'}`
+          + `\n- When: ${when.ask}`
+          + `\nThey live in ${s.city || 'the Chandler/Gilbert area (southeast Phoenix valley)'}. It's ${month}, so lean seasonal (weather, that time of year).`
+          + (s.interests ? ` They enjoy: ${s.interests}.` : '')
+          + (existing ? ` Avoid repeating these they already have: ${existing}.` : '')
+          + ` Suggest 4 specific, doable ideas that fit ALL of those answers — name real venues, neighborhoods, and destinations, the kind of thing locals actually do.`
+          + ` Don't invent specific event dates or claim something is happening on a particular day — suggest places and experiences, not calendar listings.`
+          + ` Return ONLY a JSON array of 4 objects shaped {"text": "the idea in under 10 words", "why": "one short sentence on why it fits their answers"}. No prose.`;
+        const text = await claudeText(prompt, 700);
+        const arr = JSON.parse(text.slice(text.indexOf('['), text.lastIndexOf(']') + 1));
+        const items = arr.filter((x) => x && typeof x.text === 'string' && x.text.trim()).map((x) => ({ text: x.text.trim(), why: String(x.why || '').trim() }));
+        if (!items.length) throw new Error('no ideas came back');
+        const d = { items, at: now() };
+        DB.deepcache[cacheKey] = d; save(DB);
+        showAI(d);
+      } catch (err) { toast('Idea fetch failed: ' + err.message); b.disabled = false; b.textContent = label; }
+    } }, label);
+    // A paid ask for the same five answers shows instantly for ~30 days.
+    if (DB.deepcache[cacheKey]?.items) showAI(DB.deepcache[cacheKey]);
+    else ai.append(aiBtn('✨ Claude, tailor a few to this'));
+  }
+  draw();
+}
+
 let ideaFilter = 'all';
 let privateMode = false; // add-box lock: new ideas stay on this device, never sync
 function renderIdeas() {
@@ -2075,7 +2281,10 @@ function renderIdeas() {
     ['all', 'All'], ...CADENCES.map((c) => [c.type, `${c.emoji} ${c.title.split(' ')[0]}`]), ['private', '🔒 Private'],
   ].map(([v, label]) => el('button', { class: ideaFilter === v ? 'active' : '', onclick: () => { ideaFilter = v; render(); } }, label)));
   view.append(seg);
-  view.append(el('div', { style: 'margin:-6px 0 12px' }, el('button', { class: 'btn btn-sm', onclick: rouletteModal }, '🎰 Surprise us')));
+  view.append(el('div', { class: 'card-actions', style: 'margin:-6px 0 12px' }, [
+    el('button', { class: 'btn btn-sm', onclick: finderModal }, '🧭 Find us an idea'),
+    el('button', { class: 'btn btn-sm', onclick: rouletteModal }, '🎰 Surprise us'),
+  ]));
   if (ideaFilter === 'private') view.append(el('p', { class: 'muted small', style: 'margin: -6px 0 12px' }, 'Your eyes only — these live on this device and never sync.'));
 
   const addType = (ideaFilter === 'all' || ideaFilter === 'private') ? 'date' : ideaFilter;
