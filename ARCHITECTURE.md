@@ -11,6 +11,7 @@ Single-page app, no build step. Four files at the repo root do all the work:
 | `styles.css` | All styling (theme via `data-theme`/`data-accent` attrs) |
 | `sw.js` | Service worker: network-first shell cache |
 | `manifest.json` | PWA metadata (installable, standalone display) |
+| `ortiz-drive.js` | Shared suite module for the optional Google Drive copy — copied unchanged, don't edit here |
 
 `app.js` renders by clearing and rebuilding `#view` on every state change
 (`render()` → `renderRhythm` / `renderIdeas` / `renderHistory`) — no virtual
@@ -175,6 +176,17 @@ One `localStorage` key, `ortiz-us-os`, holding:
   the phone). Restore merges: `mergeCol` per record collection, local-wins
   spread for `secrets`/`stash`/`deepcache`, gap-fill for `settings` — never
   a wholesale replace, so stale files can't clobber newer data.
+- **Google Drive copy** (Settings › Backup & restore, off by default; the
+  shared suite module `ortiz-drive.js`, copied unchanged across the Ortiz
+  apps). Saves `us-os-YYYY-MM-DD.json` (Phoenix date) to My Drive › Ortiz
+  App Backups › Us OS whenever the data changes. The payload is `driveData()`
+  — `sharedPayload()` (minus `savedAt`) wrapped as `{ app, copy: 'drive',
+  data }` — so it carries exactly what the Gist carries and nothing
+  device-local (no private ideas/plans, `secrets`, `stash`, `deepcache`,
+  `settings`), and ⬆ Restore accepts it. No timestamp inside: the module
+  skips the upload when the content fingerprint is unchanged. With an
+  expired Google token, a one-tap bar appears under the Rhythm heading.
+  Its token/state live under `ortizdrive:*` localStorage keys.
 - `RECS` (curated picks) and `SPECIAL` (anniversary/birthdays) are static
   data baked into `app.js` — not stored, not synced, edit in code.
 - `settings` is device-local only — it is never included in sync.

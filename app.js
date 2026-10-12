@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v60 · farther getaways';
+const APP_VERSION = 'v61 · drive copy';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -1924,6 +1924,9 @@ function renderCalendar() {
 
 function renderRhythm() {
   view.append(el('h1', {}, 'Your rhythm'), el('p', { class: 'sub' }, 'The 2-2-2 you two live by — kept on pace.'));
+  const driveSlot = el('div', { class: 'drive-slot' });
+  view.append(driveSlot);
+  mountDriveBar(driveSlot);
 
   const t = todayStr();
   const jump = (id) => () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3113,6 +3116,8 @@ function renderSettings() {
         el('button', { class: 'btn btn-sm', onclick: backupDownload }, '⬇ Download backup'),
         el('button', { class: 'btn btn-sm', onclick: restorePick }, '⬆ Restore from file'),
       ]),
+      Drive ? Drive.settingsBlock({ labelClass: 'field-label', buttonClass: 'btn', hintClass: 'muted small' }) : null,
+      Drive ? el('p', { class: 'muted small', style: 'margin:6px 0 0' }, 'The Drive copy holds only what syncs between your phones — never 🔒 surprises, 🎁 stashes, private ideas, or keys. Restore it with ⬆ Restore from file.') : null,
     ]),
   );
 
@@ -3190,7 +3195,7 @@ function mergeCol(local, remote) {
 const syncConfigured = () => Boolean(DB.settings.gistToken && DB.settings.gistId);
 let syncTimer = null, syncing = false;
 function scheduleSync() {
-  if (!syncConfigured()) return;
+  if (!syncConfigured()) { driveSoon(); return; }
   clearTimeout(syncTimer);
   syncTimer = setTimeout(() => syncNow(false), 2000);
 }
@@ -3231,10 +3236,30 @@ async function syncNow(manual) {
     maybeReveal(); // a sheet that just synced in a coupon deserves the moment
   } catch (err) {
     if (manual) toast('Sync failed: ' + err.message);
-  } finally { syncing = false; }
+  } finally { syncing = false; Drive?.check(); }
 }
 // Debug/verification hook (harmless in production, handy on device too).
-window.__us = { sharedPayload, mergeCol, restoreData };
+window.__us = { sharedPayload, mergeCol, restoreData, driveData };
+
+// ---------- Google Drive copy (ortiz-drive.js, shared across the suite) ----------
+// The Drive file is the SHARED payload, never the full-device backup: it
+// leaves the phone, so it gets the same filter as the Gist (no private
+// ideas/plans, secrets, stash, deepcache or settings). Wrapped like a backup
+// file so ⬆ Restore accepts it. No timestamp inside — the module skips the
+// upload when the content fingerprint hasn't changed, and a fresh `at` would
+// change it on every check.
+const Drive = window.OrtizDrive || null;
+function driveData() {
+  const { savedAt, ...data } = sharedPayload();
+  return { app: 'ortiz-us-os', copy: 'drive', data };
+}
+function mountDriveBar(slot) { Drive?.mountBar(slot, { className: 'btn drive-bar' }); }
+let driveTimer = null;
+function driveSoon() { clearTimeout(driveTimer); driveTimer = setTimeout(() => Drive?.check(), 2000); }
+Drive?.init({
+  app: 'Us OS', prefix: 'us-os', getData: driveData, toast,
+  onChange: () => { const slot = view.querySelector('.drive-slot'); if (slot) mountDriveBar(slot); },
+});
 
 // ---------- Claude idea generation (browser-side, like Home OS) ----------
 async function generateIdeas(type, btn) {

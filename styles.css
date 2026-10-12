@@ -84,6 +84,8 @@ button { color: inherit; }
 .btn-sm { padding: 6px 11px; font-size: 13px; }
 .btn-danger { color: #fff; background: #c23b52; border-color: #c23b52; }
 .btn:disabled { opacity: .5; cursor: default; }
+.ortiz-drive .ortiz-drive-btn, .drive-bar { display: block; width: 100%; min-height: 48px; margin: 8px 0; text-align: center; }
+.ortiz-drive .field-label { margin-top: 16px; }
 a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
 /* pills / chips */
