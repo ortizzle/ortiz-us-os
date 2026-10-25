@@ -342,8 +342,10 @@ textarea.input { resize: vertical; min-height: 60px; }
 .tilt-l.wob { animation: wob1 .5s ease; } .tilt-r.wob { animation: wob2 .5s ease; }
 
 /* souvenir magnets — shapes only */
-.mags { display: flex; flex-wrap: wrap; gap: 16px 20px; align-items: flex-end; margin-top: 22px; padding-bottom: 4px; }
-.magwrap { display: inline-flex; cursor: pointer; background: none; border: 0; padding: 0; }
+.mags { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin-top: 22px; padding-bottom: 4px; }
+/* 48px floor around every magnet, however small its shape — it's the double-tap into a memory. */
+.magwrap { display: inline-flex; align-items: flex-end; justify-content: center; min-width: 48px; min-height: 48px; cursor: pointer; background: none; border: 0; padding: 0; }
+.msvg { display: block; overflow: visible; }
 .mshape { position: relative; filter: drop-shadow(0 3px 4px rgba(40,20,28,0.35)); }
 .m-mesa { width: 58px; height: 31px; background: linear-gradient(180deg, #d67a50, #a94f2c);
   clip-path: polygon(0 100%, 0 62%, 8% 62%, 12% 34%, 30% 34%, 34% 62%, 46% 62%, 50% 12%, 68% 12%, 72% 48%, 86% 48%, 90% 70%, 100% 70%, 100% 100%); }
