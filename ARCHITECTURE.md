@@ -154,8 +154,13 @@ One `localStorage` key, `ortiz-us-os`, holding:
   other's notes, `{from, text, at, spicy}`). Note-loss invariant: a note is
   only archived to `notemiss` when REPLACED while unseen; 🗑 by its own
   author is an intentional retraction and archives nothing. Souvenir magnets
-  are derived entirely from logged getaway/trip entries (shape from
-  title/loc keywords, deterministic per id) — no records of their own.
+  are derived entirely from logged getaway/trip entries — no records of
+  their own. `CITY_MAGNETS` draws a named place (KC arrowhead, Vegas sign,
+  park badges, city postcards, flags) as inline SVG from title/loc keywords;
+  then generic themes (mesa, pine, mine car, beach, music note); then a name
+  plate from the city/location/title; an oval only when there's no name at
+  all. Reads the RAW synced title/loc, so a locked 🔒 field (blank in the
+  synced record) can't leak into a magnet and both phones draw the same one.
   `notekeep.spicy` splits the two reveals: **sweet** notes (`spicy:false`)
   fill the History jars and the door's comfort-food shelf (4 taps on the
   door handle); **spicy 🔥** notes (`spicy:true`) are kept OUT of the jars
