@@ -346,6 +346,22 @@ textarea.input { resize: vertical; min-height: 60px; }
 /* 48px floor around every magnet, however small its shape — it's the double-tap into a memory. */
 .magwrap { display: inline-flex; align-items: flex-end; justify-content: center; min-width: 48px; min-height: 48px; cursor: pointer; background: none; border: 0; padding: 0; }
 .msvg { display: block; overflow: visible; }
+/* 🧲 magnet chooser */
+.mag-preview { display: flex; justify-content: center; align-items: center; min-height: 92px; margin: 0 0 4px; }
+.mag-preview .mshape { transform: scale(1.6); }
+.mag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.mag-tile { position: relative; display: flex; align-items: center; justify-content: center; min-height: 64px; padding: 6px 4px; border-radius: 14px;
+  border: 2px solid var(--line); background: var(--surface-2); cursor: pointer; }
+.mag-tile.on { border-color: var(--accent); background: var(--accent-soft); }
+.mag-tile .mshape { transform: scale(0.85); }
+.mag-auto { position: absolute; top: 3px; right: 6px; font-size: 10px; font-weight: 800; color: var(--text-2); text-transform: uppercase; }
+.mag-seg button { min-height: 40px; }
+.mag-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.mag-swatch { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; }
+.mag-swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--accent); }
+.mag-words .mag-emoji { flex: 0 0 72px; text-align: center; font-size: 20px; }
+.mag-row { display: flex; align-items: center; gap: 14px; }
+.mag-mini { display: inline-flex; min-height: 52px; align-items: center; }
 .mshape { position: relative; filter: drop-shadow(0 3px 4px rgba(40,20,28,0.35)); }
 .m-mesa { width: 58px; height: 31px; background: linear-gradient(180deg, #d67a50, #a94f2c);
   clip-path: polygon(0 100%, 0 62%, 8% 62%, 12% 34%, 30% 34%, 34% 62%, 46% 62%, 50% 12%, 68% 12%, 72% 48%, 86% 48%, 90% 70%, 100% 70%, 100% 100%); }
