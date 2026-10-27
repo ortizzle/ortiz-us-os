@@ -162,7 +162,9 @@ One `localStorage` key, `ortiz-us-os`, holding:
   all. Reads the RAW synced title/loc, so a locked 🔒 field (blank in the
   synced record) can't leak into a magnet and both phones draw the same one.
   **`entry.magnet`** (synced) overrides auto, chosen in 🧲 Choose a magnet
-  (`magnetSheet`, from the event sheet of a getaway/trip that has happened):
+  (`magnetSheet`, from the event sheet of a getaway/trip that has happened,
+  or by holding a magnet on the fridge ~½s — a slide cancels, so scrolling
+  past one doesn't open it):
   either `{pick: <CITY_MAGNETS id | theme id | 'plate'>}` or a design spec
   `{shape, bg, fg, accent, label, emoji, by}` drawn by `CUSTOM_SHAPES`. The
   ✨ ask has Claude fill that spec — never raw SVG — and `cleanSpec`

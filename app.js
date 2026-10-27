@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v63 · pick your magnet';
+const APP_VERSION = 'v64 · hold a magnet';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -920,13 +920,33 @@ function magnetArt(desc, e) {
   return el('span', { class: 'mshape m-' + desc });
 }
 function magnetEl(e) {
-  // one tap wobbles, a second within 350ms opens the memory
-  let pending = null;
-  const btn = el('button', { class: 'magwrap', 'aria-label': titleText(e), onclick: () => {
-    btn.classList.remove('wobm'); void btn.offsetWidth; btn.classList.add('wobm');
-    if (pending) { clearTimeout(pending); pending = null; eventSheet(e); }
-    else pending = setTimeout(() => { pending = null; }, 350);
-  } }, magnetArt(magnetDesc(e), e));
+  // one tap wobbles, a second within 350ms opens the memory; a long press
+  // (held ~½s without sliding) goes straight to 🧲 Choose a magnet
+  let pending = null, hold = null, held = false, x0 = 0, y0 = 0;
+  const cancelHold = () => { clearTimeout(hold); hold = null; btn.classList.remove('pressing'); };
+  const btn = el('button', { class: 'magwrap', 'aria-label': titleText(e), title: 'Double-tap for the memory · hold to change the magnet',
+    onpointerdown: (ev) => {
+      if (ev.button > 0) return;
+      held = false; x0 = ev.clientX; y0 = ev.clientY;
+      btn.classList.add('pressing');
+      hold = setTimeout(() => {
+        hold = null; held = true; btn.classList.remove('pressing');
+        clearTimeout(pending); pending = null;
+        try { navigator.vibrate?.(15); } catch { /* no haptics — fine */ }
+        magnetSheet(e);
+      }, 500);
+    },
+    // A scroll that starts on a magnet is a scroll, not a hold.
+    onpointermove: (ev) => { if (hold && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 10) cancelHold(); },
+    onpointerup: cancelHold, onpointercancel: cancelHold, onpointerleave: cancelHold,
+    // Android's long-press context menu would otherwise fire on top of ours.
+    oncontextmenu: (ev) => ev.preventDefault(),
+    onclick: () => {
+      if (held) { held = false; return; } // the release of a long press isn't a tap
+      btn.classList.remove('wobm'); void btn.offsetWidth; btn.classList.add('wobm');
+      if (pending) { clearTimeout(pending); pending = null; eventSheet(e); }
+      else pending = setTimeout(() => { pending = null; }, 350);
+    } }, magnetArt(magnetDesc(e), e));
   return btn;
 }
 
