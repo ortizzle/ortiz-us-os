@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v64 · hold a magnet';
+const APP_VERSION = 'v65 · cruise, parks, camping, dining';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -685,11 +685,26 @@ const postcard = (label, top, low, sea) => ({ w: 58, h: 40, draw: () => [
 ] });
 const flagRect = (kids) => [sv('rect', { x: 0, y: 0, width: 54, height: 36, rx: 3, fill: '#fff' }), ...kids,
   sv('rect', { x: 0.5, y: 0.5, width: 53, height: 35, rx: 3, fill: 'none', stroke: 'rgba(0,0,0,0.12)' })];
+const PARK_LABELS = [[/yosemite/, 'YOSEMITE'], [/sequoia|kings canyon/, 'SEQUOIA'], [/redwood/, 'REDWOODS'], [/petrified forest/, 'PETRIFIED'],
+  [/teton/, 'TETONS'], [/yellowstone/, 'YELLOWSTONE'], [/glacier/, 'GLACIER'], [/olympic/, 'OLYMPIC'], [/acadia/, 'ACADIA'], [/everglades/, 'EVERGLADES'],
+  [/smoky/, 'SMOKIES'], [/sand dunes/, 'SAND DUNES'], [/death valley/, 'DEATH VALLEY'], [/crater lake/, 'CRATER LAKE'], [/mesa verde/, 'MESA VERDE'],
+  [/capitol reef/, 'CAPITOL REEF'], [/white sands/, 'WHITE SANDS'], [/saguaro/, 'SAGUARO'], [/rocky mountain/, 'ROCKY MTN'], [/joshua tree/, 'JOSHUA TREE']];
 const CANYON_LABELS = [[/zion/, 'ZION'], [/grand canyon/, 'GRAND CANYON'], [/bryce/, 'BRYCE'], [/moab|arches|canyonlands/, 'MOAB'],
   [/monument valley/, 'MONUMENT VALLEY'], [/page|horseshoe|antelope|powell/, 'PAGE'], [/havasu falls|supai/, 'HAVASUPAI']];
 
 // Most specific first: a named place beats a theme, a theme beats the plate.
 const CITY_MAGNETS = [
+  { id: 'cruise', name: 'Cruise ship', re: /cruise|royal caribbean|carnival (cruise|ship)|norwegian (cruise|epic|joy)|princess cruise|celebrity (cruise|edge)|virgin voyages|\bship\b|\bsailing\b/, w: 62, h: 42, draw: () => [
+    sv('rect', { x: 40, y: 3, width: 7, height: 10, rx: 1, fill: '#d6203a' }),
+    sv('rect', { x: 40, y: 3, width: 7, height: 2.5, rx: 1, fill: '#23304f' }),
+    sv('rect', { x: 18, y: 9, width: 24, height: 7, rx: 1.5, fill: '#fff', stroke: '#c9ccd3', 'stroke-width': 0.8 }),
+    sv('rect', { x: 11, y: 15, width: 40, height: 9, rx: 1.5, fill: '#fff', stroke: '#c9ccd3', 'stroke-width': 0.8 }),
+    ...[15, 21, 27, 33, 39, 45].map((x) => sv('rect', { x, y: 18, width: 3.5, height: 2.6, rx: 0.6, fill: '#5a82c9' })),
+    sv('polygon', { points: '3,24 60,24 53,36 9,36', fill: '#23304f' }),
+    sv('rect', { x: 5, y: 25.5, width: 52, height: 2, fill: '#d6203a' }),
+    ...[14, 22, 30, 38, 46].map((cx) => sv('circle', { cx, cy: 31, r: 1.2, fill: '#f5e7b2' })),
+    sv('path', { d: 'M0 38 Q5 35 10 38 T20 38 T30 38 T40 38 T50 38 T60 38 V42 H0 Z', fill: '#3f83b8' }),
+  ] },
   { id: 'kc', name: 'Kansas City arrowhead', re: /kansas city|\bkc\b|chiefs|arrowhead stadium|\bgeha\b/, w: 60, h: 42, draw: () => [
     sv('polygon', { points: '2,3 38,3 58,21 38,39 2,39 10,21', fill: '#e31837', stroke: '#fff', 'stroke-width': 2.4, 'stroke-linejoin': 'round' }),
     sv('ellipse', { cx: 29, cy: 21, rx: 15, ry: 11, fill: '#fff' }),
@@ -708,7 +723,7 @@ const CITY_MAGNETS = [
     ];
   } },
   { id: 'sd', name: 'San Diego postcard', re: /san diego|la jolla|coronado|del mar|carlsbad|encinitas/, ...postcard('SAN DIEGO', '#f59a5b', '#f7c08a', '#2f78a8') },
-  { id: 'ps', name: 'Palm Springs postcard', re: /palm springs|palm desert|la quinta|joshua tree|indio|coachella/, ...postcard('PALM SPRINGS', '#7fc9d6', '#c9ecef', '#e2709a') },
+  { id: 'ps', name: 'Palm Springs postcard', re: /palm springs|palm desert|la quinta|indio|coachella/, ...postcard('PALM SPRINGS', '#7fc9d6', '#c9ecef', '#e2709a') },
   { id: 'la', name: 'Los Angeles postcard', re: /los angeles|\bl\.a\.|hollywood|santa monica|malibu|venice beach|beverly hills|anaheim|disneyland/, ...postcard('LOS ANGELES', '#8e5bb5', '#f08aa0', '#5a3a8f') },
   { id: 'hawaii', name: 'Aloha postcard', re: /hawaii|kauai|maui|oahu|honolulu|waikiki|\bkona\b|big island|\blanai\b/, ...postcard('ALOHA', '#3fb5b0', '#9fe0d7', '#1f7f8f') },
   { id: 'canyon', name: 'Park badge', re: /zion|grand canyon|bryce|moab|arches|canyonlands|monument valley|page,|\bpage\b|horseshoe bend|antelope canyon|lake powell|havasu falls|supai/, w: 46, h: 50, label: (s) => (CANYON_LABELS.find(([r]) => r.test(s)) || [0, 'CANYON'])[1], draw: (lbl) => [
@@ -718,6 +733,16 @@ const CITY_MAGNETS = [
     sv('polygon', { points: '17,38 20,29 26,29 27,38', fill: '#4f8fb8' }),
     sv('rect', { x: 3, y: 37, width: 40, height: 11, fill: '#6b3d24' }),
     magText(23, 42.8, lbl, fitText(lbl, 36, 8.5), '#fff'),
+  ] },
+  { id: 'np', name: 'National park', re: /national park|national monument|\bnps\b|joshua tree|yosemite|sequoia|kings canyon|redwood|petrified forest|teton|yellowstone|glacier national|olympic national|acadia|everglades|smoky mountains|great sand dunes|death valley|crater lake|mesa verde|capitol reef|white sands/, w: 46, h: 52,
+    label: (s) => (PARK_LABELS.find(([r]) => r.test(s)) || [0, 'NAT’L PARK'])[1], draw: (lbl) => [
+    sv('path', { d: 'M23 2 L43 8 V27 C43 40 34 47 23 50 C12 47 3 40 3 27 V8 Z', fill: '#6b4a2b', stroke: '#e8d9b5', 'stroke-width': 2, 'stroke-linejoin': 'round' }),
+    sv('polygon', { points: '8,31 18,15 24,23 30,13 39,31', fill: '#e8d9b5' }),
+    sv('polygon', { points: '18,15 21,20 18.5,19 16,21 15,19.5', fill: '#fff' }),
+    sv('polygon', { points: '30,13 33.5,19 31,18 28.5,20 27,18', fill: '#fff' }),
+    sv('polygon', { points: '12,31 15,22 13.5,22 16,17 18.5,22 17,22 20,31', fill: '#2e5d3f' }),
+    sv('rect', { x: 5, y: 31, width: 36, height: 9, fill: '#3e2a18' }),
+    magLabel(23, 35.8, lbl, 32, 7.5, '#e8d9b5'),
   ] },
   { id: 'sf', name: 'Golden Gate', re: /san francisco|golden gate|\bsf\b|sausalito|napa|sonoma/, w: 60, h: 40, draw: () => [
     sv('rect', { x: 0, y: 0, width: 60, height: 40, rx: 4, fill: '#cfe6f3' }),
@@ -780,6 +805,27 @@ const CITY_MAGNETS = [
     sv('rect', { x: 36, y: 0, width: 18, height: 36, fill: '#ce2b37' }),
   ]) },
   { id: 'japan', name: 'Japanese flag', re: /japan|tokyo|kyoto|osaka|hokkaido/, w: 54, h: 36, draw: () => flagRect([sv('circle', { cx: 27, cy: 18, r: 10, fill: '#bc002d' })]) },
+  { id: 'camp', name: 'Campsite', re: /\bcamp(ing|ed|out|site|ground|er)?\b(?! verde)|\btent\b|glamp|\bkoa\b|\brv\b|campfire|s[’']mores/, w: 46, h: 46, draw: () => [
+    sv('circle', { cx: 23, cy: 23, r: 21, fill: '#23304f', stroke: '#c9a04a', 'stroke-width': 2.5 }),
+    sv('circle', { cx: 33, cy: 11, r: 4, fill: '#f5e7b2' }),
+    sv('circle', { cx: 35, cy: 9.6, r: 3.4, fill: '#23304f' }),
+    ...[[11, 12], [19, 8], [26, 15], [9, 21]].map(([x, y]) => sv('polygon', { points: starPts(x, y, 1.7), fill: '#f5e7b2' })),
+    sv('path', { d: 'M4 33 H42 A21 21 0 0 1 4 33 Z', fill: '#2e5d3f' }),
+    sv('polygon', { points: '8,34 20,15 32,34', fill: '#e07b39' }),
+    sv('polygon', { points: '17,34 20,25 23,34', fill: '#7a3a14' }),
+    sv('path', { d: 'M36 34 C33 30 35 27 37 25 C37 28 40 29 39 34 Z', fill: '#f0a02c' }),
+    sv('path', { d: 'M36.6 34 C35.5 32 36.5 30.5 37.4 29.5 C37.5 31 38.8 31.6 38.3 34 Z', fill: '#ffe08a' }),
+    sv('rect', { x: 33, y: 34, width: 8, height: 1.6, rx: 0.8, fill: '#5a3a22' }),
+  ] },
+  { id: 'dining', name: 'Fine dining', re: /fine dining|tasting menu|prix.fixe|michelin|omakase|chef[’']?s (table|counter)|wine pairing|steakhouse|supper club|dinner/, w: 56, h: 46, draw: () => [
+    sv('ellipse', { cx: 28, cy: 40, rx: 26, ry: 4.5, fill: '#f4efe4', stroke: '#c9a04a', 'stroke-width': 1.4 }),
+    sv('path', { d: 'M7 38 A21 21 0 0 1 49 38 Z', fill: '#c9ccd3', stroke: '#9aa0aa', 'stroke-width': 1 }),
+    sv('path', { d: 'M13 33 A15 15 0 0 1 22 21', stroke: '#fff', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'round', opacity: 0.85 }),
+    sv('rect', { x: 6, y: 36.5, width: 44, height: 2.4, rx: 1.2, fill: '#c9a04a' }),
+    sv('circle', { cx: 28, cy: 15.5, r: 3.2, fill: '#9aa0aa' }),
+    sv('polygon', { points: starPts(47, 10, 5, 4, 0.35), fill: '#f7c548' }),
+    sv('polygon', { points: starPts(9, 14, 3, 4, 0.35), fill: '#f7c548' }),
+  ] },
 ];
 function magnetShape(e) {
   const raw = `${e.title || ''} ${e.loc || ''}`;

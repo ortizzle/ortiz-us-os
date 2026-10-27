@@ -156,7 +156,8 @@ One `localStorage` key, `ortiz-us-os`, holding:
   author is an intentional retraction and archives nothing. Souvenir magnets
   are derived entirely from logged getaway/trip entries — no records of
   their own. `CITY_MAGNETS` draws a named place (KC arrowhead, Vegas sign,
-  park badges, city postcards, flags) as inline SVG from title/loc keywords;
+  park badges, city postcards, flags — plus a cruise ship, national-park
+  shield, campsite and fine-dining cloche) as inline SVG from title/loc keywords;
   then generic themes (mesa, pine, mine car, beach, music note); then a name
   plate from the city/location/title; an oval only when there's no name at
   all. Reads the RAW synced title/loc, so a locked 🔒 field (blank in the
