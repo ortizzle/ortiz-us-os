@@ -358,6 +358,8 @@ textarea.input { resize: vertical; min-height: 60px; }
   border: 2px solid var(--line); background: var(--surface-2); cursor: pointer; }
 .mag-tile.on { border-color: var(--accent); background: var(--accent-soft); }
 .mag-tile .mshape { transform: scale(0.85); }
+.mag-off { font-size: 11px; font-weight: 700; color: var(--text-2); text-align: center; line-height: 1.2; padding: 8px 6px; border: 2px dashed var(--text-2); border-radius: 10px; opacity: .75; }
+.mag-off.big { font-size: 14px; padding: 14px 18px; }
 .mag-auto { position: absolute; top: 3px; right: 6px; font-size: 10px; font-weight: 800; color: var(--text-2); text-transform: uppercase; }
 .mag-seg button { min-height: 40px; }
 .mag-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }

@@ -166,11 +166,21 @@ One `localStorage` key, `ortiz-us-os`, holding:
   (`magnetSheet`, from the event sheet of a getaway/trip that has happened,
   or by holding a magnet on the fridge ~½s — a slide cancels, so scrolling
   past one doesn't open it):
-  either `{pick: <CITY_MAGNETS id | theme id | 'plate'>}` or a design spec
+  either `{pick: <CITY_MAGNETS | MILESTONE_MAGNETS | theme id | 'plate'>}`,
+  `{off: true}` (taken down), or a design spec
   `{shape, bg, fg, accent, label, emoji, by}` drawn by `CUSTOM_SHAPES`. The
   ✨ ask has Claude fill that spec — never raw SVG — and `cleanSpec`
   re-validates it on every draw (whitelisted shape, #rrggbb colors, plain
   ≤14-char label, one emoji), so a bad synced value falls back to auto.
+  **Who's on the fridge** (`onFridge`): every getaway/trip that has happened;
+  a date night or special occasion only when it's a milestone or has a
+  chosen magnet; nothing planned, future, private, or `{off}`.
+  **Milestones** (`milestoneOf`) come from `SPECIAL`: an event on the
+  anniversary or a birthday (or a trip whose date range covers it), or one
+  titled as one, gets a 💍 rosette with the years married (counted to the
+  NEAREST anniversary) or a 🎂 cake with the name. Only `date` (not
+  hideable) and the raw title are read. A named place still beats a
+  milestone (Zion keeps its badge); a milestone beats a theme.
   `notekeep.spicy` splits the two reveals: **sweet** notes (`spicy:false`)
   fill the History jars and the door's comfort-food shelf (4 taps on the
   door handle); **spicy 🔥** notes (`spicy:true`) are kept OUT of the jars

@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v65 · cruise, parks, camping, dining';
+const APP_VERSION = 'v66 · milestones on the fridge';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -827,11 +827,69 @@ const CITY_MAGNETS = [
     sv('polygon', { points: starPts(9, 14, 3, 4, 0.35), fill: '#f7c548' }),
   ] },
 ];
+// 💍 / 🎂 milestones: an event ON the anniversary or a birthday (or inside a
+// trip's date range), or one titled as one. Only `date` (never hideable) and
+// the raw synced title are read, so nothing locked can leak into it.
+const mdOf = (d) => d.slice(5);
+const specialMd = (sp) => `${String(sp.month).padStart(2, '0')}-${String(sp.day).padStart(2, '0')}`;
+function onDay(e, sp) {
+  const md = specialMd(sp);
+  if (mdOf(e.date) === md) return true;
+  const end = e.dateEnd && e.dateEnd > e.date && daysBetween(e.date, e.dateEnd) <= 14 ? e.dateEnd : null;
+  for (let d = e.date; end && d <= end; d = addDays(d, 1)) if (mdOf(d) === md) return true;
+  return false;
+}
+function milestoneOf(e) {
+  const title = (e.title || '').toLowerCase();
+  const anniv = SPECIAL.find((sp) => sp.since);
+  if (anniv && (onDay(e, anniv) || /anniversary/.test(title))) return { kind: 'anniv' };
+  const bdays = SPECIAL.filter((sp) => !sp.since);
+  const named = bdays.find((sp) => new RegExp(`\\b${sp.label.toLowerCase()}\\b`).test(title));
+  if (/birthday|\bbday\b|b-day/.test(title)) return { kind: 'bday', who: named?.label || bdays.find((sp) => onDay(e, sp))?.label || '' };
+  const day = bdays.find((sp) => onDay(e, sp));
+  if (day) return { kind: 'bday', who: day.label };
+  return null;
+}
+// Years married on the event's date, counted to the NEAREST anniversary — a
+// trip a week late still celebrates that year's, not the next.
+function annivYears(e) {
+  const sp = SPECIAL.find((x) => x.since);
+  if (!sp) return 0;
+  const y = Number(e.date.slice(0, 4));
+  const near = [y - 1, y, y + 1].map((yy) => `${yy}-${specialMd(sp)}`)
+    .sort((a, b) => Math.abs(daysBetween(e.date, a)) - Math.abs(daysBetween(e.date, b)))[0];
+  return Number(near.slice(0, 4)) - sp.since;
+}
+const MILESTONE_MAGNETS = [
+  { id: 'anniv', name: 'Anniversary', w: 48, h: 56, label: (e) => { const n = annivYears(e); return n > 0 ? `${n} YEAR${n === 1 ? '' : 'S'}` : 'US'; }, draw: (lbl) => [
+    sv('polygon', { points: '13,34 9,54 17,49 22,55 24,36', fill: '#a3204a' }),
+    sv('polygon', { points: '35,34 39,54 31,49 26,55 24,36', fill: '#a3204a' }),
+    sv('polygon', { points: starPts(24, 22, 21, 16, 0.88), fill: '#f7c548' }),
+    sv('circle', { cx: 24, cy: 22, r: 17, fill: '#c22d55' }),
+    sv('circle', { cx: 24, cy: 22, r: 14.5, fill: 'none', stroke: '#fbe6ec', 'stroke-width': 0.9, 'stroke-dasharray': '1.6 1.6' }),
+    sv('circle', { cx: 24, cy: 16, r: 4.6, fill: 'none', stroke: '#f7c548', 'stroke-width': 1.8 }),
+    sv('polygon', { points: '24,8 26.6,10.8 24,12.6 21.4,10.8', fill: '#e8f4ff', stroke: '#fff', 'stroke-width': 0.4 }),
+    magLabel(24, 28, lbl, 24, 7.5, '#fff'),
+  ] },
+  { id: 'bday', name: 'Birthday cake', w: 50, h: 50, label: (e) => (milestoneOf(e)?.who || '').toUpperCase() || 'BDAY', draw: (lbl) => [
+    ...[16, 25, 34].map((x, i) => sv('rect', { x: x - 1.2, y: 9, width: 2.4, height: 10, rx: 1, fill: ['#5a82c9', '#f7c548', '#4b8f63'][i] })),
+    ...[16, 25, 34].map((x) => sv('path', { d: `M${x} 3 C${x + 2.6} 6 ${x + 1.6} 8.6 ${x} 8.6 C${x - 1.6} 8.6 ${x - 2.6} 6 ${x} 3 Z`, fill: '#f0a02c' })),
+    sv('rect', { x: 6, y: 19, width: 38, height: 23, rx: 3, fill: '#f6c1cf' }),
+    sv('path', { d: 'M6 22 Q6 18 10 18 H40 Q44 18 44 22 V24 Q41 28 38 24 Q35 29 31 24 Q28 28 25 24 Q22 29 18 24 Q15 28 12 24 Q9 29 6 24 Z', fill: '#fffaf2' }),
+    magLabel(25, 34, lbl, 32, 9, '#c22d55'),
+    sv('ellipse', { cx: 25, cy: 44, rx: 23, ry: 3.6, fill: '#e8e3d8', stroke: '#c9a04a', 'stroke-width': 1.2 }),
+  ] },
+];
 function magnetShape(e) {
   const raw = `${e.title || ''} ${e.loc || ''}`;
   // "LA" only in capitals — lowercased, it would catch La Posada, La Fonda…
   const s = raw.toLowerCase() + (/\bLA\b/.test(raw) ? ' los angeles' : '');
   const city = CITY_MAGNETS.find((m) => m.re.test(s));
+  // A named place still wins (an anniversary at Zion keeps its badge); the
+  // milestone beats a theme (an anniversary dinner gets 💍, not the cloche).
+  if (city && !['camp', 'dining'].includes(city.id)) return { svg: city, label: city.label ? city.label(s) : null };
+  const ms = milestoneOf(e);
+  if (ms) { const mm = MILESTONE_MAGNETS.find((x) => x.id === ms.kind); return { svg: mm, label: mm.label(e) }; }
   if (city) return { svg: city, label: city.label ? city.label(s) : null };
   if (/mine|jerome|bisbee/.test(s)) return 'minecar';
   if (/sedona|red rock|mesa|canyon/.test(s)) return 'mesa';
@@ -938,6 +996,8 @@ function magnetDesc(e, m = e.magnet) {
   if (m?.pick) {
     const city = CITY_MAGNETS.find((x) => x.id === m.pick);
     if (city) return { svg: city, label: city.label ? city.label(`${e.title || ''} ${e.loc || ''}`.toLowerCase()) : null };
+    const ms = MILESTONE_MAGNETS.find((x) => x.id === m.pick);
+    if (ms) return { svg: ms, label: ms.label(e) };
     if (m.pick === 'plate') return placeName(e) ? 'plate' : 'oval';
     if (THEME_MAGNETS.some(([id]) => id === m.pick)) return m.pick;
   }
@@ -965,6 +1025,15 @@ function magnetArt(desc, e) {
   }
   return el('span', { class: 'mshape m-' + desc });
 }
+// Getaways and trips go up on their own; a date night or special occasion
+// goes up when it's a milestone or you've chosen a magnet for it. `{off}`
+// takes anything down. Only what's happened — a pending plan never shows.
+function onFridge(e, t = todayStr()) {
+  if (e.deleted || e.private || e.planned || e.date > t || e.magnet?.off) return false;
+  if (e.type === 'getaway' || e.type === 'trip') return true;
+  return Boolean(e.magnet?.pick || cleanSpec(e.magnet) || milestoneOf(e));
+}
+const autoOnFridge = (e) => e.type === 'getaway' || e.type === 'trip' || Boolean(milestoneOf(e));
 function magnetEl(e) {
   // one tap wobbles, a second within 350ms opens the memory; a long press
   // (held ~½s without sliding) goes straight to 🧲 Choose a magnet
@@ -1001,8 +1070,13 @@ function magnetEl(e) {
 // entry as `magnet` — {pick} or a spec — so both fridges match.
 function magnetSheet(e) {
   let choice = e.magnet ? { ...e.magnet } : null; // null = auto
-  let draft = cleanSpec(e.magnet) || { shape: 'pennant', ...Object.fromEntries(['bg', 'fg', 'accent'].map((k, i) => [k, MAG_PALETTES[6][i]])), label: placeName(e) || 'OUR TRIP', emoji: '' };
-  const key = (m) => (!m ? 'auto' : m.pick ? 'pick:' + m.pick : 'custom');
+  const ms = milestoneOf(e);
+  let draft = cleanSpec(e.magnet) || (ms?.kind === 'anniv'
+    ? { shape: 'heart', bg: '#c22d55', fg: '#fff0f3', accent: '#f7c548', label: MILESTONE_MAGNETS[0].label(e), emoji: '💍' }
+    : { shape: 'pennant', ...Object.fromEntries(['bg', 'fg', 'accent'].map((k, i) => [k, MAG_PALETTES[6][i]])), label: placeName(e) || 'OUR NIGHT', emoji: '' });
+  // A plain date night's "auto" IS off the fridge — one tile, not two.
+  const autoUp = autoOnFridge(e);
+  const key = (m) => (!m ? (autoUp ? 'auto' : 'off') : m.off ? 'off' : m.pick ? 'pick:' + m.pick : 'custom');
   const preview = el('div', { class: 'mag-preview' });
   const tiles = [];
   const tile = (m, title) => {
@@ -1011,8 +1085,13 @@ function magnetSheet(e) {
   };
   const autoTile = el('button', { class: 'mag-tile', title: 'Automatic', 'aria-label': 'Automatic', onclick: () => { choice = null; refresh(); } },
     [magnetArt(magnetShape(e), e), el('span', { class: 'mag-auto' }, 'auto')]);
-  autoTile.dataset.k = 'auto'; tiles.push(autoTile);
-  const grid = el('div', { class: 'mag-grid' }, [autoTile,
+  autoTile.dataset.k = 'auto';
+  const offTile = el('button', { class: 'mag-tile', title: 'Not on the fridge', 'aria-label': 'Not on the fridge',
+    onclick: () => { choice = autoUp ? { off: true } : null; refresh(); } }, el('span', { class: 'mag-off' }, 'not on the fridge'));
+  offTile.dataset.k = 'off';
+  tiles.push(...(autoUp ? [autoTile] : []), offTile);
+  const grid = el('div', { class: 'mag-grid' }, [...(autoUp ? [autoTile] : []), offTile,
+    ...MILESTONE_MAGNETS.map((c) => tile({ pick: c.id }, c.name)),
     ...CITY_MAGNETS.map((c) => tile({ pick: c.id }, c.name)),
     ...THEME_MAGNETS.map(([id, name]) => tile({ pick: id }, name))]);
 
@@ -1071,19 +1150,22 @@ function magnetSheet(e) {
     el('div', { class: 'addbox mag-words' }, [labelIn, emojiIn]));
   drawBuilder();
 
-  function refresh() {
-    clear(preview).append(magnetArt(magnetDesc(e, choice), e));
+  const saveBtn = el('button', { class: 'btn btn-primary', onclick: () => {
     const k = key(choice);
+    if (choice && !(k === 'off' && !autoUp)) e.magnet = choice; else delete e.magnet;
+    e.updatedAt = now(); commit(); m.close(); render();
+    toast(k === 'off' ? '🧲 Off the fridge' : k === 'auto' ? '🧲 Back to the automatic magnet' : '🧲 New magnet on the fridge');
+  } }, 'Put it on the fridge');
+  function refresh() {
+    const k = key(choice);
+    clear(preview).append(k === 'off' ? el('span', { class: 'mag-off big' }, 'Not on the fridge') : magnetArt(magnetDesc(e, choice), e));
     for (const t of tiles) t.classList.toggle('on', t.dataset.k === k);
+    saveBtn.textContent = k === 'off' ? 'Keep it off the fridge' : 'Put it on the fridge';
   }
   refresh();
   const m = modal('🧲 Choose a magnet', [preview, ...design, el('h2', {}, 'Or pick one'), grid], [
     el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
-    el('button', { class: 'btn btn-primary', onclick: () => {
-      if (choice) e.magnet = choice; else delete e.magnet;
-      e.updatedAt = now(); commit(); m.close(); render();
-      toast(choice ? '🧲 New magnet on the fridge' : '🧲 Back to the automatic magnet');
-    } }, 'Put it on the fridge'),
+    saveBtn,
   ]);
 }
 let doorOpen = false, freezerOpen = false, doorTaps = 0, doorTimer = null, fzTaps = 0, fzTimer = null, ckTaps = 0, ckTimer = null;
@@ -1191,10 +1273,9 @@ function renderFridge() {
   if (misses.length) noteEls.push(el('span', { class: 'missnote from-' + them, onclick: () => missedSheet(misses[0], them) },
     misses.length === 1 ? '💌 one you missed' : `💌 ${misses.length} you missed`));
 
-  // door: souvenir magnets from logged getaways & trips
+  // door: souvenir magnets — every trip, plus any night you chose to keep
   const t = todayStr();
-  const trips = DB.entries.filter((e) => !e.deleted && !e.private && (e.type === 'getaway' || e.type === 'trip') && !e.planned && e.date <= t)
-    .sort((a, b) => a.date < b.date ? -1 : 1);
+  const trips = DB.entries.filter((e) => onFridge(e, t)).sort((a, b) => a.date < b.date ? -1 : 1);
   const dreams = DB.entries.filter((e) => !e.deleted && !e.private && (e.type === 'getaway' || e.type === 'trip') && (e.planned || e.date > t));
   const magEls = trips.map(magnetEl);
   for (const d of dreams.slice(0, 2)) magEls.push(el('button', { class: 'magwrap', onclick: () => { ideaFilter = d.type; current = 'ideas'; setTab(); render(); } },
@@ -2120,12 +2201,15 @@ function eventSheet(entry) {
   if (isSecret('notes')) pushRow('Notes', valBox('🔒 Kept as a surprise 💝', true));
   else { const nv = shownVal(entry, 'notes'); if (nv) pushRow('Notes', valBox(nv)); }
   if (entry.album) body.push(linkRow([['📷 Photo album', entry.album]]));
-  // The fridge magnet belongs to trips that have happened — never a pending
+  // A fridge magnet belongs to something that has happened — never a pending
   // plan, whose label would sync before the surprise does.
-  if ((entry.type === 'getaway' || entry.type === 'trip') && entry.date <= t) pushRow('Fridge magnet', el('div', { class: 'mag-row' }, [
-    el('span', { class: 'mag-mini' }, magnetArt(magnetDesc(entry), entry)),
-    el('button', { class: 'btn btn-sm', onclick: () => { m.close(); magnetSheet(entry); } }, entry.magnet ? '🧲 Change' : '🧲 Choose'),
-  ]));
+  if (entry.date <= t && !entry.planned) {
+    const up = onFridge(entry, t);
+    pushRow('Fridge magnet', el('div', { class: 'mag-row' }, [
+      up ? el('span', { class: 'mag-mini' }, magnetArt(magnetDesc(entry), entry)) : el('span', { class: 'muted small' }, 'Not on the fridge'),
+      el('button', { class: 'btn btn-sm', onclick: () => { m.close(); magnetSheet(entry); } }, up ? '🧲 Change' : '🧲 Put it on the fridge'),
+    ]));
+  }
 
   // Memories + rating make sense once it's happened.
   if (entry.date <= t) {
