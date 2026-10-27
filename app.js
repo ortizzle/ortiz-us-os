@@ -19,7 +19,7 @@ const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); return 
 
 // Shown in Settings so both phones can confirm which build they're actually
 // running. Bump alongside sw.js CACHE on any shell change.
-const APP_VERSION = 'v61 · drive copy';
+const APP_VERSION = 'v63 · pick your magnet';
 // Canonical deployed URL, hardcoded so a share sent from a localhost preview
 // still hands the other phone a link that works.
 const APP_URL = 'https://ortizzle.github.io/ortiz-us-os/';
@@ -650,35 +650,375 @@ function shareTonight() {
     : 'Both answers are in — come see if it’s a rose 🌹';
   sendNudge(`💬 Tonight’s question on our fridge:\n“${tonightsQuestion()}”\n${nudge}`);
 }
-// Deterministic souvenir-magnet shape from the memory itself; both phones
-// derive the same fridge from the same synced entries.
+// Souvenir magnets are derived, never stored: both phones read the same
+// synced title/loc and draw the same fridge. Raw fields on purpose — a
+// locked 🔒 field is blank in the synced record, so a magnet can never give
+// a surprise away, and the owner's phone doesn't draw a different fridge.
+const SVGNS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs = {}, kids = []) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  for (const kid of [].concat(kids)) if (kid != null) n.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return n;
+}
+const magText = (x, y, text, size, fill, extra = {}) => sv('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+  'font-size': size, 'font-weight': 900, 'font-family': 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', fill, ...extra }, text);
+// Shrinks a label until it fits the width it's given, within a readable floor.
+const fitText = (text, width, max) => Math.max(5.5, Math.min(max, width / (text.length * 0.68)));
+const starPts = (cx, cy, r, n = 5, inner = 0.45) => Array.from({ length: n * 2 }, (_, i) => {
+  const a = -Math.PI / 2 + (i * Math.PI) / n, rr = i % 2 ? r * inner : r;
+  return `${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`;
+}).join(' ');
+const palm = (x, y) => [
+  sv('path', { d: `M${x} ${y} Q${x + 1} ${y - 9} ${x + 4} ${y - 16}`, stroke: '#3b2a20', 'stroke-width': 1.8, fill: 'none', 'stroke-linecap': 'round' }),
+  ...[[-8, -1], [-6, -6], [3, -6], [7, -1], [2, 4]].map(([dx, dy]) => sv('path', {
+    d: `M${x + 4} ${y - 16} Q${x + 4 + dx / 2} ${y - 19 + dy / 2} ${x + 4 + dx} ${y - 16 + dy}`, stroke: '#24452d', 'stroke-width': 1.7, fill: 'none', 'stroke-linecap': 'round' })),
+];
+const postcard = (label, top, low, sea) => ({ w: 58, h: 40, draw: () => [
+  sv('rect', { x: 0, y: 0, width: 58, height: 40, rx: 4, fill: '#fffaf2' }),
+  sv('rect', { x: 2.5, y: 2.5, width: 53, height: 13, fill: top }),
+  sv('rect', { x: 2.5, y: 15.5, width: 53, height: 9, fill: low }),
+  sv('circle', { cx: 22, cy: 20, r: 6.5, fill: '#ffd36b' }),
+  sv('rect', { x: 2.5, y: 22, width: 53, height: 7, fill: sea }),
+  ...palm(40, 29),
+  magText(29, 34.5, label, fitText(label, 50, 8.5), sea),
+] });
+const flagRect = (kids) => [sv('rect', { x: 0, y: 0, width: 54, height: 36, rx: 3, fill: '#fff' }), ...kids,
+  sv('rect', { x: 0.5, y: 0.5, width: 53, height: 35, rx: 3, fill: 'none', stroke: 'rgba(0,0,0,0.12)' })];
+const CANYON_LABELS = [[/zion/, 'ZION'], [/grand canyon/, 'GRAND CANYON'], [/bryce/, 'BRYCE'], [/moab|arches|canyonlands/, 'MOAB'],
+  [/monument valley/, 'MONUMENT VALLEY'], [/page|horseshoe|antelope|powell/, 'PAGE'], [/havasu falls|supai/, 'HAVASUPAI']];
+
+// Most specific first: a named place beats a theme, a theme beats the plate.
+const CITY_MAGNETS = [
+  { id: 'kc', name: 'Kansas City arrowhead', re: /kansas city|\bkc\b|chiefs|arrowhead stadium|\bgeha\b/, w: 60, h: 42, draw: () => [
+    sv('polygon', { points: '2,3 38,3 58,21 38,39 2,39 10,21', fill: '#e31837', stroke: '#fff', 'stroke-width': 2.4, 'stroke-linejoin': 'round' }),
+    sv('ellipse', { cx: 29, cy: 21, rx: 15, ry: 11, fill: '#fff' }),
+    sv('ellipse', { cx: 29, cy: 21, rx: 15, ry: 11, fill: 'none', stroke: '#ffb81c', 'stroke-width': 1.4 }),
+    magText(29, 21.5, 'KC', 14, '#e31837', { 'letter-spacing': -1.5 }),
+  ] },
+  { id: 'vegas', name: 'Vegas sign', re: /las vegas|\bvegas\b|\bthe strip\b/, w: 50, h: 52, draw: () => {
+    const edge = [[25, 8], [48, 30], [25, 51], [2, 30]];
+    const bulbs = edge.flatMap(([x1, y1], i) => { const [x2, y2] = edge[(i + 1) % 4];
+      return [0.25, 0.5, 0.75].map((t) => sv('circle', { cx: x1 + (x2 - x1) * t, cy: y1 + (y2 - y1) * t, r: 1.1, fill: '#f7c548' })); });
+    return [
+      sv('polygon', { points: edge.map((p) => p.join(',')).join(' '), fill: '#fffaf0', stroke: '#d6203a', 'stroke-width': 3, 'stroke-linejoin': 'round' }),
+      ...bulbs,
+      sv('polygon', { points: starPts(25, 6, 5.5), fill: '#d6203a', stroke: '#f7c548', 'stroke-width': 0.8 }),
+      magText(25, 30.5, 'VEGAS', 10, '#d6203a'),
+    ];
+  } },
+  { id: 'sd', name: 'San Diego postcard', re: /san diego|la jolla|coronado|del mar|carlsbad|encinitas/, ...postcard('SAN DIEGO', '#f59a5b', '#f7c08a', '#2f78a8') },
+  { id: 'ps', name: 'Palm Springs postcard', re: /palm springs|palm desert|la quinta|joshua tree|indio|coachella/, ...postcard('PALM SPRINGS', '#7fc9d6', '#c9ecef', '#e2709a') },
+  { id: 'la', name: 'Los Angeles postcard', re: /los angeles|\bl\.a\.|hollywood|santa monica|malibu|venice beach|beverly hills|anaheim|disneyland/, ...postcard('LOS ANGELES', '#8e5bb5', '#f08aa0', '#5a3a8f') },
+  { id: 'hawaii', name: 'Aloha postcard', re: /hawaii|kauai|maui|oahu|honolulu|waikiki|\bkona\b|big island|\blanai\b/, ...postcard('ALOHA', '#3fb5b0', '#9fe0d7', '#1f7f8f') },
+  { id: 'canyon', name: 'Park badge', re: /zion|grand canyon|bryce|moab|arches|canyonlands|monument valley|page,|\bpage\b|horseshoe bend|antelope canyon|lake powell|havasu falls|supai/, w: 46, h: 50, label: (s) => (CANYON_LABELS.find(([r]) => r.test(s)) || [0, 'CANYON'])[1], draw: (lbl) => [
+    sv('path', { d: 'M3 48 V22 A20 20 0 0 1 43 22 V48 Z', fill: '#f6d7a7', stroke: '#6b3d24', 'stroke-width': 2.5, 'stroke-linejoin': 'round' }),
+    sv('polygon', { points: '4.5,38 4.5,24 11,15 15,24 17,38', fill: '#c4572e' }),
+    sv('polygon', { points: '41.5,38 41.5,22 33,12 29,25 27,38', fill: '#a8441f' }),
+    sv('polygon', { points: '17,38 20,29 26,29 27,38', fill: '#4f8fb8' }),
+    sv('rect', { x: 3, y: 37, width: 40, height: 11, fill: '#6b3d24' }),
+    magText(23, 42.8, lbl, fitText(lbl, 36, 8.5), '#fff'),
+  ] },
+  { id: 'sf', name: 'Golden Gate', re: /san francisco|golden gate|\bsf\b|sausalito|napa|sonoma/, w: 60, h: 40, draw: () => [
+    sv('rect', { x: 0, y: 0, width: 60, height: 40, rx: 4, fill: '#cfe6f3' }),
+    sv('rect', { x: 0, y: 30, width: 60, height: 10, fill: '#2f6f9e' }),
+    sv('path', { d: 'M0 25 L16 6 Q30 27 44 6 L60 25', stroke: '#c0362c', 'stroke-width': 1.6, fill: 'none' }),
+    sv('rect', { x: 14, y: 4, width: 4, height: 28, fill: '#c0362c' }),
+    sv('rect', { x: 42, y: 4, width: 4, height: 28, fill: '#c0362c' }),
+    sv('rect', { x: 0, y: 25, width: 60, height: 3.2, fill: '#a52a22' }),
+  ] },
+  { id: 'peaks', name: 'Mountain peaks', re: /colorado|denver|aspen|\bvail\b|breckenridge|telluride|banff|lake louise|tahoe|park city|big bear|mammoth|jackson hole|yellowstone|glacier|rockies|whistler/, w: 58, h: 38, draw: () => [
+    sv('polygon', { points: '0,38 18,9 30,25 40,6 58,38', fill: '#3d5a80' }),
+    sv('polygon', { points: '18,9 23.5,17 20,15.5 17,18.5 13.5,16', fill: '#fff' }),
+    sv('polygon', { points: '40,6 46,15 42.5,13.5 39,17 35,13.5', fill: '#fff' }),
+    sv('polygon', { points: '0,38 10,30 18,34 30,27 44,34 58,30 58,38', fill: '#2c4a3a' }),
+  ] },
+  { id: 'ny', name: 'Big Apple', re: /new york|\bnyc\b|manhattan|brooklyn/, w: 44, h: 44, draw: () => [
+    sv('path', { d: 'M22 13 C14 7 3 11 4 23 C5 35 13 43 22 40 C31 43 39 35 40 23 C41 11 30 7 22 13 Z', fill: '#d1232a' }),
+    sv('path', { d: 'M22 13 Q22 7 25 3', stroke: '#5a3a22', 'stroke-width': 2, fill: 'none', 'stroke-linecap': 'round' }),
+    sv('ellipse', { cx: 29, cy: 6, rx: 5, ry: 2.4, fill: '#4b8f3a', transform: 'rotate(-25 29 6)' }),
+    magText(22, 26, 'NY', 13, '#fff'),
+  ] },
+  { id: 'chicago', name: 'Chicago flag', re: /chicago|wrigley/, w: 54, h: 36, draw: () => flagRect([
+    sv('rect', { x: 0, y: 6, width: 54, height: 5, fill: '#41b6e6' }),
+    sv('rect', { x: 0, y: 25, width: 54, height: 5, fill: '#41b6e6' }),
+    ...[11, 22.5, 34, 45.5].map((x) => sv('polygon', { points: starPts(x, 18, 4.4, 6, 0.5), fill: '#e4002b' })),
+  ]) },
+  { id: 'texas', name: 'Texas flag', re: /texas|austin|dallas|houston|san antonio|fort worth|\btx\b/, w: 54, h: 36, draw: () => flagRect([
+    sv('rect', { x: 18, y: 18, width: 36, height: 18, fill: '#bf0a30' }),
+    sv('rect', { x: 0, y: 0, width: 18, height: 36, fill: '#002868' }),
+    sv('polygon', { points: starPts(9, 18.5, 6.5), fill: '#fff' }),
+  ]) },
+  { id: 'guitar', name: 'Guitar', re: /nashville|memphis|music city|graceland/, w: 30, h: 48, draw: () => [
+    sv('rect', { x: 13.5, y: 4, width: 3, height: 24, fill: '#4a2e1c' }),
+    sv('rect', { x: 11.5, y: 0, width: 7, height: 7, rx: 1.5, fill: '#2e1c10' }),
+    sv('circle', { cx: 15, cy: 37, r: 10.5, fill: '#c8762f' }),
+    sv('circle', { cx: 15, cy: 25, r: 7.5, fill: '#c8762f' }),
+    sv('circle', { cx: 15, cy: 30, r: 3.2, fill: '#2e1c10' }),
+    sv('rect', { x: 10, y: 40, width: 10, height: 2.2, rx: 1, fill: '#2e1c10' }),
+  ] },
+  { id: 'nola', name: 'NOLA', re: /new orleans|\bnola\b|french quarter|bourbon street/, w: 44, h: 44, draw: () => [
+    sv('circle', { cx: 22, cy: 22, r: 20, fill: '#5b2a86', stroke: '#f5c542', 'stroke-width': 3 }),
+    sv('circle', { cx: 22, cy: 22, r: 15.5, fill: 'none', stroke: '#2e8b57', 'stroke-width': 1.4, 'stroke-dasharray': '2 2' }),
+    magText(22, 22.5, 'NOLA', 11, '#f5c542'),
+  ] },
+  { id: 'saguaro', name: 'Saguaro', re: /tucson|saguaro|tubac|oro valley|marana|tombstone/, w: 36, h: 44, draw: () => [
+    sv('rect', { x: 14, y: 2, width: 8, height: 42, rx: 4, fill: '#4b8f63' }),
+    sv('rect', { x: 4, y: 12, width: 6, height: 16, rx: 3, fill: '#4b8f63' }),
+    sv('rect', { x: 4, y: 23, width: 13, height: 5.5, rx: 2.75, fill: '#4b8f63' }),
+    sv('rect', { x: 26, y: 8, width: 6, height: 16, rx: 3, fill: '#3f7d55' }),
+    sv('rect', { x: 19, y: 19, width: 13, height: 5.5, rx: 2.75, fill: '#3f7d55' }),
+    sv('path', { d: 'M18 6 V40', stroke: '#3a7350', 'stroke-width': 0.9 }),
+  ] },
+  { id: 'paris', name: 'Eiffel Tower', re: /\bparis\b|eiffel|france/, w: 32, h: 50, draw: () => [
+    sv('polygon', { points: '16,0 18.5,14 21.5,26 29,49 22,49 16,37 10,49 3,49 10.5,26 13.5,14', fill: '#5a5f6e' }),
+    sv('rect', { x: 8.5, y: 25, width: 15, height: 2.4, fill: '#3e4250' }),
+    sv('rect', { x: 11.5, y: 13, width: 9, height: 1.8, fill: '#3e4250' }),
+  ] },
+  { id: 'italy', name: 'Italian flag', re: /italy|\brome\b|amalfi|florence|firenze|tuscany|positano|\bmilan\b|\bvenice\b|sicily|cinque terre/, w: 54, h: 36, draw: () => flagRect([
+    sv('rect', { x: 0, y: 0, width: 18, height: 36, fill: '#009246' }),
+    sv('rect', { x: 36, y: 0, width: 18, height: 36, fill: '#ce2b37' }),
+  ]) },
+  { id: 'japan', name: 'Japanese flag', re: /japan|tokyo|kyoto|osaka|hokkaido/, w: 54, h: 36, draw: () => flagRect([sv('circle', { cx: 27, cy: 18, r: 10, fill: '#bc002d' })]) },
+];
 function magnetShape(e) {
-  const s = `${e.title || ''} ${e.loc || ''}`.toLowerCase();
-  if (/mine|jerome/.test(s)) return 'minecar';
+  const raw = `${e.title || ''} ${e.loc || ''}`;
+  // "LA" only in capitals — lowercased, it would catch La Posada, La Fonda…
+  const s = raw.toLowerCase() + (/\bLA\b/.test(raw) ? ' los angeles' : '');
+  const city = CITY_MAGNETS.find((m) => m.re.test(s));
+  if (city) return { svg: city, label: city.label ? city.label(s) : null };
+  if (/mine|jerome|bisbee/.test(s)) return 'minecar';
   if (/sedona|red rock|mesa|canyon/.test(s)) return 'mesa';
   if (/concert|show|band|music|gig|symphony|theatre|theater/.test(s)) return 'enote';
-  if (/beach|island|point|bay|coast|ocean|lake|cruise|hawaii|kauai|maui|diego/.test(s)) return 'sunwave';
-  if (/cabin|pine|greer|forest|flagstaff|mountain|ski|creek/.test(s)) return 'pine';
-  return 'oval';
+  if (/beach|island|point|bay|coast|ocean|lake|cruise|cabo|cancun|tulum|riviera maya|vallarta|pe[nñ]asco|mazatl/.test(s)) return 'sunwave';
+  if (/cabin|pine|greer|forest|flagstaff|mountain|ski|creek|payson|\brim\b|prescott/.test(s)) return 'pine';
+  return placeName(e) ? 'plate' : 'oval';
+}
+// The plate's name: a parsed city, else a short location, else the title.
+function placeName(e) {
+  const loc = (e.loc || '').trim();
+  let name = (loc && cityOf(loc)?.split(',')[0]) || (loc.length <= 16 ? loc : '') || (e.title || '').trim();
+  if (name.length > 14) name = name.split(/\s+/).reduce((acc, w) => (!acc ? w : (acc + ' ' + w).length <= 14 ? acc + ' ' + w : acc), '');
+  return name.slice(0, 14).toUpperCase();
 }
 const OVAL_HUES = [['#d67a50', '#b85632'], ['#5a82c9', '#3a5fa5'], ['#4b8f63', '#2e6b45'], ['#a06fd0', '#7a44ad'], ['#e0637f', '#c22d55'], ['#c9a04a', '#946a2c']];
+const hueOf = (e) => { let h = 0; for (const ch of e.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return OVAL_HUES[h % OVAL_HUES.length]; };
+const THEME_MAGNETS = [['mesa', 'Red-rock mesa'], ['pine', 'Pine tree'], ['minecar', 'Mine car'], ['sunwave', 'Beach sunset'], ['enote', 'Music note'], ['plate', 'Name plate']];
+
+// ---- your own design: a fixed set of souvenir shapes filled from a small,
+// validated spec {shape, bg, fg, accent, label, emoji}. Claude (or you) only
+// ever fills the spec — never raw SVG — so a synced design can't carry markup.
+// A label that still won't fit at the smallest readable size gets squeezed
+// to the shape's width rather than spilling past its edge.
+const magLabel = (cx, cy, text, w, max, fill) => {
+  const size = fitText(text, w, max);
+  return magText(cx, cy, text, size, fill, text.length * 0.68 * size > w ? { textLength: w, lengthAdjust: 'spacingAndGlyphs' } : {});
+};
+const magContent = ({ cx, cy, w, size }, d, fill) => {
+  if (d.emoji && d.label) return [magText(cx, cy - size * 0.55, d.emoji, size * 1.05, fill), magLabel(cx, cy + size * 0.62, d.label, w, size * 0.72, fill)];
+  if (d.emoji) return [magText(cx, cy + 0.5, d.emoji, size * 1.5, fill)];
+  return [magLabel(cx, cy + 0.5, d.label, w, size, fill)];
+};
+const CUSTOM_SHAPES = {
+  arrowhead: { name: 'Arrowhead', w: 60, h: 42, draw: (d) => [
+    sv('polygon', { points: '2,3 38,3 58,21 38,39 2,39 10,21', fill: d.bg, stroke: d.fg, 'stroke-width': 2.4, 'stroke-linejoin': 'round' }),
+    sv('ellipse', { cx: 29, cy: 21, rx: 15, ry: 11, fill: d.fg, stroke: d.accent, 'stroke-width': 1.4 }),
+    ...magContent({ cx: 29, cy: 21, w: 25, size: 13 }, d, d.bg)] },
+  pennant: { name: 'Pennant', w: 66, h: 38, draw: (d) => [
+    sv('rect', { x: 0, y: 0, width: 4.5, height: 38, rx: 2, fill: d.accent }),
+    sv('polygon', { points: '4,2 64,19 4,36', fill: d.bg, stroke: d.accent, 'stroke-width': 1.4, 'stroke-linejoin': 'round' }),
+    ...(d.label
+      ? [d.emoji ? magText(13, 19, d.emoji, 11, d.fg) : null, magLabel(d.emoji ? 33 : 27, 19.5, d.label, d.emoji ? 30 : 40, 10, d.fg)]
+      : [magText(22, 19.5, d.emoji, 15, d.fg)])] },
+  diamond: { name: 'Sign', w: 50, h: 52, draw: (d) => {
+    const edge = [[25, 8], [48, 30], [25, 51], [2, 30]];
+    return [sv('polygon', { points: edge.map((q) => q.join(',')).join(' '), fill: d.fg, stroke: d.bg, 'stroke-width': 3, 'stroke-linejoin': 'round' }),
+      ...edge.flatMap(([x1, y1], i) => { const [x2, y2] = edge[(i + 1) % 4];
+        return [0.25, 0.5, 0.75].map((t) => sv('circle', { cx: x1 + (x2 - x1) * t, cy: y1 + (y2 - y1) * t, r: 1.1, fill: d.accent })); }),
+      sv('polygon', { points: starPts(25, 6, 5.5), fill: d.bg, stroke: d.accent, 'stroke-width': 0.8 }),
+      ...magContent({ cx: 25, cy: 30, w: 30, size: 10 }, d, d.bg)];
+  } },
+  badge: { name: 'Park badge', w: 46, h: 50, draw: (d) => [
+    sv('path', { d: 'M3 48 V22 A20 20 0 0 1 43 22 V48 Z', fill: d.bg, stroke: d.accent, 'stroke-width': 2.5, 'stroke-linejoin': 'round' }),
+    sv('rect', { x: 3, y: 37, width: 40, height: 11, fill: d.accent }),
+    d.emoji ? magText(23, 23, d.emoji, 17, d.fg) : sv('polygon', { points: starPts(23, 23, 9), fill: d.fg }),
+    d.label ? magLabel(23, 42.8, d.label, 36, 8.5, d.fg) : null] },
+  circle: { name: 'Button', w: 46, h: 46, draw: (d) => [
+    sv('circle', { cx: 23, cy: 23, r: 20, fill: d.bg, stroke: d.accent, 'stroke-width': 3 }),
+    sv('circle', { cx: 23, cy: 23, r: 15.5, fill: 'none', stroke: d.fg, 'stroke-width': 1.2, 'stroke-dasharray': '2 2', opacity: 0.7 }),
+    ...magContent({ cx: 23, cy: 23, w: 27, size: 11 }, d, d.fg)] },
+  plate: { name: 'Plate', w: 62, h: 32, draw: (d) => [
+    sv('rect', { x: 1.25, y: 1.25, width: 59.5, height: 29.5, rx: 5, fill: d.fg, stroke: d.bg, 'stroke-width': 2.5 }),
+    sv('rect', { x: 2.5, y: 2.5, width: 57, height: 6, rx: 3, fill: d.accent }),
+    ...magContent({ cx: 31, cy: 19.5, w: 54, size: d.emoji && d.label ? 8.5 : 11 }, d, d.bg)] },
+  postcard: { name: 'Postcard', w: 58, h: 40, draw: (d) => [
+    sv('rect', { x: 0, y: 0, width: 58, height: 40, rx: 4, fill: d.fg }),
+    sv('rect', { x: 2.5, y: 2.5, width: 53, height: d.label ? 27 : 35, fill: d.bg }),
+    sv('circle', { cx: 17, cy: 14, r: 6.5, fill: d.accent }),
+    d.emoji ? magText(39, d.label ? 16 : 20, d.emoji, 15, d.fg) : null,
+    d.label ? magLabel(29, 34.5, d.label, 50, 8.5, d.bg) : null] },
+  flag: { name: 'Flag', w: 54, h: 36, draw: (d) => flagRect([
+    sv('rect', { x: 0, y: 0, width: 18, height: 36, fill: d.bg }),
+    sv('rect', { x: 18, y: 0, width: 18, height: 36, fill: d.fg }),
+    sv('rect', { x: 36, y: 0, width: 18, height: 36, fill: d.accent }),
+    d.label ? sv('rect', { x: 4, y: 12, width: 46, height: 12, rx: 3, fill: '#fff', opacity: 0.92 }) : null,
+    ...(d.label ? [magLabel(27, 18.5, d.label, 42, 8.5, d.bg)] : [magText(27, 18.5, d.emoji, 16, d.bg)])]) },
+  heart: { name: 'Heart', w: 48, h: 44, draw: (d) => [
+    sv('path', { d: 'M24 41 C10 31 2 22 3 13 C4 5 12 1 18 3 C21 4 23 6 24 9 C25 6 27 4 30 3 C36 1 44 5 45 13 C46 22 38 31 24 41 Z', fill: d.bg, stroke: d.accent, 'stroke-width': 2, 'stroke-linejoin': 'round' }),
+    ...magContent({ cx: 24, cy: 19, w: 26, size: 10 }, d, d.fg)] },
+  star: { name: 'Star', w: 54, h: 52, draw: (d) => [
+    sv('polygon', { points: starPts(27, 28, 25, 5, 0.5), fill: d.bg, stroke: d.accent, 'stroke-width': 2, 'stroke-linejoin': 'round' }),
+    ...magContent({ cx: 27, cy: 30, w: 19, size: 9 }, d, d.fg)] },
+};
+const MAG_PALETTES = [['#e31837', '#ffffff', '#ffb81c'], ['#c4572e', '#fdf3e1', '#6b3d24'], ['#2f78a8', '#fffaf2', '#f7c08a'], ['#2e6b45', '#f4f0e1', '#c9a04a'],
+  ['#8e5bb5', '#fff4ea', '#f08aa0'], ['#23304f', '#f5e7b2', '#e0637f'], ['#c22d55', '#fff0f3', '#f7c548'], ['#3e4250', '#f2f2f2', '#41b6e6']];
+const HEX6 = /^#[0-9a-f]{6}$/i;
+const firstGraphemes = (str, n) => (typeof Intl !== 'undefined' && Intl.Segmenter
+  ? [...new Intl.Segmenter().segment(str)].slice(0, n).map((g) => g.segment).join('')
+  : Array.from(str).slice(0, n * 2).join(''));
+// Every design is re-checked on every draw: it may have synced in from the
+// other phone, and a bad one should fall back to auto, never break the fridge.
+function cleanSpec(x) {
+  if (!x || !Object.hasOwn(CUSTOM_SHAPES, x.shape)) return null;
+  const col = (v, dflt) => (typeof v === 'string' && HEX6.test(v) ? v.toLowerCase() : dflt);
+  const label = String(x.label || '').toUpperCase().replace(/[<>{}[\]\\"`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 14);
+  const emoji = firstGraphemes(String(x.emoji || '').trim(), 1);
+  if (!label && !emoji) return null;
+  return { shape: x.shape, bg: col(x.bg, '#c22d55'), fg: col(x.fg, '#fffaf2'), accent: col(x.accent, '#f7c548'), label, emoji };
+}
+
+// What to draw: the magnet you chose (a pick or your own design), else auto.
+function magnetDesc(e, m = e.magnet) {
+  if (m?.pick) {
+    const city = CITY_MAGNETS.find((x) => x.id === m.pick);
+    if (city) return { svg: city, label: city.label ? city.label(`${e.title || ''} ${e.loc || ''}`.toLowerCase()) : null };
+    if (m.pick === 'plate') return placeName(e) ? 'plate' : 'oval';
+    if (THEME_MAGNETS.some(([id]) => id === m.pick)) return m.pick;
+  }
+  const spec = m && cleanSpec(m);
+  if (spec) return { custom: spec };
+  return magnetShape(e);
+}
+function magnetArt(desc, e) {
+  const svgOf = (w, h, kids) => sv('svg', { class: 'mshape msvg', viewBox: `0 0 ${w} ${h}`, width: w, height: h, 'aria-hidden': 'true' }, kids);
+  if (desc.custom) { const t = CUSTOM_SHAPES[desc.custom.shape]; return svgOf(t.w, t.h, t.draw(desc.custom)); }
+  if (desc.svg) return svgOf(desc.svg.w, desc.svg.h, desc.svg.draw(desc.label));
+  if (desc === 'plate') {
+    const name = placeName(e), [a, b] = hueOf(e);
+    return svgOf(62, 32, [
+      sv('rect', { x: 1.25, y: 1.25, width: 59.5, height: 29.5, rx: 5, fill: '#fdf8ef', stroke: b, 'stroke-width': 2.5 }),
+      sv('rect', { x: 2.5, y: 2.5, width: 57, height: 6, rx: 3, fill: a }),
+      ...[10, 31, 52].map((x) => sv('circle', { cx: x, cy: 5.5, r: 1, fill: '#fdf8ef' })),
+      magText(31, 19.5, name, fitText(name, 54, 11), b),
+    ]);
+  }
+  if (desc === 'enote') return el('span', { class: 'mshape m-enote' }, [el('i', { class: 'nh' }), el('i', { class: 'ns' }), el('i', { class: 'nf' })]);
+  if (desc === 'oval') {
+    const [a, b] = hueOf(e);
+    return el('span', { class: 'mshape m-oval', style: `background:linear-gradient(160deg,${a},${b})` }, cadenceOf(e.type).emoji);
+  }
+  return el('span', { class: 'mshape m-' + desc });
+}
 function magnetEl(e) {
-  const shape = magnetShape(e);
-  let inner;
-  if (shape === 'enote') inner = el('span', { class: 'mshape m-enote' }, [el('i', { class: 'nh' }), el('i', { class: 'ns' }), el('i', { class: 'nf' })]);
-  else if (shape === 'oval') {
-    let h = 0; for (const ch of e.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-    const [a, b] = OVAL_HUES[h % OVAL_HUES.length];
-    inner = el('span', { class: 'mshape m-oval', style: `background:linear-gradient(160deg,${a},${b})` }, cadenceOf(e.type).emoji);
-  } else inner = el('span', { class: 'mshape m-' + shape });
   // one tap wobbles, a second within 350ms opens the memory
   let pending = null;
-  const btn = el('button', { class: 'magwrap', onclick: () => {
+  const btn = el('button', { class: 'magwrap', 'aria-label': titleText(e), onclick: () => {
     btn.classList.remove('wobm'); void btn.offsetWidth; btn.classList.add('wobm');
     if (pending) { clearTimeout(pending); pending = null; eventSheet(e); }
     else pending = setTimeout(() => { pending = null; }, 350);
-  } }, inner);
+  } }, magnetArt(magnetDesc(e), e));
   return btn;
+}
+
+// 🧲 Choose a magnet: auto, one from the set, or your own design (built by
+// hand, or described to Claude, which fills the same spec). Synced on the
+// entry as `magnet` — {pick} or a spec — so both fridges match.
+function magnetSheet(e) {
+  let choice = e.magnet ? { ...e.magnet } : null; // null = auto
+  let draft = cleanSpec(e.magnet) || { shape: 'pennant', ...Object.fromEntries(['bg', 'fg', 'accent'].map((k, i) => [k, MAG_PALETTES[6][i]])), label: placeName(e) || 'OUR TRIP', emoji: '' };
+  const key = (m) => (!m ? 'auto' : m.pick ? 'pick:' + m.pick : 'custom');
+  const preview = el('div', { class: 'mag-preview' });
+  const tiles = [];
+  const tile = (m, title) => {
+    const b = el('button', { class: 'mag-tile', title, 'aria-label': title, onclick: () => { choice = m; refresh(); } }, magnetArt(magnetDesc(e, m), e));
+    b.dataset.k = key(m); tiles.push(b); return b;
+  };
+  const autoTile = el('button', { class: 'mag-tile', title: 'Automatic', 'aria-label': 'Automatic', onclick: () => { choice = null; refresh(); } },
+    [magnetArt(magnetShape(e), e), el('span', { class: 'mag-auto' }, 'auto')]);
+  autoTile.dataset.k = 'auto'; tiles.push(autoTile);
+  const grid = el('div', { class: 'mag-grid' }, [autoTile,
+    ...CITY_MAGNETS.map((c) => tile({ pick: c.id }, c.name)),
+    ...THEME_MAGNETS.map(([id, name]) => tile({ pick: id }, name))]);
+
+  // the builder — always usable, no API key needed
+  const shapeSeg = el('div', { class: 'seg mag-seg' });
+  const swatches = el('div', { class: 'mag-swatches' });
+  const labelIn = el('input', { class: 'input', maxlength: 14, placeholder: 'Words on it — KC, ALOHA…', autocapitalize: 'characters' });
+  const emojiIn = el('input', { class: 'input mag-emoji', placeholder: '🏈', 'aria-label': 'Emoji' });
+  const useDraft = (by) => {
+    const spec = cleanSpec(draft);
+    if (!spec) return; // mid-edit with nothing on it yet — keep the last good preview
+    choice = { ...spec, by }; refresh();
+  };
+  labelIn.addEventListener('input', () => { draft.label = labelIn.value; useDraft('you'); });
+  emojiIn.addEventListener('input', () => { draft.emoji = emojiIn.value; useDraft('you'); });
+  const drawBuilder = () => {
+    clear(shapeSeg).append(...Object.entries(CUSTOM_SHAPES).map(([id, t]) =>
+      el('button', { class: draft.shape === id ? 'active' : '', onclick: () => { draft.shape = id; drawBuilder(); useDraft('you'); } }, t.name)));
+    clear(swatches).append(...MAG_PALETTES.map((p) => el('button', {
+      class: 'mag-swatch' + (p[0] === draft.bg && p[1] === draft.fg && p[2] === draft.accent ? ' on' : ''), 'aria-label': 'Colors',
+      style: `background:linear-gradient(135deg,${p[0]} 0 50%,${p[2]} 50% 75%,${p[1]} 75%)`,
+      onclick: () => { [draft.bg, draft.fg, draft.accent] = p; drawBuilder(); useDraft('you'); } })));
+    labelIn.value = draft.label || ''; emojiIn.value = draft.emoji || '';
+  };
+
+  const design = [el('h2', { style: 'margin-top:8px' }, 'Design your own')];
+  if (hasKey()) {
+    const ask = el('input', { class: 'input', placeholder: 'Describe it — “Chiefs arrowhead with KC”, “BBQ pennant”', onkeydown: (ev) => { if (ev.key === 'Enter') askBtn.click(); } });
+    const askBtn = el('button', { class: 'btn', onclick: async () => {
+      const want = ask.value.trim();
+      if (!want) { toast('Tell Claude what you want on it'); return; }
+      askBtn.disabled = true; askBtn.innerHTML = '<span class="spinner"></span>';
+      try {
+        const c = cadenceOf(e.type), place = [e.title, e.loc].filter(Boolean).join(' — ') || placeName(e) || 'a trip';
+        const text = await claudeText(`Design a souvenir fridge magnet for a married couple's ${c.title.toLowerCase()}: ${place}. Their request: "${want}".`
+          + ` You can only describe it with this template:`
+          + `\n- shape: one of ${Object.keys(CUSTOM_SHAPES).join(', ')} (diamond is a Vegas-style sign, badge is a national-park arch, plate is a license plate)`
+          + `\n- bg, fg, accent: hex colors like #e31837. bg is the main fill, fg the contrasting color for text and inner shapes, accent the trim. For flag, they are the three vertical stripes.`
+          + `\n- label: the words on it, at most 12 characters, uppercase (initials, a nickname, a short phrase), or "" for none`
+          + `\n- emoji: exactly one emoji as the picture, or "" for none`
+          + `\nThink like a souvenir shop: real team and city colors, iconic shorthand. Example — Kansas City Chiefs: {"shape":"arrowhead","bg":"#e31837","fg":"#ffffff","accent":"#ffb81c","label":"KC","emoji":""}.`
+          + ` Return ONLY one JSON object with those six keys. No prose.`, 300);
+        let spec = null;
+        try { spec = cleanSpec(JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1))); } catch { /* not JSON — same as no design */ }
+        if (!spec) throw new Error('no usable design came back — try wording it differently');
+        draft = { ...spec }; drawBuilder();
+        choice = { ...spec, by: 'claude' }; refresh();
+      } catch (err) { toast('Design failed: ' + err.message); }
+      askBtn.disabled = false; askBtn.textContent = '✨ Design it';
+    } }, '✨ Design it');
+    design.push(el('div', { class: 'addbox' }, [ask, askBtn]),
+      el('p', { class: 'muted small', style: 'margin:-8px 0 12px' }, 'Claude fills in the shape, colors, words and emoji — tweak any of them below.'));
+  }
+  design.push(el('div', { class: 'field-label' }, 'Shape'), shapeSeg,
+    el('div', { class: 'field-label' }, 'Colors'), swatches,
+    el('div', { class: 'addbox mag-words' }, [labelIn, emojiIn]));
+  drawBuilder();
+
+  function refresh() {
+    clear(preview).append(magnetArt(magnetDesc(e, choice), e));
+    const k = key(choice);
+    for (const t of tiles) t.classList.toggle('on', t.dataset.k === k);
+  }
+  refresh();
+  const m = modal('🧲 Choose a magnet', [preview, ...design, el('h2', {}, 'Or pick one'), grid], [
+    el('button', { class: 'btn', onclick: () => m.close() }, 'Cancel'),
+    el('button', { class: 'btn btn-primary', onclick: () => {
+      if (choice) e.magnet = choice; else delete e.magnet;
+      e.updatedAt = now(); commit(); m.close(); render();
+      toast(choice ? '🧲 New magnet on the fridge' : '🧲 Back to the automatic magnet');
+    } }, 'Put it on the fridge'),
+  ]);
 }
 let doorOpen = false, freezerOpen = false, doorTaps = 0, doorTimer = null, fzTaps = 0, fzTimer = null, ckTaps = 0, ckTimer = null;
 const FRIDGE_FOOD = ['🥧', '🥡', '🍕', '🧆', '🍲'];   // comfort — the warm keepsakes
@@ -1714,6 +2054,12 @@ function eventSheet(entry) {
   if (isSecret('notes')) pushRow('Notes', valBox('🔒 Kept as a surprise 💝', true));
   else { const nv = shownVal(entry, 'notes'); if (nv) pushRow('Notes', valBox(nv)); }
   if (entry.album) body.push(linkRow([['📷 Photo album', entry.album]]));
+  // The fridge magnet belongs to trips that have happened — never a pending
+  // plan, whose label would sync before the surprise does.
+  if ((entry.type === 'getaway' || entry.type === 'trip') && entry.date <= t) pushRow('Fridge magnet', el('div', { class: 'mag-row' }, [
+    el('span', { class: 'mag-mini' }, magnetArt(magnetDesc(entry), entry)),
+    el('button', { class: 'btn btn-sm', onclick: () => { m.close(); magnetSheet(entry); } }, entry.magnet ? '🧲 Change' : '🧲 Choose'),
+  ]));
 
   // Memories + rating make sense once it's happened.
   if (entry.date <= t) {

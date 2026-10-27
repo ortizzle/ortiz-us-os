@@ -26,7 +26,7 @@ One `localStorage` key, `ortiz-us-os`, holding:
 {
   entries: [{ id, type, date, dateEnd, title, cover, loc, time, dress, pack,
               notes, recap, rating, planned, status, owner, private, mem, hidden,
-              updatedAt, deleted }],
+              magnet, updatedAt, deleted }],
   //         `notes` is the PLAN ("dinner at 5:45 first"); `recap` + `mem` are
   //         written afterwards. Separate fields so a recap can never overwrite
   //         the plan. `recap` is not HIDEABLE (no 🔒) — apply() only routes
@@ -154,8 +154,20 @@ One `localStorage` key, `ortiz-us-os`, holding:
   other's notes, `{from, text, at, spicy}`). Note-loss invariant: a note is
   only archived to `notemiss` when REPLACED while unseen; 🗑 by its own
   author is an intentional retraction and archives nothing. Souvenir magnets
-  are derived entirely from logged getaway/trip entries (shape from
-  title/loc keywords, deterministic per id) — no records of their own.
+  are derived entirely from logged getaway/trip entries — no records of
+  their own. `CITY_MAGNETS` draws a named place (KC arrowhead, Vegas sign,
+  park badges, city postcards, flags) as inline SVG from title/loc keywords;
+  then generic themes (mesa, pine, mine car, beach, music note); then a name
+  plate from the city/location/title; an oval only when there's no name at
+  all. Reads the RAW synced title/loc, so a locked 🔒 field (blank in the
+  synced record) can't leak into a magnet and both phones draw the same one.
+  **`entry.magnet`** (synced) overrides auto, chosen in 🧲 Choose a magnet
+  (`magnetSheet`, from the event sheet of a getaway/trip that has happened):
+  either `{pick: <CITY_MAGNETS id | theme id | 'plate'>}` or a design spec
+  `{shape, bg, fg, accent, label, emoji, by}` drawn by `CUSTOM_SHAPES`. The
+  ✨ ask has Claude fill that spec — never raw SVG — and `cleanSpec`
+  re-validates it on every draw (whitelisted shape, #rrggbb colors, plain
+  ≤14-char label, one emoji), so a bad synced value falls back to auto.
   `notekeep.spicy` splits the two reveals: **sweet** notes (`spicy:false`)
   fill the History jars and the door's comfort-food shelf (4 taps on the
   door handle); **spicy 🔥** notes (`spicy:true`) are kept OUT of the jars
