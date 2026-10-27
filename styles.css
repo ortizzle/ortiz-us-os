@@ -344,7 +344,11 @@ textarea.input { resize: vertical; min-height: 60px; }
 /* souvenir magnets — shapes only */
 .mags { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin-top: 22px; padding-bottom: 4px; }
 /* 48px floor around every magnet, however small its shape — it's the double-tap into a memory. */
-.magwrap { display: inline-flex; align-items: flex-end; justify-content: center; min-width: 48px; min-height: 48px; cursor: pointer; background: none; border: 0; padding: 0; }
+.magwrap { display: inline-flex; align-items: flex-end; justify-content: center; min-width: 48px; min-height: 48px; cursor: pointer; background: none; border: 0; padding: 0;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+/* held: the magnet lifts off the door while the long press counts down */
+.magwrap .mshape { transition: transform .45s ease; }
+.magwrap.pressing .mshape { transform: scale(1.12) translateY(-2px); }
 .msvg { display: block; overflow: visible; }
 /* 🧲 magnet chooser */
 .mag-preview { display: flex; justify-content: center; align-items: center; min-height: 92px; margin: 0 0 4px; }
